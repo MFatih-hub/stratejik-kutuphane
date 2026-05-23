@@ -33,9 +33,9 @@ export default async function HomePage() {
       <section className="hero">
         <h1>Stratejik düşüncenin haritası</h1>
         <p>
-          Dünya politikasının arkasındaki on büyük geleneği — Türk devlet aklından Anglo-Amerikan
-          establishment'ına, Çin parti danışmanlığından Davos sınıfına — birincil kaynaklarla,
-          akademik metinlerle ve çağdaş sesleriyle inceleyen kişisel okuma günlüğüm.
+          Dünya politikasının arkasındaki on büyük geleneği — Türk devlet aklından Anglo-
+          Amerikan establishment'ına, Çin parti danışmanlığından Davos sınıfına — birincil
+          kaynaklarla, akademik metinlerle ve çağdaş sesleriyle inceleyen kişisel okuma günlüğüm.
         </p>
       </section>
 
