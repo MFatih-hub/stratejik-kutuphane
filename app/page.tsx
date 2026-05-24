@@ -81,12 +81,11 @@ export default async function HomePage({ searchParams }: PageProps) {
       <section className="hero">
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
-          <span>KİŞİSEL KÜTÜPHANE</span>
+          <span>Kütüphane</span>
         </div>
-        <h1>Zihin Haritası</h1>
+        <h1>Bellek</h1>
         <p>
-          Akademik metinlerin, kitapların ve referans çalışmalarının kişisel kütüphanesi —
-          alan, tür ve dil filtreleriyle organize edilmiş bir okuma günlüğü.
+ Kırk ambar kütüphanesi
         </p>
       </section>
 
