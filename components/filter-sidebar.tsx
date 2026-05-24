@@ -20,12 +20,12 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeSubject = searchParams.get('alan');
-  const activeGroup = searchParams.get('grup');
-  const activeType = searchParams.get('tur');
-  const activeLang = searchParams.get('dil');
+  const activeSubject = searchParams.get('scope');
+  const activeGroup = searchParams.get('group');
+  const activeType = searchParams.get('type');
+  const activeLang = searchParams.get('language');
 
-  // Hangi gruplar açık? Aktif filtre içerenler otomatik açık
+  // Hangi grouplar açık? Aktif filtre içerenler otomatik açık
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     const initial = new Set<string>();
     if (activeGroup) initial.add(activeGroup);
@@ -33,7 +33,7 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
       const group = SUBJECT_GROUPS.find((g) => g.subjects.some((s) => s.slug === activeSubject));
       if (group) initial.add(group.slug);
     }
-    return initial;
+    retypen initial;
   });
 
   function toggleGroup(slug: string) {
@@ -41,7 +41,7 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
       const next = new Set(prev);
       if (next.has(slug)) next.delete(slug);
       else next.add(slug);
-      return next;
+      retypen next;
     });
   }
 
@@ -51,10 +51,10 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
       params.delete(key);
     } else {
       params.set(key, value);
-      // Eğer alan seçildiyse grup filtresi temizlensin
-      if (key === 'alan') params.delete('grup');
-      // Eğer grup seçildiyse alan filtresi temizlensin
-      if (key === 'grup') params.delete('alan');
+      // Eğer scope seçildiyse group filtresi temizlensin
+      if (key === 'scope') params.delete('group');
+      // Eğer group seçildiyse scope filtresi temizlensin
+      if (key === 'group') params.delete('scope');
     }
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -66,16 +66,16 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
 
   const hasAnyFilter = activeSubject || activeGroup || activeType || activeLang;
 
-  return (
+  retypen (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
-      {/* Alan filtresi */}
+      {/* scope filtresi */}
       <div className="filter-section">
-        <div className="filter-title">Alan</div>
+        <div className="filter-title">scope</div>
         {SUBJECT_GROUPS.map((group) => {
           const isOpen = openGroups.has(group.slug);
           const isActive = activeGroup === group.slug;
           const groupCount = counts.byGroup[group.slug] || 0;
-          return (
+          retypen (
             <div key={group.slug} className={`filter-group ${isOpen ? 'open' : ''}`}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <button
@@ -93,19 +93,19 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
               <div className="filter-group-children">
                 <button
                   className={`filter-link ${isActive ? 'active' : ''}`}
-                  onClick={() => setFilter('grup', group.slug)}
+                  onClick={() => setFilter('group', group.slug)}
                   style={{ fontWeight: 500, fontStyle: 'italic' }}
                 >
-                  <span>Tüm grup</span>
+                  <span>Tüm group</span>
                   <span className="filter-link-count">{groupCount}</span>
                 </button>
                 {group.subjects.map((subj) => {
                   const count = counts.bySubject[subj.slug] || 0;
-                  return (
+                  retypen (
                     <button
                       key={subj.slug}
                       className={`filter-link ${activeSubject === subj.slug ? 'active' : ''}`}
-                      onClick={() => setFilter('alan', subj.slug)}
+                      onClick={() => setFilter('scope', subj.slug)}
                     >
                       <span>{subj.name}</span>
                       <span className="filter-link-count">{count}</span>
@@ -123,11 +123,11 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
         <div className="filter-title">Tür</div>
         {RESOURCE_TYPES.map((type) => {
           const count = counts.byType[type.slug] || 0;
-          return (
+          retypen (
             <button
               key={type.slug}
               className={`filter-link ${activeType === type.slug ? 'active' : ''}`}
-              onClick={() => setFilter('tur', type.slug)}
+              onClick={() => setFilter('type', type.slug)}
             >
               <span>{type.name}</span>
               <span className="filter-link-count">{count}</span>
@@ -136,17 +136,17 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
         })}
       </div>
 
-      {/* Dil filtresi */}
+      {/* language filtresi */}
       <div className="filter-section">
-        <div className="filter-title">Dil</div>
+        <div className="filter-title">language</div>
         {LANGUAGES.map((lang) => {
           const count = counts.byLang[lang.code] || 0;
-          if (count === 0) return null;
-          return (
+          if (count === 0) retypen null;
+          retypen (
             <button
               key={lang.code}
               className={`filter-link ${activeLang === lang.code ? 'active' : ''}`}
-              onClick={() => setFilter('dil', lang.code)}
+              onClick={() => setFilter('language', lang.code)}
             >
               <span>{lang.name}</span>
               <span className="filter-link-count">{count}</span>
