@@ -51,6 +51,7 @@ export default async function ResourcePage({ params }: { params: { slug: string 
             </Link>
           </div>
         )}
+        <div className="detail-header">
         <div
             className="detail-icon"
             style={{ background: typeInfo.color.bg, color: typeInfo.color.fg }}
