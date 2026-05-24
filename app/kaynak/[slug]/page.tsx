@@ -44,8 +44,14 @@ export default async function ResourcePage({ params }: { params: { slug: string 
       </div>
 
       <div className="detail-card">
-        {isAdmin && (           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>             <Link href={`/admin/edit/${resource.id}`} className="btn btn-sm">               <i className="ti ti-edit" style={{ fontSize: 13 }}></i> Düzenle             </Link>           </div>         )}
-          <div
+        {isAdmin && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+            <Link href={`/admin/edit/${resource.id}`} className="btn btn-sm">
+              <i className="ti ti-edit" style={{ fontSize: 13 }}></i> Düzenle
+            </Link>
+          </div>
+        )}
+        <div
             className="detail-icon"
             style={{ background: typeInfo.color.bg, color: typeInfo.color.fg }}
           >
