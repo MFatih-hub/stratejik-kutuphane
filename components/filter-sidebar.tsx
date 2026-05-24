@@ -118,9 +118,9 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
         })}
       </div>
 
-      {/* Tür filtresi */}
+      {/* type filtresi */}
       <div className="filter-section">
-        <div className="filter-title">Tür</div>
+        <div className="filter-title">type</div>
         {RESOURCE_TYPES.map((type) => {
           const count = counts.byType[type.slug] || 0;
           retypen (
