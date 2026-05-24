@@ -20,10 +20,10 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeSubject = searchParams.get('alan');
-  const activeGroup = searchParams.get('grup');
-  const activeType = searchParams.get('tur');
-  const activeLang = searchParams.get('dil');
+  const activeSubject = searchParams.get('scope');
+  const activeGroup = searchParams.get('group');
+  const activeType = searchParams.get('type');
+  const activeLang = searchParams.get('language');
 
   // Hangi gruplar açık? Aktif filtre içerenler otomatik açık
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
@@ -93,7 +93,7 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
               <div className="filter-group-children">
                 <button
                   className={`filter-link ${isActive ? 'active' : ''}`}
-                  onClick={() => setFilter('grup', group.slug)}
+                  onClick={() => setFilter('group', group.slug)}
                   style={{ fontWeight: 500, fontStyle: 'italic' }}
                 >
                   <span>All groups</span>
@@ -138,7 +138,7 @@ export default function FilterSidebar({ counts, open, onClose }: FilterSidebarPr
 
       {/* Dil filtresi */}
       <div className="filter-section">
-        <div className="filter-title">Dil</div>
+        <div className="filter-title">Language</div>
         {LANGUAGES.map((lang) => {
           const count = counts.byLang[lang.code] || 0;
           if (count === 0) return null;
