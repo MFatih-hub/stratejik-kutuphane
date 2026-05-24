@@ -403,6 +403,9 @@ export default function AdminClient({ resources }: any) {
                     <span className="pill pill-have">PDF</span>
                   )}
                   <Link href={`/kaynak/${r.slug}`} className="btn btn-sm">Gör</Link>
+                  <Link href={`/admin/edit/${r.id}`} className="btn btn-sm">
+                    <i className="ti ti-edit" style={{ fontSize: 13 }}></i> Düzenle
+                  </Link>
                   <button
                     onClick={() => handleDelete(r.id, r.pdf_url)}
                     className="btn btn-danger btn-sm"
