@@ -1,131 +1,120 @@
+// lib/helpers.ts — Zihin Haritası Blog
+
+export const CATEGORIES = [
+  {
+    slug: 'teknoloji',
+    name: 'Teknoloji & Mühendislik',
+    description: 'AI, yarı iletkenler, enerji, robotik, kuantum',
+    color: '#8b2a16',
+    icon: 'ti-cpu',
+  },
+  {
+    slug: 'jeopolitik',
+    name: 'Jeopolitik & Strateji',
+    description: 'Dünya düzeni, ABD-Çin, Türkiye, küresel kurumlar',
+    color: '#2d5f3f',
+    icon: 'ti-world',
+  },
+  {
+    slug: 'bilim',
+    name: 'Bilim & Doğa',
+    description: 'Fizik, biyoloji, materyaller, uzay, iklim',
+    color: '#1d3d5c',
+    icon: 'ti-atom',
+  },
+  {
+    slug: 'ekonomi',
+    name: 'Ekonomi & Finans',
+    description: 'Para, piyasalar, kritik mineraller, ticaret',
+    color: '#a3691e',
+    icon: 'ti-chart-line',
+  },
+  {
+    slug: 'dusunce',
+    name: 'Düşünce & Felsefe',
+    description: 'Tarih, sanat, kitap incelemeleri, denemeler',
+    color: '#5e3d8c',
+    icon: 'ti-bulb',
+  },
+  {
+    slug: 'turkiye',
+    name: 'Türkiye',
+    description: 'Türk perspektifi, savunma sanayi, ulusal teknoloji',
+    color: '#a32d2d',
+    icon: 'ti-flag',
+  },
+];
+
+export function getCategoryBySlug(slug: string) {
+  return CATEGORIES.find((c) => c.slug === slug) || null;
+}
+
+export function getCategoryName(slug: string) {
+  return getCategoryBySlug(slug)?.name || slug;
+}
+
+export function getCategoryColor(slug: string) {
+  return getCategoryBySlug(slug)?.color || '#1a1814';
+}
+
+// Markdown içeriğinden okuma süresi hesapla
+export function calculateReadingMinutes(content: string): number {
+  if (!content) return 1;
+  // Markdown sözdizimini ve link/image markup'larını temizle
+  const text = content
+    .replace(/!\[.*?\]\(.*?\)/g, '') // resimler
+    .replace(/\[.*?\]\(.*?\)/g, '$1') // linkler
+    .replace(/```[\s\S]*?```/g, '') // kod blokları
+    .replace(/[#*_~`>]/g, ''); // formatting
+  const words = text.trim().split(/\s+/).length;
+  // Türkçe okuma hızı ortalama 220 kelime/dk
+  return Math.max(1, Math.round(words / 220));
+}
+
+// Markdown içeriğinden otomatik özet üret (eğer manuel girilmediyse)
+export function generateExcerpt(content: string, maxLength = 180): string {
+  if (!content) return '';
+  const plain = content
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/[#*_~`>]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+  if (plain.length <= maxLength) return plain;
+  return plain.substring(0, maxLength).replace(/\s+\S*$/, '') + '…';
+}
+
+// Türkçe slug oluştur
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/ı/g, 'i')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
+    .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+    .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .substring(0, 80);
+    .substring(0, 70);
 }
 
-export function formatBytes(bytes: number | null | undefined): string {
-  if (!bytes) return '';
-  const mb = bytes / (1024 * 1024);
-  return mb.toFixed(1) + ' MB';
+// Türkçe tarih formatı
+export function formatDate(date: string | Date | null): string {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// ============= ALANLAR =============
-export interface SubjectGroup {
-  slug: string;
-  name: string;
-  icon: string;
-  subjects: { slug: string; name: string }[];
+// Kısa tarih (3 gün önce, 2 hafta önce vs.)
+export function timeAgo(date: string | Date | null): string {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (seconds < 60) return 'az önce';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} dakika önce`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} saat önce`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} gün önce`;
+  if (seconds < 2592000) return `${Math.floor(seconds / 604800)} hafta önce`;
+  if (seconds < 31536000) return `${Math.floor(seconds / 2592000)} ay önce`;
+  return `${Math.floor(seconds / 31536000)} yıl önce`;
 }
-
-export const SUBJECT_GROUPS: SubjectGroup[] = [
-  {
-    slug: 'physical-sciences',
-    name: 'Physical Sciences and Engineering',
-    icon: 'ti-atom',
-    subjects: [
-      { slug: 'chemical-engineering', name: 'Chemical Engineering' },
-      { slug: 'chemistry', name: 'Chemistry' },
-      { slug: 'computer-science', name: 'Computer Science' },
-      { slug: 'earth-planetary-sciences', name: 'Earth and Planetary Sciences' },
-      { slug: 'energy', name: 'Energy' },
-      { slug: 'engineering', name: 'Engineering' },
-      { slug: 'materials-science', name: 'Materials Science' },
-      { slug: 'mathematics', name: 'Mathematics' },
-      { slug: 'physics-astronomy', name: 'Physics and Astronomy' },
-    ],
-  },
-  {
-    slug: 'life-sciences',
-    name: 'Life Sciences',
-    icon: 'ti-dna',
-    subjects: [
-      { slug: 'agricultural-biological', name: 'Agricultural and Biological Sciences' },
-      { slug: 'biochemistry-genetics', name: 'Biochemistry, Genetics and Molecular Biology' },
-      { slug: 'environmental-science', name: 'Environmental Science' },
-      { slug: 'immunology-microbiology', name: 'Immunology and Microbiology' },
-      { slug: 'neuroscience', name: 'Neuroscience' },
-    ],
-  },
-  {
-    slug: 'health-sciences',
-    name: 'Health Sciences',
-    icon: 'ti-stethoscope',
-    subjects: [
-      { slug: 'medicine-dentistry', name: 'Medicine and Dentistry' },
-      { slug: 'nursing-health', name: 'Nursing and Health Professions' },
-      { slug: 'pharmacology', name: 'Pharmacology, Toxicology and Pharmaceutical Science' },
-      { slug: 'veterinary', name: 'Veterinary Science and Veterinary Medicine' },
-    ],
-  },
-  {
-    slug: 'social-humanities',
-    name: 'Social Sciences and Humanities',
-    icon: 'ti-books',
-    subjects: [
-      { slug: 'arts-humanities', name: 'Arts and Humanities' },
-      { slug: 'business-management', name: 'Business, Management and Accounting' },
-      { slug: 'decision-sciences', name: 'Decision Sciences' },
-      { slug: 'economics-finance', name: 'Economics, Econometrics and Finance' },
-      { slug: 'psychology', name: 'Psychology' },
-      { slug: 'social-sciences', name: 'Social Sciences' },
-    ],
-  },
-];
-
-// Slug → name lookup
-export const SUBJECT_LOOKUP: Record<string, { name: string; groupName: string; groupSlug: string }> = {};
-SUBJECT_GROUPS.forEach((g) => {
-  g.subjects.forEach((s) => {
-    SUBJECT_LOOKUP[s.slug] = { name: s.name, groupName: g.name, groupSlug: g.slug };
-  });
-});
-
-// ============= TÜRLER =============
-export interface ResourceType {
-  slug: string;
-  name: string;
-  icon: string;
-  color: { bg: string; fg: string };
-}
-
-export const RESOURCE_TYPES: ResourceType[] = [
-  { slug: 'journal',       name: 'Journal',        icon: 'ti-news',           color: { bg: '#e6f1fb', fg: '#0c447c' } },
-  { slug: 'book',          name: 'Book',           icon: 'ti-book-2',         color: { bg: '#f3edfe', fg: '#3c2c89' } },
-  { slug: 'textbook',      name: 'Textbook',       icon: 'ti-school',         color: { bg: '#faeeda', fg: '#854f0b' } },
-  { slug: 'handbook',      name: 'Handbook',       icon: 'ti-notebook',       color: { bg: '#e1f5ee', fg: '#085041' } },
-  { slug: 'reference',     name: 'Reference Work', icon: 'ti-bookmarks',      color: { bg: '#fdf2ee', fg: '#8b2a16' } },
-  { slug: 'whitepaper',    name: 'Whitepaper',     icon: 'ti-file-text',      color: { bg: '#f1efe8', fg: '#444441' } },
-];
-
-export const TYPE_LOOKUP: Record<string, ResourceType> = {};
-RESOURCE_TYPES.forEach((t) => { TYPE_LOOKUP[t.slug] = t; });
-
-// ============= STATUS =============
-export const STATUS_LABELS: Record<string, { label: string; color: { bg: string; fg: string } }> = {
-  to_read: { label: 'Okunacak',   color: { bg: '#f1efe8', fg: '#5f5e5a' } },
-  reading: { label: 'Okuyorum',   color: { bg: '#faeeda', fg: '#854f0b' } },
-  done:    { label: 'Bitti',      color: { bg: '#e1f5ee', fg: '#0f6e56' } },
-};
-
-// ============= DİLLER =============
-export const LANGUAGES = [
-  { code: 'TR', name: 'Türkçe' },
-  { code: 'EN', name: 'İngilizce' },
-  { code: 'FR', name: 'Fransızca' },
-  { code: 'DE', name: 'Almanca' },
-  { code: 'RU', name: 'Rusça' },
-  { code: 'AR', name: 'Arapça' },
-  { code: 'FA', name: 'Farsça' },
-  { code: 'ZH', name: 'Çince' },
-  { code: 'ES', name: 'İspanyolca' },
-  { code: 'IT', name: 'İtalyanca' },
-];
