@@ -1,101 +1,130 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
-import { SUBJECT_GROUPS, SUBJECT_LOOKUP, TYPE_LOOKUP, RESOURCE_TYPES } from '@/lib/helpers';
-import LibraryClient from './library-client';
+import { CATEGORIES, formatDate, timeAgo } from '@/lib/helpers';
 
-export const revalidate = 0;
+export const revalidate = 60;
 
-interface PageProps {
-  searchParams: {
-    alan?: string;
-    grup?: string;
-    tur?: string;
-    dil?: string;
-    sirala?: string;
-  };
-}
-
-export default async function HomePage({ searchParams }: PageProps) {
+export default async function HomePage() {
   const supabase = createClient();
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('is_published', true)
+    .order('published_at', { ascending: false });
 
-  // Tüm kaynakları çek (filtreleme client tarafında değil, server tarafında SQL ile)
-  let query = supabase.from('resources').select('*');
-
-  if (searchParams.alan) {
-    // Alan filtresi: primary_subject veya subjects array
-    query = query.or(`primary_subject.eq.${searchParams.alan},subjects.cs.{${searchParams.alan}}`);
-  } else if (searchParams.grup) {
-    // Grup filtresi: o gruba ait alanlardan herhangi biri
-    const group = SUBJECT_GROUPS.find((g) => g.slug === searchParams.grup);
-    if (group) {
-      const subjectSlugs = group.subjects.map((s) => s.slug);
-      const conditions = subjectSlugs.map((s) => `primary_subject.eq.${s}`).join(',');
-      query = query.or(conditions);
-    }
-  }
-
-  if (searchParams.tur) {
-    query = query.eq('type', searchParams.tur);
-  }
-
-  if (searchParams.dil) {
-    query = query.eq('language', searchParams.dil);
-  }
-
-  // Varsayılan: başlığa göre alfabetik
-  const sortField = searchParams.sirala === 'yil' ? 'year' :
-                    searchParams.sirala === 'yeni' ? 'created_at' : 'title';
-  const sortAsc = searchParams.sirala !== 'yeni' && searchParams.sirala !== 'yil';
-
-  query = query.order(sortField, { ascending: sortAsc, nullsFirst: false });
-
-  const { data: resources } = await query;
-
-  // Tüm kaynaklar (filtresiz - sayım için)
-  const { data: allResources } = await supabase.from('resources').select('primary_subject, subjects, type, language');
-
-  // Sayımları hesapla
-  const counts = {
-    bySubject: {} as Record<string, number>,
-    byGroup: {} as Record<string, number>,
-    byType: {} as Record<string, number>,
-    byLang: {} as Record<string, number>,
-  };
-
-  (allResources || []).forEach((r: any) => {
-    if (r.primary_subject) {
-      counts.bySubject[r.primary_subject] = (counts.bySubject[r.primary_subject] || 0) + 1;
-      const groupInfo = SUBJECT_LOOKUP[r.primary_subject];
-      if (groupInfo) {
-        counts.byGroup[groupInfo.groupSlug] = (counts.byGroup[groupInfo.groupSlug] || 0) + 1;
-      }
-    }
-    if (r.type) counts.byType[r.type] = (counts.byType[r.type] || 0) + 1;
-    if (r.language) counts.byLang[r.language] = (counts.byLang[r.language] || 0) + 1;
-  });
-
-  const totalCount = allResources?.length || 0;
+  const postList = posts || [];
+  const featured = postList[0];
+  const rest = postList.slice(1);
 
   return (
     <>
-      <section className="hero">
+      {/* HERO */}
+      <section className="blog-hero">
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
-          <span>Kütüphane</span>
+          MUHAMMET FATİH IŞIK · DENEMELER VE ANALİZLER
         </div>
-        <h1>Bellek</h1>
-        <p>
- Kırk ambar kütüphanesi
+        <h1 className="blog-hero-title">Zihin Haritası</h1>
+        <p className="blog-hero-sub">
+          Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Düşünmek
+          yetmediği için yazıyorum.
         </p>
       </section>
 
-      <LibraryClient
-        resources={resources || []}
-        counts={counts}
-        totalCount={totalCount}
-        currentSort={searchParams.sirala || 'alfabe'}
-        currentFilters={searchParams}
-      />
+      {/* KATEGORİ ŞERİDİ */}
+      <section className="category-bar">
+        {CATEGORIES.map((c) => (
+          <Link key={c.slug} href={`/kategori/${c.slug}`} className="category-pill">
+            {c.name}
+          </Link>
+        ))}
+      </section>
+
+      {/* BOŞSA */}
+      {postList.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">✍️</div>
+          <p className="empty-state-text">
+            Henüz yazı yok. Yakında ilki gelecek.
+          </p>
+        </div>
+      )}
+
+      {/* ÖNE ÇIKAN (en yeni) */}
+      {featured && (
+        <article className="featured-post">
+          <Link href={`/yazi/${featured.slug}`} className="featured-link">
+            {featured.cover_image_url && (
+              <div className="featured-image">
+                <img src={featured.cover_image_url} alt={featured.title} />
+              </div>
+            )}
+            <div className="featured-body">
+              <div className="post-meta">
+                <span className="post-category" style={{
+                  background: `${getCategoryColor(featured.category)}15`,
+                  color: getCategoryColor(featured.category)
+                }}>
+                  {getCategoryName(featured.category)}
+                </span>
+                <span className="post-meta-sep">·</span>
+                <time className="post-date">{formatDate(featured.published_at)}</time>
+                <span className="post-meta-sep">·</span>
+                <span className="post-reading">{featured.reading_minutes} dk okuma</span>
+              </div>
+              <h2 className="featured-title">{featured.title}</h2>
+              {featured.subtitle && (
+                <p className="featured-subtitle">{featured.subtitle}</p>
+              )}
+              {featured.excerpt && (
+                <p className="featured-excerpt">{featured.excerpt}</p>
+              )}
+              <span className="featured-read-more">Okumaya devam et →</span>
+            </div>
+          </Link>
+        </article>
+      )}
+
+      {/* DİĞER YAZILAR LİSTESİ */}
+      {rest.length > 0 && (
+        <section className="posts-list">
+          <h2 className="section-title">Tüm Yazılar</h2>
+          {rest.map((post) => (
+            <article key={post.id} className="post-card">
+              <Link href={`/yazi/${post.slug}`} className="post-card-link">
+                <div className="post-card-body">
+                  <div className="post-meta">
+                    <span className="post-category" style={{
+                      background: `${getCategoryColor(post.category)}15`,
+                      color: getCategoryColor(post.category)
+                    }}>
+                      {getCategoryName(post.category)}
+                    </span>
+                    <span className="post-meta-sep">·</span>
+                    <time className="post-date">{formatDate(post.published_at)}</time>
+                    <span className="post-meta-sep">·</span>
+                    <span className="post-reading">{post.reading_minutes} dk</span>
+                  </div>
+                  <h3 className="post-card-title">{post.title}</h3>
+                  {post.excerpt && <p className="post-card-excerpt">{post.excerpt}</p>}
+                </div>
+                {post.cover_image_url && (
+                  <div className="post-card-image">
+                    <img src={post.cover_image_url} alt={post.title} />
+                  </div>
+                )}
+              </Link>
+            </article>
+          ))}
+        </section>
+      )}
     </>
   );
+}
+
+function getCategoryName(slug: string) {
+  return CATEGORIES.find((c) => c.slug === slug)?.name || slug;
+}
+function getCategoryColor(slug: string) {
+  return CATEGORIES.find((c) => c.slug === slug)?.color || '#1a1814';
 }
