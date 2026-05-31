@@ -10,7 +10,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphan
 
 export const metadata: Metadata = {
   title: 'Zihin Haritası — Muhammet Fatih Işık',
-  description: 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Türkiye perspektifinden 2026 sonrası dünyaya bakış.',
+  description: 'Not defteri',
   alternates: { canonical: SITE_URL },
 };
 
@@ -31,7 +31,7 @@ export default async function HomePage() {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     name: 'Zihin Haritası',
-    description: 'Muhammet Fatih Işık tarafından yazılan denemeler ve analizler.',
+    description: 'denemeler ve analizler.',
     url: SITE_URL,
     inLanguage: 'tr-TR',
     author: {
@@ -63,8 +63,7 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Düşünmek
-          yetmediği için yazıyorum.
+          Aslında bunlar not değil; kâğıt fiyatlarına verdiğim uzun soluklu bir tepki.
         </p>
       </section>
 
