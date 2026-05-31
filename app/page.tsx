@@ -1,8 +1,18 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib/helpers';
 
 export const revalidate = 60;
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
+
+export const metadata: Metadata = {
+  title: 'Zihin Haritası — Muhammet Fatih Işık',
+  description: 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Türkiye perspektifinden 2026 sonrası dünyaya bakış.',
+  alternates: { canonical: SITE_URL },
+};
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -16,8 +26,36 @@ export default async function HomePage() {
   const featured = postList[0];
   const rest = postList.slice(1);
 
+  // Blog schema (Google için)
+  const blogSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Zihin Haritası',
+    description: 'Muhammet Fatih Işık tarafından yazılan denemeler ve analizler.',
+    url: SITE_URL,
+    inLanguage: 'tr-TR',
+    author: {
+      '@type': 'Person',
+      name: 'Muhammet Fatih Işık',
+      url: SITE_URL,
+    },
+    blogPost: postList.slice(0, 10).map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      url: `${SITE_URL}/yazi/${p.slug}`,
+      datePublished: p.published_at,
+      author: { '@type': 'Person', name: 'Muhammet Fatih Işık' },
+    })),
+  };
+
   return (
     <>
+      <Script
+        id="schema-blog"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
+      />
+
       <section className="blog-hero">
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
@@ -25,11 +63,12 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Zihnimden geçenler.
+          Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Düşünmek
+          yetmediği için yazıyorum.
         </p>
       </section>
 
-      <section className="category-bar">
+      <section className="category-bar" aria-label="Kategoriler">
         {CATEGORIES.map((c) => (
           <Link key={c.slug} href={`/kategori/${c.slug}`} className="category-pill">
             {c.name}
@@ -51,7 +90,7 @@ export default async function HomePage() {
           <Link href={`/yazi/${featured.slug}`} className="featured-link">
             {featured.cover_image_url && (
               <div className="featured-image">
-                <img src={featured.cover_image_url} alt={featured.title} />
+                <img src={featured.cover_image_url} alt={featured.title} loading="eager" />
               </div>
             )}
             <div className="featured-body">
@@ -63,7 +102,9 @@ export default async function HomePage() {
                   {getCategoryName(featured.category)}
                 </span>
                 <span className="post-meta-sep">·</span>
-                <time className="post-date">{formatDate(featured.published_at)}</time>
+                <time className="post-date" dateTime={featured.published_at}>
+                  {formatDate(featured.published_at)}
+                </time>
                 <span className="post-meta-sep">·</span>
                 <span className="post-reading">{featured.reading_minutes} dk okuma</span>
               </div>
@@ -91,7 +132,9 @@ export default async function HomePage() {
                       {getCategoryName(post.category)}
                     </span>
                     <span className="post-meta-sep">·</span>
-                    <time className="post-date">{formatDate(post.published_at)}</time>
+                    <time className="post-date" dateTime={post.published_at}>
+                      {formatDate(post.published_at)}
+                    </time>
                     <span className="post-meta-sep">·</span>
                     <span className="post-reading">{post.reading_minutes} dk</span>
                   </div>
@@ -100,7 +143,7 @@ export default async function HomePage() {
                 </div>
                 {post.cover_image_url && (
                   <div className="post-card-image">
-                    <img src={post.cover_image_url} alt={post.title} />
+                    <img src={post.cover_image_url} alt={post.title} loading="lazy" />
                   </div>
                 )}
               </Link>

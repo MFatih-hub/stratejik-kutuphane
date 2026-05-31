@@ -1,9 +1,37 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, getCategoryBySlug, formatDate, getCategoryColor } from '@/lib/helpers';
+import { CATEGORIES, getCategoryBySlug, formatDate } from '@/lib/helpers';
 
 export const revalidate = 60;
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const category = getCategoryBySlug(params.slug);
+  if (!category) return { title: 'Kategori bulunamadı' };
+
+  const url = `${SITE_URL}/kategori/${category.slug}`;
+  return {
+    title: category.name,
+    description: `${category.name} kategorisindeki tüm yazılar. ${category.description}`,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'website',
+      url,
+      title: `${category.name} — Zihin Haritası`,
+      description: category.description,
+      siteName: 'Zihin Haritası',
+      locale: 'tr_TR',
+    },
+  };
+}
+
+// Tüm kategori sayfalarını önceden build et (SEO için)
+export async function generateStaticParams() {
+  return CATEGORIES.map((c) => ({ slug: c.slug }));
+}
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const category = getCategoryBySlug(params.slug);
@@ -56,7 +84,9 @@ export default async function CategoryPage({ params }: { params: { slug: string 
               <Link href={`/yazi/${post.slug}`} className="post-card-link">
                 <div className="post-card-body">
                   <div className="post-meta">
-                    <time className="post-date">{formatDate(post.published_at)}</time>
+                    <time className="post-date" dateTime={post.published_at}>
+                      {formatDate(post.published_at)}
+                    </time>
                     <span className="post-meta-sep">·</span>
                     <span className="post-reading">{post.reading_minutes} dk</span>
                   </div>
@@ -65,7 +95,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                 </div>
                 {post.cover_image_url && (
                   <div className="post-card-image">
-                    <img src={post.cover_image_url} alt={post.title} />
+                    <img src={post.cover_image_url} alt={post.title} loading="lazy" />
                   </div>
                 )}
               </Link>

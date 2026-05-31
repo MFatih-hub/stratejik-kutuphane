@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate } from '@/lib/helpers';
 import ReactMarkdown from 'react-markdown';
@@ -7,6 +9,66 @@ import remarkGfm from 'remark-gfm';
 import ShareButtons from '@/components/share-buttons';
 
 export const revalidate = 60;
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
+const AUTHOR_NAME = 'Muhammet Fatih Işık';
+
+// Her yazıya özel meta üretir
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: post } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('slug', params.slug)
+    .eq('is_published', true)
+    .single();
+
+  if (!post) {
+    return {
+      title: 'Yazı bulunamadı',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const url = `${SITE_URL}/yazi/${post.slug}`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/yazi/${post.slug}/opengraph-image`;
+  const description = post.excerpt || post.subtitle || `${post.title} — ${AUTHOR_NAME}`;
+
+  return {
+    title: post.title,
+    description,
+    keywords: [...(post.tags || []), post.category, 'türkçe blog'],
+    authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      type: 'article',
+      url,
+      title: post.title,
+      description,
+      siteName: 'Zihin Haritası',
+      locale: 'tr_TR',
+      publishedTime: post.published_at,
+      modifiedTime: post.updated_at,
+      authors: [AUTHOR_NAME],
+      section: post.category,
+      tags: post.tags,
+      images: [{
+        url: imageUrl,
+        width: 1200,
+        height: 630,
+        alt: post.title,
+      }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
   const supabase = createClient();
@@ -24,11 +86,79 @@ export default async function PostPage({ params }: { params: { slug: string } })
   }
 
   const category = CATEGORIES.find((c) => c.slug === post.category);
-  const url = typeof window !== 'undefined' ? window.location.href : `/yazi/${post.slug}`;
+  const url = `${SITE_URL}/yazi/${post.slug}`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/yazi/${post.slug}/opengraph-image`;
+
+  // JSON-LD Article schema (Google için)
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || post.subtitle,
+    image: imageUrl,
+    author: {
+      '@type': 'Person',
+      name: AUTHOR_NAME,
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Person',
+      name: AUTHOR_NAME,
+      url: SITE_URL,
+    },
+    datePublished: post.published_at,
+    dateModified: post.updated_at,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': url,
+    },
+    url,
+    inLanguage: 'tr-TR',
+    wordCount: (post.content || '').split(/\s+/).length,
+    keywords: (post.tags || []).join(', '),
+    articleSection: category?.name || post.category,
+  };
+
+  // BreadcrumbList schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Ana sayfa',
+        item: SITE_URL,
+      },
+      ...(category ? [{
+        '@type': 'ListItem',
+        position: 2,
+        name: category.name,
+        item: `${SITE_URL}/kategori/${category.slug}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: category ? 3 : 2,
+        name: post.title,
+        item: url,
+      },
+    ],
+  };
 
   return (
     <article className="post-detail">
-      <nav className="breadcrumb">
+      <Script
+        id="schema-article"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <Script
+        id="schema-breadcrumb"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
+      <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">Ana sayfa</Link>
         <span className="breadcrumb-sep">›</span>
         {category && (
@@ -64,9 +194,10 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <div className="post-byline">
           <div className="author-avatar">M</div>
           <div className="author-info">
-            <span className="author-name">Muhammet Fatih Işık</span>
+            <span className="author-name">{AUTHOR_NAME}</span>
             <span className="post-byline-meta">
-              {formatDate(post.published_at)} · {post.reading_minutes} dk okuma
+              <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
+              {' · '}{post.reading_minutes} dk okuma
             </span>
           </div>
         </div>
@@ -74,7 +205,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
       {post.cover_image_url && (
         <div className="post-cover">
-          <img src={post.cover_image_url} alt={post.title} />
+          <img src={post.cover_image_url} alt={post.title} loading="eager" />
         </div>
       )}
 
