@@ -25,8 +25,7 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Düşünmek
-          yetmediği için yazıyorum.
+          Zihnimden geçenler.
         </p>
       </section>
 
