@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — ${AUTHOR_NAME}`,
     description: SITE_DESCRIPTION,
     images: ['/opengraph-image'],
-    // creator: '@kullanici_adi', // Twitter hesabın varsa ekle
+    creator: '@Yedikarat'
   },
   robots: {
     index: true,
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   },
   verification: {
     // Google Search Console kayıt sonrası buraya kodu yapıştır:
-    google: 'google-site-verification=D0hcZnHTN8VOE8mfUOK9yfTl0oddEssAno3H-QIWKqQ',
+    google: '0hcZnHTN8VOE8mfUOK9yfTl0oddEssAno3H-QIWKqQ',
   },
 };
 
@@ -109,8 +109,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     url: SITE_URL,
     sameAs: [
       // İleride sosyal medya hesaplarını ekle:
-      // 'https://twitter.com/kullaniciadi',
-      // 'https://linkedin.com/in/kullaniciadi',
+      'https://x.com/Yedikarat',
+      'https://www.linkedin.com/in/muhammet-fatih-i%C5%9F%C4%B1k-096b58301/'
       // 'https://github.com/MFatih-hub',
     ],
     jobTitle: 'Yazar, Mühendis, Araştırmacı',
