@@ -1,10 +1,10 @@
 // lib/helpers.ts — Zihin Haritası Blog
 
 export const CATEGORIES = [
-  { slug: 'teknoloji', name: 'Mühendislik', description: 'AI, yarı iletkenler, enerji, robotik, kuantum', color: '#8b2a16' },
+  { slug: 'teknoloji', name: 'Teknoloji', description: 'AI, yarı iletkenler, enerji, robotik, kuantum', color: '#8b2a16' },
   { slug: 'jeopolitik', name: 'Jeopolitik', description: 'Dünya düzeni, ABD-Çin, Türkiye, küresel kurumlar', color: '#2d5f3f' },
   { slug: 'bilim', name: 'Bilim', description: 'Fizik, biyoloji, materyaller, uzay, iklim', color: '#1d3d5c' },
-  { slug: 'ekonomi', name: 'Ekonomi', description: 'Para, piyasalar, kritik mineraller, ticaret', color: '#a3691e' },
+  { slug: 'ekonomi', name: 'Finans', description: 'Para, piyasalar, kritik mineraller, ticaret', color: '#a3691e' },
   { slug: 'dusunce', name: 'Felsefe', description: 'Tarih, sanat, kitap incelemeleri, denemeler', color: '#5e3d8c' },
   { slug: 'turkiye', name: 'Türkiye', description: 'Türk perspektifi, savunma sanayi, ulusal teknoloji', color: '#a32d2d' },
 ];
