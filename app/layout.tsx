@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   },
   verification: {
     // Google Search Console kayıt sonrası buraya kodu yapıştır:
-    // google: 'xxxxxxxxxxxxx',
+    // google: 'google-site-verification=D0hcZnHTN8VOE8mfUOK9yfTl0oddEssAno3H-QIWKqQ',
   },
 };
 
