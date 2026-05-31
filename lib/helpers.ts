@@ -1,12 +1,12 @@
 // lib/helpers.ts — Zihin Haritası Blog
 
 export const CATEGORIES = [
-  { slug: 'teknoloji', name: 'Teknoloji & Mühendislik', description: 'AI, yarı iletkenler, enerji, robotik, kuantum', color: '#8b2a16' },
-  { slug: 'jeopolitik', name: 'Jeopolitik & Strateji', description: 'Dünya düzeni, ABD-Çin, Türkiye, küresel kurumlar', color: '#2d5f3f' },
-  { slug: 'bilim', name: 'Bilim & Doğa', description: 'Fizik, biyoloji, materyaller, uzay, iklim', color: '#1d3d5c' },
-  { slug: 'ekonomi', name: 'Ekonomi & Finans', description: 'Para, piyasalar, kritik mineraller, ticaret', color: '#a3691e' },
-  { slug: 'dusunce', name: 'Düşünce & Felsefe', description: 'Tarih, sanat, kitap incelemeleri, denemeler', color: '#5e3d8c' },
-  { slug: 'turkiye', name: 'Türkiye', description: 'Türk perspektifi, savunma sanayi, ulusal teknoloji', color: '#a32d2d' },
+  { slug: 'teknoloji', name: 'Mühendislik', description: 'Mühendislik', color: '#8b2a16' },
+  { slug: 'jeopolitik', name: 'Politika', description: 'Politika', color: '#2d5f3f' },
+  { slug: 'bilim', name: 'Sosyoloji', description: 'Sosyoloji', color: '#1d3d5c' },
+  { slug: 'ekonomi', name: 'Finans', description: 'Finans', color: '#a3691e' },
+  { slug: 'dusunce', name: 'Felsefe', description: 'Felsefe', color: '#5e3d8c' },
+  { slug: 'turkiye', name: 'Tarih', description: 'Tarih', color: '#a32d2d' },
 ];
 
 export function getCategoryBySlug(slug: string) {
