@@ -10,7 +10,7 @@ import './globals.css';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
 const SITE_NAME = 'Zihin Haritası';
 const AUTHOR_NAME = 'Muhammet Fatih Işık';
-const SITE_DESCRIPTION = 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazılar. Muhammet Fatih Işık tarafından.';
+const SITE_DESCRIPTION = 'Note defterim';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
