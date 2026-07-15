@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import ThemeToggle from '@/components/theme-toggle';
+import { HeaderSiteSearch } from '@/components/site-search';
 import './globals.css';
 
 // ⚠️ Burayı kendi domain'inle değiştir (custom domain alınca)
@@ -163,6 +164,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </Link>
             <nav className="site-nav">
+              <HeaderSiteSearch />
               <ThemeToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
               {user && (

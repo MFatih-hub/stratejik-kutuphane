@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib/helpers';
+import { InlineSiteSearch } from '@/components/site-search';
 
 export const revalidate = 60;
 
@@ -65,6 +67,9 @@ export default async function HomePage() {
         <p className="blog-hero-sub">
           Aslında bunlar not değil; kâğıt fiyatlarına verdiğim uzun soluklu bir tepki.
         </p>
+        <div className="hero-search">
+          <InlineSiteSearch />
+        </div>
       </section>
 
       <section className="category-bar" aria-label="Kategoriler">
@@ -89,7 +94,14 @@ export default async function HomePage() {
           <Link href={`/yazi/${featured.slug}`} className="featured-link">
             {featured.cover_image_url && (
               <div className="featured-image">
-                <img src={featured.cover_image_url} alt={featured.title} loading="eager" />
+                <Image
+                  src={featured.cover_image_url}
+                  alt={featured.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 1150px"
+                  style={{ objectFit: 'cover' }}
+                  priority
+                />
               </div>
             )}
             <div className="featured-body">
@@ -142,7 +154,7 @@ export default async function HomePage() {
                 </div>
                 {post.cover_image_url && (
                   <div className="post-card-image">
-                    <img src={post.cover_image_url} alt={post.title} loading="lazy" />
+                    <Image src={post.cover_image_url} alt={post.title} fill sizes="160px" style={{ objectFit: 'cover' }} />
                   </div>
                 )}
               </Link>

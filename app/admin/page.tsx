@@ -27,9 +27,14 @@ export default async function AdminPage() {
           <h1 className="admin-title">Yazı Yönetimi</h1>
           <p className="admin-sub">Tüm yazılarını buradan yönet</p>
         </div>
-        <Link href="/admin/yazi/yeni" className="btn btn-primary">
-          ✍️ Yeni Yazı
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/admin/analiz" className="btn btn-sm">
+            📊 Analiz
+          </Link>
+          <Link href="/admin/yazi/yeni" className="btn btn-primary">
+            ✍️ Yeni Yazı
+          </Link>
+        </div>
       </div>
 
       <div className="admin-stats">

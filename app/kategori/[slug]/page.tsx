@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
@@ -95,7 +96,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                 </div>
                 {post.cover_image_url && (
                   <div className="post-card-image">
-                    <img src={post.cover_image_url} alt={post.title} loading="lazy" />
+                    <Image src={post.cover_image_url} alt={post.title} fill sizes="160px" style={{ objectFit: 'cover' }} />
                   </div>
                 )}
               </Link>

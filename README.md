@@ -2,22 +2,25 @@
 
 Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 
-## 🚀 Hızlı Kurulum
+## 🚀 Hızlı Kurulum (sıfırdan)
 
 ### 1. Supabase'i Hazırla
 1. https://supabase.com/dashboard projene git
 2. Sol menüden **SQL Editor** → **New query**
-3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır
-4. **Run** bas
-5. "Posts tablosu hazır" yazısını görmelisin ✓
+3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
+4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
+5. "...hazır" yazan mesajları görmelisin ✓
+
+> Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** `SUPABASE-MIGRATION-v2.sql`'i çalıştırman yeterli — eklemeli bir script, hiçbir yazını silmez.
 
 ### 2. Vercel'e Deploy Et
 1. GitHub'a repo'yu push et
 2. Vercel'de yeni proje oluştur → bu repo'yu seç
-3. **Environment Variables** ekle:
+3. **Environment Variables** ekle (`.env.example` dosyasındaki isimlerle aynı):
    - `NEXT_PUBLIC_SUPABASE_URL` → Supabase projenin URL'i
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Supabase anon key
    - `NEXT_PUBLIC_BUCKET_NAME` → `documentspdfs` (veya bucket adın)
+   - `NEXT_PUBLIC_SITE_URL` → canlı site adresin (örn. `https://senin-domain.vercel.app`)
 4. **Deploy** bas
 
 ### 3. Storage Bucket'ı Hazırla (Görseller için)
@@ -38,39 +41,35 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 - Ana sayfa: `https://senin-domain.vercel.app`
 - Admin giriş (gizli): `https://senin-domain.vercel.app/giris`
 - Admin panel: `https://senin-domain.vercel.app/admin`
+- Okuyucu analitiği: `https://senin-domain.vercel.app/admin/analiz`
 
-## 📝 Yazı Yazmak
+## ✍️ Yazı Yazmak (Word/Notion tarzı editör)
 
 1. `/giris` → e-posta + şifre
 2. `/admin` → "Yeni Yazı" butonu
-3. Markdown editöründe yaz
-4. Kategori seç, etiket ekle, kapak görseli yükle
-5. **Taslak Kaydet** veya **Yayınla**
+3. Üstteki araç çubuğuyla biçimlendir: başlıklar, **kalın**, *italik*, listeler, alıntı, kod, hizalama, bağlantı — hepsi yazarken anında göründüğü gibi kaydedilir, markdown işareti yazmana gerek yok
+4. Görsel eklemek için araç çubuğundaki 📷 butonuna bas, ya da görseli doğrudan yazının içine sürükle-bırak/yapıştır
+5. Sağ üstte **"Tam ekran"** ile dikkat dağıtmadan yazabilirsin
+6. Yazarken birkaç saniyede bir **otomatik kaydedilir** (üstte "Kaydedildi · saat" yazısını görürsün) — internetin gitse veya sekmeyi kapatsan bile son halin Supabase'de duruyor
+7. Kategori seç, etiket ekle, kapak görseli yükle (sağ panel)
+8. **Taslak Kaydet** veya **Yayınla**
 
-## 📋 Markdown Hızlı Rehber
+Eski (markdown ile yazılmış) yazıların açıldığında otomatik olarak yeni editöre uygun hale getirilir — hiçbir şey kaybolmaz, tekrar kaydettiğinde yeni formatta saklanır.
 
-```markdown
-# Başlık
-## Alt başlık
+## 📊 Okuyucu Analitiği
 
-**kalın** *italik* ~~üstü çizili~~
+`/admin/analiz` sayfasında:
+- Toplam / son 24 saat / son 7 gün görüntülenme
+- Son 14 günün günlük grafiği
+- Yazı başına toplam ve son 7 günlük görüntülenme (sıralanabilir)
+- **"Şu an okunuyor"** — biri bir yazını açtığı an, sayfayı yenilemene bile gerek kalmadan burada anında görünür (Supabase Realtime ile)
+- Trafiğin nereden geldiği (Google, X, doğrudan, vb.)
 
-- liste
-- öğeleri
+Görüntülenme sayacı artık güvenli şekilde çalışıyor: eski sürümde sayaç güncellemesi Supabase'in güvenlik kurallarına (RLS) takılıp sessizce başarısız oluyordu — `SUPABASE-MIGRATION-v2.sql` bunu `record_post_view()` adlı bir veritabanı fonksiyonuyla düzeltiyor. Aynı ziyaretçinin 30 dakika içinde bir yazıyı yenilemesi sayacı şişirmez.
 
-1. Sıralı
-2. Liste
+## 🔍 Arama
 
-> Alıntı
-
-[link metni](https://url.com)
-
-![görsel](https://url.com/img.jpg)
-
-`kod parçası`
-
-```kod bloğu```
-```
+Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutusu, başlık/özet/etiketlerde anlık arama yapar. Türkçe karakterler (İ/I, ı/i) doğru şekilde eşleşir.
 
 ## 🎨 Kategoriler
 
@@ -98,25 +97,40 @@ http://localhost:3000
 
 ```
 app/
-  page.tsx                          # Ana sayfa (yazı listesi)
-  yazi/[slug]/page.tsx              # Yazı detay
+  page.tsx                          # Ana sayfa (yazı listesi + arama kutusu)
+  yazi/[slug]/page.tsx              # Yazı detay (okuma çubuğu, içindekiler, ilgili yazılar)
   kategori/[slug]/page.tsx          # Kategori sayfası
   giris/page.tsx                    # Admin giriş
   admin/
     page.tsx                        # Yazı yönetim paneli
+    analiz/
+      page.tsx                      # Okuyucu analitiği (sunucu tarafı veri)
+      analytics-client.tsx          # Canlı akış + grafikler
     cikis/page.tsx                  # Çıkış
     yazi/
       yeni/page.tsx                 # Yeni yazı
       [id]/duzenle/
         page.tsx                    # Düzenle
-        editor-client.tsx           # Markdown editör
+        editor-client.tsx           # Editör mantığı: otomatik kaydetme, yayınlama
 components/
+  rich-text-editor.tsx              # Word/Notion tarzı WYSIWYG editör (Tiptap)
+  post-content.tsx                  # Yazı içeriğini render eder (html + eski markdown)
+  table-of-contents.tsx             # İçindekiler (uzun yazılarda)
+  reading-progress.tsx              # Okuma ilerleme çubuğu
+  related-posts.tsx                 # "Bunları da okuyabilirsin"
+  site-search.tsx                   # Arama kutusu + modal
+  view-tracker.tsx                  # Görüntülenme kaydı (görünmez bileşen)
   theme-toggle.tsx                  # 3 tema (light/dark/blue)
   share-buttons.tsx                 # Sosyal paylaşım
 lib/
   helpers.ts                        # Kategoriler ve yardımcılar
+  content.ts                        # Başlık çıkarma, HTML temizleme (sanitize)
+  visitor.ts                        # Anonim ziyaretçi kimliği (çerez)
   supabase-browser.ts               # Client-side Supabase
   supabase-server.ts                # Server-side Supabase
+SUPABASE-SETUP.sql                  # İlk kurulum (sıfırdan)
+SUPABASE-MIGRATION-v2.sql           # Mevcut siteyi güncelleme (eklemeli, güvenli)
+SEO-CHECKLIST.md                    # Yazı öncesi/sonrası SEO kontrol listesi
 ```
 
 ---

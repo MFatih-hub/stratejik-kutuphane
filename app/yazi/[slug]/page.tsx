@@ -1,11 +1,16 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate } from '@/lib/helpers';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { extractHeadings } from '@/lib/content';
+import PostContent from '@/components/post-content';
+import ReadingProgress from '@/components/reading-progress';
+import TableOfContents from '@/components/table-of-contents';
+import RelatedPosts from '@/components/related-posts';
+import ViewTracker from '@/components/view-tracker';
 import ShareButtons from '@/components/share-buttons';
 
 export const revalidate = 60;
@@ -81,13 +86,40 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
   if (!post) notFound();
 
-  if (post.is_published && !isAdmin) {
-    await supabase.from('posts').update({ view_count: (post.view_count || 0) + 1 }).eq('id', post.id);
+  let relatedPosts: any[] = [];
+  if (post.is_published) {
+    const { data: sameCategory } = await supabase
+      .from('posts')
+      .select('id, slug, title, cover_image_url, category, published_at')
+      .eq('is_published', true)
+      .eq('category', post.category)
+      .neq('id', post.id)
+      .order('published_at', { ascending: false })
+      .limit(3);
+
+    relatedPosts = sameCategory || [];
+    if (relatedPosts.length < 3) {
+      const { data: recent } = await supabase
+        .from('posts')
+        .select('id, slug, title, cover_image_url, category, published_at')
+        .eq('is_published', true)
+        .neq('id', post.id)
+        .order('published_at', { ascending: false })
+        .limit(3 + relatedPosts.length);
+      const usedIds = new Set(relatedPosts.map((p) => p.id));
+      for (const p of recent || []) {
+        if (relatedPosts.length >= 3) break;
+        if (usedIds.has(p.id)) continue;
+        relatedPosts.push(p);
+        usedIds.add(p.id);
+      }
+    }
   }
 
   const category = CATEGORIES.find((c) => c.slug === post.category);
   const url = `${SITE_URL}/yazi/${post.slug}`;
   const imageUrl = post.cover_image_url || `${SITE_URL}/yazi/${post.slug}/opengraph-image`;
+  const headings = extractHeadings(post.content, post.content_format);
 
   // JSON-LD Article schema (Google için)
   const articleSchema = {
@@ -147,6 +179,9 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
   return (
     <article className="post-detail">
+      {post.is_published && !isAdmin && <ViewTracker slug={post.slug} />}
+      {post.is_published && <ReadingProgress targetId="post-article-body" />}
+
       <Script
         id="schema-article"
         type="application/ld+json"
@@ -205,12 +240,14 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
       {post.cover_image_url && (
         <div className="post-cover">
-          <img src={post.cover_image_url} alt={post.title} loading="eager" />
+          <Image src={post.cover_image_url} alt={post.title} fill sizes="(max-width: 768px) 100vw, 720px" style={{ objectFit: 'cover' }} priority />
         </div>
       )}
 
-      <div className="post-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+      {headings.length >= 3 && <TableOfContents headings={headings} />}
+
+      <div id="post-article-body">
+        <PostContent content={post.content} format={post.content_format} />
       </div>
 
       {post.tags && post.tags.length > 0 && (
@@ -225,6 +262,8 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <h3 className="post-footer-title">Bu yazıyı paylaş</h3>
         <ShareButtons url={url} title={post.title} />
       </footer>
+
+      <RelatedPosts posts={relatedPosts} />
     </article>
   );
 }

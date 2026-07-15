@@ -75,3 +75,53 @@ export function timeAgo(date: string | Date | null): string {
   if (seconds < 31536000) return `${Math.floor(seconds / 2592000)} ay önce`;
   return `${Math.floor(seconds / 31536000)} yıl önce`;
 }
+
+// ============== ZENGİN METİN (HTML) İÇERİK YARDIMCILARI ==============
+// Yeni WYSIWYG editör içeriği HTML olarak saklar (content_format = 'html').
+// Eski yazılar markdown olarak kalır (content_format = 'markdown').
+// Aşağıdaki fonksiyonlar her iki formatı da destekler.
+
+export function stripHtml(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function calculateReadingMinutesFromHtml(html: string): number {
+  const words = stripHtml(html).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 220));
+}
+
+export function generateExcerptFromHtml(html: string, maxLength = 180): string {
+  const plain = stripHtml(html);
+  if (plain.length <= maxLength) return plain;
+  return plain.substring(0, maxLength).replace(/\s+\S*$/, '') + '…';
+}
+
+/** content_format'a göre doğru okuma süresi hesaplayıcısını çağırır. */
+export function getReadingMinutes(content: string, format?: string | null): number {
+  return format === 'html' ? calculateReadingMinutesFromHtml(content) : calculateReadingMinutes(content);
+}
+
+/** content_format'a göre doğru özet üreticisini çağırır. */
+export function getExcerpt(content: string, format?: string | null, maxLength = 180): string {
+  return format === 'html' ? generateExcerptFromHtml(content, maxLength) : generateExcerpt(content, maxLength);
+}
+
+// ============== TÜRKÇE ARAMA YARDIMCISI ==============
+// JS'in varsayılan toLowerCase() metodu Türkçe İ/I harflerini yanlış çevirir
+// (İstanbul → "i̇stanbul" gibi). Arama kutusu için bunu düzeltiyoruz.
+const TR_UPPER_TO_LOWER: Record<string, string> = { İ: 'i', I: 'ı' };
+export function turkishLower(text: string): string {
+  if (!text) return '';
+  return text.replace(/[İI]/g, (ch) => TR_UPPER_TO_LOWER[ch] || ch).toLowerCase();
+}
