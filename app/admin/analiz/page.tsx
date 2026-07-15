@@ -92,7 +92,7 @@ export default async function AnalyticsPage() {
   return (
     <AnalyticsClient
       posts={allPosts.map((p: any) => ({ ...p, views7d: last7dByPost[p.id] || 0 }))}
-      recentViews={recentViews || []}
+      rrecentViews={(recentViews as any) || []}
       dailyTrend={dailyTrend}
       referrerBreakdown={referrerBreakdown}
       totalViews={totalViews}
