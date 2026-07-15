@@ -178,6 +178,8 @@ Detaylı ziyaretçi analizi istiyorsan:
 6. Yorum işaretlerini (`{/*` ve `*/}`) kaldır, `G-XXXXXXXXXX` yerine senin ID'ni yaz.
 7. Commit & deploy.
 
+> Not: Artık sitede kendi okuyucu analitiğin de var (bkz. `/admin/analiz`) — Google Analytics olmadan da hangi yazının ne kadar okunduğunu, trafiğin nereden geldiğini ve o an kimin ne okuduğunu görebilirsin. Google Analytics'i sadece daha derin/üçüncü taraf karşılaştırma istersen ekle.
+
 ---
 
 ## 🇹🇷 TÜRKÇE SEO İPUÇLARI
