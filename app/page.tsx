@@ -65,7 +65,7 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Aslında bunlar not değil; kâğıt fiyatlarına verdiğim uzun soluklu bir tepki.
+          Kağıt fiyatları çok arttı.
         </p>
         <div className="hero-search">
           <InlineSiteSearch />
