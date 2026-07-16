@@ -6,10 +6,31 @@ export interface Heading {
   level: number;
 }
 
-/** Editörden gelen ve herkese açık sayfada render edilen HTML için ortak DOMPurify ayarı. */
+// Editörden gelen HTML'de izin verilen etiket/özellik listesi — hem tarayıcıda
+// (editör, DOMPurify) hem sunucuda (herkese açık yazı sayfası, sanitize-html)
+// aynı kurallar geçerli olsun diye tek yerden tanımlanıyor.
+const ALLOWED_HTML_TAGS = ['p', 'h1', 'h2', 'h3', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'hr', 'img', 'br'];
+const ALLOWED_HTML_ATTRS = ['href', 'src', 'alt', 'title', 'rel', 'target', 'style', 'id'];
+
+/** Tarayıcıda (editör kaydederken) çalışan DOMPurify için ayar — SADECE client component'lerde kullan. */
 export const SANITIZE_CONFIG = {
-  ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'hr', 'img', 'br'],
-  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'rel', 'target', 'style', 'id'],
+  ALLOWED_TAGS: ALLOWED_HTML_TAGS,
+  ALLOWED_ATTR: ALLOWED_HTML_ATTRS,
+};
+
+/**
+ * Sunucuda (herkese açık yazı sayfasını render ederken) çalışan sanitize-html
+ * için ayar. isomorphic-dompurify BİLEREK kullanılmıyor: onun Node tarafı
+ * jsdom'a dayanıyor, jsdom'un bir alt bağımlılığı (html-encoding-sniffer →
+ * @exodus/bytes) Vercel'in sunucu ortamında ESM/CJS çakışmasıyla çöküyor
+ * (ERR_REQUIRE_ESM, 16 Temmuz 2026'da canlıda görüldü). sanitize-html saf
+ * JS'tir, DOM/jsdom gerektirmez, bu sorunu tamamen ortadan kaldırıyor.
+ */
+export const SANITIZE_HTML_OPTIONS = {
+  allowedTags: ALLOWED_HTML_TAGS,
+  allowedAttributes: {
+    '*': ALLOWED_HTML_ATTRS,
+  },
 };
 
 function stripInlineTags(html: string): string {
