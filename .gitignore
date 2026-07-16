@@ -1,0 +1,26 @@
+# Bağımlılıklar
+node_modules/
+
+# Next.js build çıktıları
+.next/
+out/
+build/
+
+# Ortam değişkenleri (gizli anahtarlar burada olmamalı)
+.env
+.env*.local
+
+# Log dosyaları
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editör / işletim sistemi dosyaları
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
