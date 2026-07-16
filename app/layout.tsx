@@ -6,8 +6,7 @@ import ThemeToggle from '@/components/theme-toggle';
 import { HeaderSiteSearch } from '@/components/site-search';
 import './globals.css';
 
-// ⚠️ Burayı kendi domain'inle değiştir (custom domain alınca)
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
 const SITE_NAME = 'Zihin Haritası';
 const AUTHOR_NAME = 'Muhammet Fatih Işık';
 const SITE_DESCRIPTION = 'Note defterim';
