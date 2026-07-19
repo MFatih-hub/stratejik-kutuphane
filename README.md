@@ -103,9 +103,13 @@ Bir Okuma Bülteni kaydının `content` alanı (normal yazılarda "yazı gövdes
 2. İstediğin zaman `/admin`'den o kaydı aç, editördeki ana metin alanına (artık "Yorumun" olarak etiketlenir) yorumunu yaz, kaydet.
 3. `/okuma-bulteni/senin-linkin` sayfası artık hem alıntılanan kaynağı (kutu içinde, kaynağa link vererek) hem de altında senin yorumunu gösterir. Yorum yoksa o bölüm hiç görünmez — sayfa sade bir paylaşım gibi kalır.
 
-### Toplu ekleme
+### Toplu ekleme (elle)
 
-Bülten günde birkaç kez onlarca link üretebildiği için tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kullanılabilir: `Kategori:`, `Başlık:`, `Kaynak:`, `URL:`, `Özet:` etiketleriyle yazılmış, boş satırla ayrılmış bloklar halinde metin yapıştırılır, önizlenir (kategori otomatik tahmin edilir, elle düzeltilebilir) ve tek seferde eklenir. Bu araç otomatik bir bağlantı **kurmaz** — bülteni üreten süreç hâlâ e-posta taslağı oluşturuyor; bu sayfa sadece o çıktıyı siteye aktarmayı hızlandırır.
+Tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kullanılabilir: `Kategori:`, `Başlık:`, `Kaynak:`, `URL:`, `Özet:` etiketleriyle yazılmış, boş satırla ayrılmış bloklar halinde metin yapıştırılır, önizlenir (kategori otomatik tahmin edilir, elle düzeltilebilir) ve tek seferde eklenir.
+
+### Otomatik gönderim (scheduled task → site)
+
+`app/api/okuma-bulteni` (`POST`), "Zihin Haritası Okuma Bülteni" scheduled task'ının doğrudan siteye yazması için var. Kimlik doğrulama Supabase login'i değil, `x-bulletin-secret` header'ındaki paylaşımlı bir sırla yapılır — scheduled task'a hiçbir zaman Supabase servis anahtarı verilmez, sadece bu dar-yetkili sır. Gövde: `[{title, source, url, category, summary}, …]` (en fazla 60 öğe). Aynı `source_url` daha önce eklenmişse atlanır (idempotent). Kurulum için `.env.example`'daki `SUPABASE_SERVICE_ROLE_KEY` ve `BULLETIN_API_SECRET` değişkenlerini Vercel'e ekle.
 
 ## 🛠️ Yerel Geliştirme
 
@@ -131,6 +135,8 @@ app/
   okuma-bulteni/
     page.tsx                        # Okuma Bülteni listesi (kategori filtresiyle)
     [slug]/page.tsx                 # Tekil link + alıntı bloğu + yorum
+  api/
+    okuma-bulteni/route.ts          # Scheduled task'ın siteye otomatik yazdığı uç nokta
   giris/page.tsx                    # Admin giriş
   admin/
     page.tsx                        # İçerik yönetim paneli (tür sekmeleriyle)
