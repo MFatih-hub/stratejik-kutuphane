@@ -48,8 +48,7 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
         </div>
         <h1 className="blog-hero-title">Okuma Bülteni</h1>
         <p className="blog-hero-sub">
-          Okuduğum makaleler, kaynakları ve kısa özetleri. Bazılarının altında kendi notum da var —
-          orijinal kaynağa gitmeden önce ya da sonra buradan takip edebilirsin.
+          Okuduğum makaleler, kaynakları ve kısa özetleri.
         </p>
       </section>
 
