@@ -23,6 +23,7 @@ export async function GET() {
     .from('posts')
     .select('*')
     .eq('is_published', true)
+    .eq('post_type', 'yazi')
     .order('published_at', { ascending: false })
     .limit(50);
 

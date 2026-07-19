@@ -9,9 +9,10 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 2. Sol menüden **SQL Editor** → **New query**
 3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
 4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
-5. "...hazır" yazan mesajları görmelisin ✓
+5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (Okuma Bülteni + Kitap Tahlilleri bölümleri için `post_type` ve kaynak alanlarını ekler)
+6. "...hazır" yazan mesajları görmelisin ✓
 
-> Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** `SUPABASE-MIGRATION-v2.sql`'i çalıştırman yeterli — eklemeli bir script, hiçbir yazını silmez.
+> Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** eksik olan migration dosyalarını çalıştırman yeterli — hepsi eklemelidir, hiçbir yazını silmez.
 
 ### 2. Vercel'e Deploy Et
 1. GitHub'a repo'yu push et
@@ -82,6 +83,30 @@ Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutus
 
 Kategorileri değiştirmek için: `lib/helpers.ts` → `CATEGORIES` array'ini düzenle.
 
+## 🗂️ Üç İçerik Türü
+
+Site üç ayrı, birbirine karışmayan bölümde yayın yapar. Hepsi aynı `posts` tablosunda tutulur, `post_type` ile ayrışır ve her biri kendi URL önekinde yaşar:
+
+| Tür | `post_type` | Adres | Ne için |
+|---|---|---|---|
+| Yazı | `yazi` | `/yazi/…` | Kendi denemelerin/analizlerin. Ana sayfa ve kategori sayfaları sadece bunları listeler. |
+| Kitap Tahlili | `kitap_tahlili` | `/kitap-tahlilleri/…` | Okuduğun kitaplar üzerine tahliller — kendi ayrı bölümü. |
+| Okuma Bülteni | `okuma_bulteni` | `/okuma-bulteni/…` | Zihin Haritası Okuma Bülteni'nden paylaşılan linkler + özetleri. |
+
+`/admin`'deki **"İçerik Türü"** seçiciyle (yeni yazı / düzenleme ekranında) bir kaydın türünü belirlersin.
+
+### Okuma Bülteni linkleri nasıl çalışır (retweet + alıntı mantığı)
+
+Bir Okuma Bülteni kaydının `content` alanı (normal yazılarda "yazı gövdesi" olan alan) burada **senin o linke yazdığın yorum** için kullanılır — Twitter/X'te bir şeyi retweet edip altına kendi yorumunu eklemek gibi:
+
+1. **Kaynak Adı**, **Kaynak URL** ve **Kaynağın Özeti** alanlarını doldurup yayınla — link+özet siteye çıkar, yorum alanı boş kalabilir.
+2. İstediğin zaman `/admin`'den o kaydı aç, editördeki ana metin alanına (artık "Yorumun" olarak etiketlenir) yorumunu yaz, kaydet.
+3. `/okuma-bulteni/senin-linkin` sayfası artık hem alıntılanan kaynağı (kutu içinde, kaynağa link vererek) hem de altında senin yorumunu gösterir. Yorum yoksa o bölüm hiç görünmez — sayfa sade bir paylaşım gibi kalır.
+
+### Toplu ekleme
+
+Bülten günde birkaç kez onlarca link üretebildiği için tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kullanılabilir: `Kategori:`, `Başlık:`, `Kaynak:`, `URL:`, `Özet:` etiketleriyle yazılmış, boş satırla ayrılmış bloklar halinde metin yapıştırılır, önizlenir (kategori otomatik tahmin edilir, elle düzeltilebilir) ve tek seferde eklenir. Bu araç otomatik bir bağlantı **kurmaz** — bülteni üreten süreç hâlâ e-posta taslağı oluşturuyor; bu sayfa sadece o çıktıyı siteye aktarmayı hızlandırır.
+
 ## 🛠️ Yerel Geliştirme
 
 ```bash
@@ -97,21 +122,31 @@ http://localhost:3000
 
 ```
 app/
-  page.tsx                          # Ana sayfa (yazı listesi + arama kutusu)
+  page.tsx                          # Ana sayfa (sadece "yazi" türü + arama kutusu)
   yazi/[slug]/page.tsx              # Yazı detay (okuma çubuğu, içindekiler, ilgili yazılar)
-  kategori/[slug]/page.tsx          # Kategori sayfası
+  kategori/[slug]/page.tsx          # Kategori sayfası (sadece "yazi" türü)
+  kitap-tahlilleri/
+    page.tsx                        # Kitap Tahlilleri listesi
+    [slug]/page.tsx                 # Kitap Tahlili detay
+  okuma-bulteni/
+    page.tsx                        # Okuma Bülteni listesi (kategori filtresiyle)
+    [slug]/page.tsx                 # Tekil link + alıntı bloğu + yorum
   giris/page.tsx                    # Admin giriş
   admin/
-    page.tsx                        # Yazı yönetim paneli
+    page.tsx                        # İçerik yönetim paneli (tür sekmeleriyle)
     analiz/
       page.tsx                      # Okuyucu analitiği (sunucu tarafı veri)
       analytics-client.tsx          # Canlı akış + grafikler
     cikis/page.tsx                  # Çıkış
+    okuma-bulteni/
+      toplu-ekle/
+        page.tsx                    # Toplu ekleme (auth guard)
+        bulk-add-client.tsx         # Yapıştır → ayrıştır → önizle → ekle
     yazi/
-      yeni/page.tsx                 # Yeni yazı
+      yeni/page.tsx                 # Yeni yazı/tahlil/link (?tur= ile ön-seçili)
       [id]/duzenle/
-        page.tsx                    # Düzenle
-        editor-client.tsx           # Editör mantığı: otomatik kaydetme, yayınlama
+        page.tsx                    # Düzenle (tüm türler tek editörü paylaşır)
+        editor-client.tsx           # Editör mantığı: tür seçici, otomatik kaydetme, yayınlama
 components/
   rich-text-editor.tsx              # Word/Notion tarzı WYSIWYG editör (Tiptap)
   post-content.tsx                  # Yazı içeriğini render eder (html + eski markdown)
@@ -129,7 +164,8 @@ lib/
   supabase-browser.ts               # Client-side Supabase
   supabase-server.ts                # Server-side Supabase
 SUPABASE-SETUP.sql                  # İlk kurulum (sıfırdan)
-SUPABASE-MIGRATION-v2.sql           # Mevcut siteyi güncelleme (eklemeli, güvenli)
+SUPABASE-MIGRATION-v2.sql           # content_format, page_views, record_post_view()
+SUPABASE-MIGRATION-v3.sql           # post_type + Okuma Bülteni kaynak alanları
 SEO-CHECKLIST.md                    # Yazı öncesi/sonrası SEO kontrol listesi
 ```
 

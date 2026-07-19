@@ -18,7 +18,6 @@ export const revalidate = 60;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
 const AUTHOR_NAME = 'Muhammet Fatih Işık';
 
-// Her yazıya özel meta üretir
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = createClient();
   const { data: post } = await supabase
@@ -26,28 +25,26 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     .select('*')
     .eq('slug', params.slug)
     .eq('is_published', true)
-    .eq('post_type', 'yazi')
+    .eq('post_type', 'kitap_tahlili')
     .single();
 
   if (!post) {
     return {
-      title: 'Yazı bulunamadı',
+      title: 'Tahlil bulunamadı',
       robots: { index: false, follow: false },
     };
   }
 
-  const url = `${SITE_URL}/yazi/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/yazi/${post.slug}/opengraph-image`;
+  const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
   const description = post.excerpt || post.subtitle || `${post.title} — ${AUTHOR_NAME}`;
 
   return {
     title: post.title,
     description,
-    keywords: [...(post.tags || []), post.category, 'türkçe blog'],
+    keywords: [...(post.tags || []), post.category, 'kitap tahlili'],
     authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
-    alternates: {
-      canonical: url,
-    },
+    alternates: { canonical: url },
     openGraph: {
       type: 'article',
       url,
@@ -58,14 +55,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       publishedTime: post.published_at,
       modifiedTime: post.updated_at,
       authors: [AUTHOR_NAME],
-      section: post.category,
+      section: 'Kitap Tahlilleri',
       tags: post.tags,
-      images: [{
-        url: imageUrl,
-        width: 1200,
-        height: 630,
-        alt: post.title,
-      }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -76,12 +68,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
+export default async function KitapTahliliPage({ params }: { params: { slug: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAdmin = !!user;
 
-  let query = supabase.from('posts').select('*').eq('slug', params.slug).eq('post_type', 'yazi');
+  let query = supabase.from('posts').select('*').eq('slug', params.slug).eq('post_type', 'kitap_tahlili');
   if (!isAdmin) query = query.eq('is_published', true);
   const { data: post } = await query.single();
 
@@ -89,94 +81,47 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
   let relatedPosts: any[] = [];
   if (post.is_published) {
-    const { data: sameCategory } = await supabase
+    const { data: recent } = await supabase
       .from('posts')
       .select('id, slug, title, cover_image_url, category, published_at')
       .eq('is_published', true)
-      .eq('post_type', 'yazi')
-      .eq('category', post.category)
+      .eq('post_type', 'kitap_tahlili')
       .neq('id', post.id)
       .order('published_at', { ascending: false })
       .limit(3);
-
-    relatedPosts = sameCategory || [];
-    if (relatedPosts.length < 3) {
-      const { data: recent } = await supabase
-        .from('posts')
-        .select('id, slug, title, cover_image_url, category, published_at')
-        .eq('is_published', true)
-        .eq('post_type', 'yazi')
-        .neq('id', post.id)
-        .order('published_at', { ascending: false })
-        .limit(3 + relatedPosts.length);
-      const usedIds = new Set(relatedPosts.map((p) => p.id));
-      for (const p of recent || []) {
-        if (relatedPosts.length >= 3) break;
-        if (usedIds.has(p.id)) continue;
-        relatedPosts.push(p);
-        usedIds.add(p.id);
-      }
-    }
+    relatedPosts = recent || [];
   }
 
   const category = CATEGORIES.find((c) => c.slug === post.category);
-  const url = `${SITE_URL}/yazi/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/yazi/${post.slug}/opengraph-image`;
+  const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
   const headings = extractHeadings(post.content, post.content_format);
 
-  // JSON-LD Article schema (Google için)
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt || post.subtitle,
     image: imageUrl,
-    author: {
-      '@type': 'Person',
-      name: AUTHOR_NAME,
-      url: SITE_URL,
-    },
-    publisher: {
-      '@type': 'Person',
-      name: AUTHOR_NAME,
-      url: SITE_URL,
-    },
+    author: { '@type': 'Person', name: AUTHOR_NAME, url: SITE_URL },
+    publisher: { '@type': 'Person', name: AUTHOR_NAME, url: SITE_URL },
     datePublished: post.published_at,
     dateModified: post.updated_at,
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': url,
-    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     url,
     inLanguage: 'tr-TR',
     wordCount: (post.content || '').split(/\s+/).length,
     keywords: (post.tags || []).join(', '),
-    articleSection: category?.name || post.category,
+    articleSection: 'Kitap Tahlilleri',
   };
 
-  // BreadcrumbList schema
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Ana sayfa',
-        item: SITE_URL,
-      },
-      ...(category ? [{
-        '@type': 'ListItem',
-        position: 2,
-        name: category.name,
-        item: `${SITE_URL}/kategori/${category.slug}`,
-      }] : []),
-      {
-        '@type': 'ListItem',
-        position: category ? 3 : 2,
-        name: post.title,
-        item: url,
-      },
+      { '@type': 'ListItem', position: 1, name: 'Ana sayfa', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Kitap Tahlilleri', item: `${SITE_URL}/kitap-tahlilleri` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: url },
     ],
   };
 
@@ -185,45 +130,32 @@ export default async function PostPage({ params }: { params: { slug: string } })
       {post.is_published && !isAdmin && <ViewTracker slug={post.slug} />}
       {post.is_published && <ReadingProgress targetId="post-article-body" />}
 
-      <Script
-        id="schema-article"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-      />
-      <Script
-        id="schema-breadcrumb"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+      <Script id="schema-article" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <Script id="schema-breadcrumb" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">Ana sayfa</Link>
         <span className="breadcrumb-sep">›</span>
-        {category && (
-          <>
-            <Link href={`/kategori/${category.slug}`}>{category.name}</Link>
-            <span className="breadcrumb-sep">›</span>
-          </>
-        )}
+        <Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link>
+        <span className="breadcrumb-sep">›</span>
         <span>{post.title}</span>
       </nav>
 
       {isAdmin && (
         <div className="admin-bar">
           <span>
-            {post.is_published ? '✓ Yayında' : '⚠ Taslak'} ·{' '}
-            {post.view_count || 0} görüntülenme
+            {post.is_published ? '✓ Yayında' : '⚠ Taslak'} · {post.view_count || 0} görüntülenme
           </span>
-          <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm">
-            Düzenle
-          </Link>
+          <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm">Düzenle</Link>
         </div>
       )}
 
       <header className="post-header">
+        <span className="post-category-large" style={{ background: 'var(--accent-bg)', color: 'var(--accent)' }}>
+          Kitap Tahlili
+        </span>
         {category && (
-          <Link href={`/kategori/${category.slug}`} className="post-category-large"
-            style={{ background: `${category.color}15`, color: category.color }}>
+          <Link href={`/kitap-tahlilleri`} className="post-category-large" style={{ background: `${category.color}15`, color: category.color, marginLeft: 8 }}>
             {category.name}
           </Link>
         )}
@@ -262,11 +194,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
       )}
 
       <footer className="post-footer">
-        <h3 className="post-footer-title">Bu yazıyı paylaş</h3>
+        <h3 className="post-footer-title">Bu tahlili paylaş</h3>
         <ShareButtons url={url} title={post.title} />
       </footer>
 
-      <RelatedPosts posts={relatedPosts} />
+      <RelatedPosts posts={relatedPosts} basePath="/kitap-tahlilleri" title="Diğer kitap tahlilleri" />
     </article>
   );
 }

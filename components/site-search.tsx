@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
-import { turkishLower, getCategoryName, formatDate } from '@/lib/helpers';
+import { turkishLower, getCategoryName, formatDate, getPostUrl, getPostTypeInfo } from '@/lib/helpers';
 
 interface SearchPost {
   id: number;
@@ -13,6 +13,7 @@ interface SearchPost {
   tags: string[] | null;
   category: string;
   published_at: string | null;
+  post_type: string | null;
 }
 
 // Basit tarayıcı-içi önbellek: aynı sayfa yüklemesi boyunca tekrar sorgu atmasın.
@@ -23,7 +24,7 @@ async function loadPosts(): Promise<SearchPost[]> {
   const supabase = createClient();
   const { data } = await supabase
     .from('posts')
-    .select('id, slug, title, excerpt, tags, category, published_at')
+    .select('id, slug, title, excerpt, tags, category, published_at, post_type')
     .eq('is_published', true)
     .order('published_at', { ascending: false });
   cachedPosts = data || [];
@@ -46,8 +47,11 @@ function ResultsList({ results, onNavigate }: { results: SearchPost[]; onNavigat
     <ul className="search-results">
       {results.map((p) => (
         <li key={p.id}>
-          <Link href={`/yazi/${p.slug}`} onClick={onNavigate} className="search-result-item">
-            <span className="search-result-category">{getCategoryName(p.category)}</span>
+          <Link href={getPostUrl({ slug: p.slug, post_type: p.post_type })} onClick={onNavigate} className="search-result-item">
+            <span className="search-result-category">
+              {getCategoryName(p.category)}
+              {p.post_type && p.post_type !== 'yazi' ? ` · ${getPostTypeInfo(p.post_type).label}` : ''}
+            </span>
             <span className="search-result-title">{p.title}</span>
             {p.published_at && <span className="search-result-date">{formatDate(p.published_at)}</span>}
           </Link>

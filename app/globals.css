@@ -1146,3 +1146,167 @@ h1, h2, h3, h4, h5 { font-weight: 500; color: var(--text-primary); line-height: 
   .referrer-row { grid-template-columns: 80px 1fr 24px; }
   .search-modal-backdrop { padding: 6vh 1rem 2rem; }
 }
+
+/* ============== OKUMA BÜLTENİ ============== */
+.category-pill-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.category-pill-active:hover { background: var(--accent-hover); color: #fff; border-color: var(--accent-hover); }
+
+.reading-list { gap: 1.25rem; }
+.reading-item-card {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+}
+.reading-item-source { color: var(--text-tertiary); font-family: var(--font-mono); font-size: 12px; }
+.comment-indicator { color: var(--accent); font-size: 12px; font-weight: 500; }
+.reading-item-title-link { display: block; }
+.reading-item-title {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0.5rem 0 0.4rem;
+  color: var(--text-primary);
+}
+.reading-item-title-link:hover .reading-item-title { color: var(--accent); }
+.reading-item-summary {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 0.75rem;
+}
+.reading-item-actions { display: flex; gap: 14px; align-items: center; }
+.reading-item-permalink { font-size: 13px; color: var(--accent); font-weight: 500; }
+.reading-item-external { font-size: 13px; color: var(--text-tertiary); }
+.reading-item-external:hover { color: var(--accent); }
+
+/* Alıntı bloğu: paylaşılan kaynağın "retweet edilen" hâli */
+.source-quote {
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  margin: 0 0 2rem;
+}
+.source-quote-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+.source-quote-icon { font-size: 13px; }
+.source-quote-title {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0 0 0.75rem;
+  color: var(--text-primary);
+}
+.source-quote-title a { color: inherit; }
+.source-quote-title a:hover { color: var(--accent); }
+.source-quote-summary {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+  margin: 0 0 1rem;
+}
+.source-quote-link { font-size: 13px; font-weight: 500; color: var(--accent); }
+.source-quote-link:hover { text-decoration: underline; }
+
+.comment-section { margin: 2rem 0; }
+.comment-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+
+.reading-related-list { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.reading-related-list li { font-size: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.reading-related-list a { color: var(--accent); }
+.reading-related-list a:hover { text-decoration: underline; }
+
+/* ============== ADMIN: SEKMELER + TÜR ROZETİ ============== */
+.admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 2rem; }
+.admin-tab {
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+  border: 0.5px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-tab:hover { background: var(--bg-secondary); }
+.admin-tab-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.admin-tab-active .count-badge { background: rgba(255,255,255,0.25); color: #fff; }
+
+.type-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.source-fields {
+  background: var(--accent-bg);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 0 -12px 1rem;
+}
+
+/* ============== ADMIN: TOPLU EKLEME ============== */
+.bulk-add-layout { max-width: 900px; }
+.bulk-textarea { min-height: 260px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+.bulk-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  font-size: 13px;
+}
+.bulk-toolbar-left { display: flex; align-items: center; flex-wrap: wrap; }
+.bulk-items { display: flex; flex-direction: column; gap: 12px; }
+.bulk-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+.bulk-item-done { opacity: 0.55; }
+.bulk-item-error { border-color: var(--danger); }
+.bulk-item-check { padding-top: 12px; }
+.bulk-item-fields { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.bulk-item-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.bulk-item-row > * { min-width: 160px; }
+.bulk-item-warnings { display: flex; gap: 10px; flex-wrap: wrap; }
+.bulk-warning { font-size: 12px; color: var(--danger); }
+
+@media (max-width: 700px) {
+  .reading-item-card { padding: 1rem; }
+  .source-quote { padding: 1.25rem; }
+  .bulk-item { flex-direction: column; }
+  .bulk-item-check { padding-top: 0; }
+}

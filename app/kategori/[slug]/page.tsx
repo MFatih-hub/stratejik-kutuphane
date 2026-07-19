@@ -43,6 +43,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
     .from('posts')
     .select('*')
     .eq('is_published', true)
+    .eq('post_type', 'yazi')
     .eq('category', params.slug)
     .order('published_at', { ascending: false });
 

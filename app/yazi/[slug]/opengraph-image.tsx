@@ -14,6 +14,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
     .select('title, subtitle, category, excerpt')
     .eq('slug', params.slug)
     .eq('is_published', true)
+    .eq('post_type', 'yazi')
     .single();
 
   const title = post?.title || 'Zihin Haritası';

@@ -166,6 +166,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <HeaderSiteSearch />
               <ThemeToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
+              <Link href="/okuma-bulteni"><span className="nav-text">Okuma Bülteni</span></Link>
+              <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
               {user && (
                 <>
                   <Link href="/admin"><span className="nav-text">Admin</span></Link>

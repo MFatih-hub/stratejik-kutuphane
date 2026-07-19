@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import DOMPurify from 'isomorphic-dompurify';
 import { marked } from 'marked';
 import { createClient } from '@/lib/supabase-browser';
-import { CATEGORIES, slugify, stripHtml, generateExcerptFromHtml } from '@/lib/helpers';
+import { CATEGORIES, POST_TYPES, getPostTypeInfo, slugify, stripHtml, generateExcerptFromHtml } from '@/lib/helpers';
 import { SANITIZE_CONFIG } from '@/lib/content';
 import type { RichTextEditorStats } from '@/components/rich-text-editor';
 
@@ -33,7 +33,7 @@ function formatSavedTime(d: Date): string {
   return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export default function EditorClient({ post }: { post: any | null }) {
+export default function EditorClient({ post, initialType }: { post: any | null; initialType?: string }) {
   const router = useRouter();
   const supabase = createClient();
   const bucket = process.env.NEXT_PUBLIC_BUCKET_NAME || 'documentspdfs';
@@ -53,6 +53,13 @@ export default function EditorClient({ post }: { post: any | null }) {
   const [slug, setSlug] = useState(post?.slug || '');
   const [autoSlug, setAutoSlug] = useState(!post?.slug);
 
+  const [postType, setPostType] = useState<string>(post?.post_type || initialType || 'yazi');
+  const [sourceName, setSourceName] = useState(post?.source_name || '');
+  const [sourceUrl, setSourceUrl] = useState(post?.source_url || '');
+  const [sourceSummary, setSourceSummary] = useState(post?.source_summary || '');
+  const typeInfo = getPostTypeInfo(postType);
+  const isBulletin = postType === 'okuma_bulteni';
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState('');
@@ -64,7 +71,10 @@ export default function EditorClient({ post }: { post: any | null }) {
   // save() aşağıda tanımlı, ama en güncel state'i her zaman görmesi için ref'te tutuyoruz
   // (setTimeout ile tetiklenen otomatik kaydetmenin bayat state yakalamaması için).
   const latestRef = useRef<any>(null);
-  latestRef.current = { postId, title, subtitle, content, excerpt, coverUrl, category, tags, isPublished, slug, stats };
+  latestRef.current = {
+    postId, title, subtitle, content, excerpt, coverUrl, category, tags, isPublished, slug, stats,
+    postType, sourceName, sourceUrl, sourceSummary,
+  };
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function showToast(msg: string) {
@@ -96,7 +106,7 @@ export default function EditorClient({ post }: { post: any | null }) {
   }, []);
 
   const readingMinutes = Math.max(1, Math.round((stats.words || 0) / 220));
-  const autoExcerpt = generateExcerptFromHtml(content);
+  const autoExcerpt = generateExcerptFromHtml(content) || (isBulletin ? sourceSummary : '');
 
   function markDirty() {
     isDirtyRef.current = true;
@@ -141,7 +151,14 @@ export default function EditorClient({ post }: { post: any | null }) {
       if (!silent) showToast('Başlık zorunlu');
       return;
     }
-    if (!s.content || stripHtml(s.content).length < 10) {
+    if (s.postType === 'okuma_bulteni') {
+      // Okuma Bülteni linklerinde yorum (content) opsiyoneldir — önce link+özet
+      // yayınlanır, yorum istenirse sonra eklenir. Ama kaynak linki zorunlu.
+      if (!s.sourceUrl || !s.sourceUrl.trim()) {
+        if (!silent) showToast('Kaynak URL zorunlu');
+        return;
+      }
+    } else if (!s.content || stripHtml(s.content).length < 10) {
       if (!silent) showToast('İçerik çok kısa');
       return;
     }
@@ -161,9 +178,11 @@ export default function EditorClient({ post }: { post: any | null }) {
     const shouldPublish = publishNow === null ? s.isPublished : publishNow;
     const finalSlug = s.slug || slugify(s.title);
     const cleanContent = DOMPurify.sanitize(s.content, SANITIZE_CONFIG);
-    const finalExcerpt = s.excerpt || generateExcerptFromHtml(cleanContent);
+    const hasRealContent = stripHtml(cleanContent).length > 0;
+    const finalExcerpt = s.excerpt || (hasRealContent ? generateExcerptFromHtml(cleanContent) : (s.sourceSummary || '').slice(0, 180));
     const tagArray = s.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
     const minutes = Math.max(1, Math.round((s.stats.words || 0) / 220));
+    const isBulletinType = s.postType === 'okuma_bulteni';
 
     const payload: any = {
       slug: finalSlug,
@@ -177,6 +196,10 @@ export default function EditorClient({ post }: { post: any | null }) {
       tags: tagArray,
       reading_minutes: minutes,
       is_published: shouldPublish,
+      post_type: s.postType,
+      source_name: isBulletinType ? (s.sourceName.trim() || null) : null,
+      source_url: isBulletinType ? (s.sourceUrl.trim() || null) : null,
+      source_summary: isBulletinType ? (s.sourceSummary.trim() || null) : null,
     };
 
     if (shouldPublish && !s.isPublished) {
@@ -236,7 +259,7 @@ export default function EditorClient({ post }: { post: any | null }) {
         <div className="editor-header-left">
           <Link href="/admin" className="btn btn-sm">← Geri</Link>
           <span className="editor-status">
-            {isNew ? 'Yeni yazı' : isPublished ? '✓ Yayında' : '⚠ Taslak'}
+            {isNew ? `Yeni ${typeInfo.label.toLowerCase()}` : isPublished ? '✓ Yayında' : '⚠ Taslak'}
           </span>
           <span className="editor-autosave">
             {saving ? 'Kaydediliyor…' : lastSavedAt ? `Kaydedildi · ${formatSavedTime(lastSavedAt)}` : ''}
@@ -244,7 +267,7 @@ export default function EditorClient({ post }: { post: any | null }) {
         </div>
         <div className="editor-header-right">
           {!isNew && (
-            <Link href={`/yazi/${slug}`} target="_blank" className="btn btn-sm">
+            <Link href={`${typeInfo.basePath}/${slug}`} target="_blank" className="btn btn-sm">
               Önizle
             </Link>
           )}
@@ -277,17 +300,59 @@ export default function EditorClient({ post }: { post: any | null }) {
             onChange={(e) => { setSubtitle(e.target.value); markDirty(); }}
           />
 
+          {isBulletin && <p className="form-label" style={{ marginTop: 18 }}>Yorumun (opsiyonel — şimdi ya da sonra ekleyebilirsin)</p>}
           <RichTextEditor
             content={content}
-            placeholder="Yazmaya başla…"
+            placeholder={isBulletin ? 'Bu paylaşımla ilgili yorumun… (boş bırakabilirsin)' : 'Yazmaya başla…'}
             onChange={(html) => { setContent(html); markDirty(); }}
             onStatsChange={setStats}
             onImageUpload={uploadImage}
           />
-          <p className="editor-reading-time">~{readingMinutes} dakika okuma süresi</p>
+          {!(isBulletin && stripHtml(content).length === 0) && (
+            <p className="editor-reading-time">~{readingMinutes} dakika okuma süresi</p>
+          )}
         </div>
 
         <aside className="editor-sidebar">
+          <div className="sidebar-section">
+            <label className="form-label">İçerik Türü</label>
+            <select className="select" value={postType} onChange={(e) => { setPostType(e.target.value); markDirty(); }}>
+              {POST_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {isBulletin && (
+            <div className="sidebar-section source-fields">
+              <label className="form-label">Kaynak Adı</label>
+              <input
+                type="text"
+                className="input"
+                value={sourceName}
+                onChange={(e) => { setSourceName(e.target.value); markDirty(); }}
+                placeholder="Örn. War on the Rocks"
+              />
+              <label className="form-label" style={{ marginTop: 10 }}>Kaynak URL</label>
+              <input
+                type="url"
+                className="input"
+                value={sourceUrl}
+                onChange={(e) => { setSourceUrl(e.target.value); markDirty(); }}
+                placeholder="https://…"
+              />
+              <label className="form-label" style={{ marginTop: 10 }}>Kaynağın Özeti</label>
+              <textarea
+                className="textarea"
+                value={sourceSummary}
+                onChange={(e) => { setSourceSummary(e.target.value); markDirty(); }}
+                placeholder="Makalenin kısa özeti (1-3 cümle)"
+                style={{ minHeight: 70 }}
+              />
+              <p className="form-hint">Liste sayfasında ve alıntı bloğunda bu özet gösterilir.</p>
+            </div>
+          )}
+
           <div className="sidebar-section">
             <label className="form-label">Kategori</label>
             <select className="select" value={category} onChange={(e) => { setCategory(e.target.value); markDirty(); }}>
@@ -318,7 +383,7 @@ export default function EditorClient({ post }: { post: any | null }) {
               value={slug}
               onChange={(e) => { setSlug(e.target.value); setAutoSlug(false); markDirty(); }}
             />
-            <p className="form-hint">/yazi/{slug || 'ornek-slug'}</p>
+            <p className="form-hint">{typeInfo.basePath}/{slug || 'ornek-slug'}</p>
           </div>
 
           <div className="sidebar-section">

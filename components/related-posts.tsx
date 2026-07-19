@@ -2,14 +2,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatDate, getCategoryColor, getCategoryName } from '@/lib/helpers';
 
-export default function RelatedPosts({ posts }: { posts: any[] }) {
+export default function RelatedPosts({ posts, basePath = '/yazi', title = 'Bunları da okuyabilirsin' }: { posts: any[]; basePath?: string; title?: string }) {
   if (!posts || posts.length === 0) return null;
   return (
     <section className="related-posts">
-      <h2 className="post-footer-title">Bunları da okuyabilirsin</h2>
+      <h2 className="post-footer-title">{title}</h2>
       <div className="related-posts-grid">
         {posts.map((post) => (
-          <Link key={post.id} href={`/yazi/${post.slug}`} className="related-post-card">
+          <Link key={post.id} href={`${basePath}/${post.slug}`} className="related-post-card">
             <div className="related-post-image">
               {post.cover_image_url ? (
                 <Image

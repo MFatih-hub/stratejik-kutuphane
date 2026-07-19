@@ -21,6 +21,59 @@ export function getCategoryColor(slug: string) {
   return getCategoryBySlug(slug)?.color || '#1a1814';
 }
 
+// ============== İÇERİK TÜRLERİ ==============
+// Site üç ayrı bölümde yayın yapar: kendi yazıları, kitap tahlilleri ve
+// okuma bülteni linkleri. Hepsi aynı `posts` tablosunda tutulur ama
+// `post_type` ile ayrışır ve her biri kendi URL önekinde (ayrı sayfalarda)
+// yaşar — böylece hiçbiri birbirine karışmaz.
+export const POST_TYPES = [
+  { value: 'yazi', label: 'Yazı', pluralLabel: 'Yazılar', basePath: '/yazi' },
+  { value: 'kitap_tahlili', label: 'Kitap Tahlili', pluralLabel: 'Kitap Tahlilleri', basePath: '/kitap-tahlilleri' },
+  { value: 'okuma_bulteni', label: 'Okuma Bülteni Linki', pluralLabel: 'Okuma Bülteni', basePath: '/okuma-bulteni' },
+] as const;
+
+export type PostType = (typeof POST_TYPES)[number]['value'];
+
+export function getPostTypeInfo(type?: string | null) {
+  return POST_TYPES.find((t) => t.value === type) || POST_TYPES[0];
+}
+
+export function getPostBasePath(type?: string | null): string {
+  return getPostTypeInfo(type).basePath;
+}
+
+/** Bir yazının (herhangi bir türden) doğru site-içi adresini üretir. */
+export function getPostUrl(post: { slug: string; post_type?: string | null }): string {
+  return `${getPostBasePath(post.post_type)}/${post.slug}`;
+}
+
+// ============== TOPLU EKLEME İÇİN KATEGORİ EŞLEŞTİRME ==============
+// Okuma Bülteni toplu-ekleme aracına yapıştırılan metindeki kategori
+// isimleri (bültenin kendi kategori adları, eski site kategorileri veya
+// serbest yazım) site kategorisine eşlenir. Birebir slug/isim eşleşmezse
+// bu sözlükte en uzun eşleşen anahtar kazanır.
+const CATEGORY_ALIASES: Record<string, string> = {
+  'jeopolitik': 'jeopolitik', 'politika': 'jeopolitik', 'güvenlik': 'jeopolitik', 'guvenlik': 'jeopolitik',
+  'teknoloji': 'teknoloji', 'mühendislik': 'teknoloji', 'muhendislik': 'teknoloji',
+  'ekonomi': 'ekonomi', 'finans': 'ekonomi',
+  'sosyoloji': 'bilim', 'bilim': 'bilim',
+  'felsefe': 'dusunce', 'düşünce': 'dusunce', 'dusunce': 'dusunce',
+  'stratejik kültür': 'turkiye', 'stratejik kultur': 'turkiye', 'tarih': 'turkiye', 'türkiye': 'turkiye', 'turkiye': 'turkiye',
+};
+
+/** Serbest metindeki bir kategori adını site kategori slug'ına çevirir; bulamazsa null döner. */
+export function resolveCategorySlug(input: string): string | null {
+  if (!input) return null;
+  const norm = turkishLower(input.trim()).replace(/[&/]/g, ' ');
+  const bySlug = CATEGORIES.find((c) => c.slug === norm || turkishLower(c.name) === norm);
+  if (bySlug) return bySlug.slug;
+  const keys = Object.keys(CATEGORY_ALIASES).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    if (norm.includes(key)) return CATEGORY_ALIASES[key];
+  }
+  return null;
+}
+
 export function calculateReadingMinutes(content: string): number {
   if (!content) return 1;
   const text = content

@@ -22,6 +22,7 @@ export default async function HomePage() {
     .from('posts')
     .select('*')
     .eq('is_published', true)
+    .eq('post_type', 'yazi')
     .order('published_at', { ascending: false });
 
   const postList = posts || [];
