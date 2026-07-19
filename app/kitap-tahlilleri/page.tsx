@@ -42,7 +42,7 @@ export default async function KitapTahlilleriPage() {
         </div>
         <h1 className="blog-hero-title">Kitap Tahlilleri</h1>
         <p className="blog-hero-sub">
-          Okunan kitaplar üzerine notlar ve tahliller — yazılardan ve okuma bülteninden ayrı bir bölüm.
+          Okunan kitaplar üzerine notlar ve tahliller.
         </p>
       </section>
 
