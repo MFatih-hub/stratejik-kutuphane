@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import DOMPurify from 'isomorphic-dompurify';
 import { marked } from 'marked';
 import { createClient } from '@/lib/supabase-browser';
 import { CATEGORIES, POST_TYPES, getPostTypeInfo, slugify, stripHtml, generateExcerptFromHtml } from '@/lib/helpers';
@@ -177,6 +176,16 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
 
     const shouldPublish = publishNow === null ? s.isPublished : publishNow;
     const finalSlug = s.slug || slugify(s.title);
+    // isomorphic-dompurify burada BİLEREK dinamik import ediliyor (statik import değil):
+    // bu dosya 'use client' olsa da Next.js ilk sayfa yüklemesinde sunucuda bir kez
+    // render ediyor, ve isomorphic-dompurify'ın Node tarafı jsdom'a dayanıyor —
+    // jsdom'un bir alt bağımlılığı (html-encoding-sniffer → @exodus/bytes) Vercel'in
+    // sunucu ortamında ESM/CJS çakışmasıyla çöküyor (ERR_REQUIRE_ESM — aynı sorun
+    // daha önce post-content.tsx/lib/content.ts'de görülüp sanitize-html'e geçilerek
+    // çözülmüştü, bkz. oradaki not). save() sadece tarayıcıdaki kullanıcı etkileşimiyle
+    // (tıklama/otomatik kaydetme) çalıştığı için dinamik import burada güvenli ve
+    // paketin sunucu paketine hiç dahil edilmemesini garantiliyor.
+    const DOMPurify = (await import('isomorphic-dompurify')).default;
     const cleanContent = DOMPurify.sanitize(s.content, SANITIZE_CONFIG);
     const hasRealContent = stripHtml(cleanContent).length > 0;
     const finalExcerpt = s.excerpt || (hasRealContent ? generateExcerptFromHtml(cleanContent) : (s.sourceSummary || '').slice(0, 180));
