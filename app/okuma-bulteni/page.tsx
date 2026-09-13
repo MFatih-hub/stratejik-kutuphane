@@ -48,7 +48,6 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
         </div>
         <h1 className="blog-hero-title">Okuma Bülteni</h1>
         <p className="blog-hero-sub">
-          Okuduğum makaleler, kaynakları ve kısa özetleri.
         </p>
       </section>
 
@@ -71,7 +70,7 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
         <div className="empty-state">
           <div className="empty-state-icon">🔗</div>
           <p className="empty-state-text">
-            {activeCategory ? 'Bu kategoride henüz paylaşım yok.' : 'Henüz paylaşım yok. Yakında ilk linkler gelecek.'}
+            {activeCategory ? 'Bu kategoride henüz paylaşım yok.' : 'Henüz paylaşım yok.'}
           </p>
         </div>
       ) : (
