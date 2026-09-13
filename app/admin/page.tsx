@@ -7,17 +7,43 @@ export const revalidate = 0;
 
 const VALID_TABS = ['tumu', 'yazi', 'kitap_tahlili', 'okuma_bulteni'];
 
+// PostgREST tek istekte en fazla 1000 satır döndürür; bu yüzden sayfa sayfa çekiyoruz.
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 50; // güvenlik tavanı (50.000 kayıt)
+
+async function fetchAllPosts(supabase: ReturnType<typeof createClient>) {
+  const all: any[] = [];
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE;
+
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .order('id', { ascending: false }) // eşit tarihlerde sıralamayı sabitler
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('[admin] Supabase hatası:', error.message);
+      break;
+    }
+    if (!data || data.length === 0) break;
+
+    all.push(...data);
+
+    if (data.length < PAGE_SIZE) break; // son sayfa
+  }
+
+  return all;
+}
+
 export default async function AdminPage({ searchParams }: { searchParams: { tur?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/giris');
 
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .order('updated_at', { ascending: false });
-
-  const allPosts = posts || [];
+  const allPosts = await fetchAllPosts(supabase);
   const drafts = allPosts.filter((p) => !p.is_published);
   const published = allPosts.filter((p) => p.is_published);
   const totalViews = allPosts.reduce((sum, p) => sum + (p.view_count || 0), 0);
