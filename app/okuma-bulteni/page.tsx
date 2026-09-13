@@ -7,6 +7,10 @@ export const revalidate = 60;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
 
+// PostgREST tek istekte en fazla 1000 satır döndürür; bu yüzden sayfa sayfa çekiyoruz.
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 50; // güvenlik tavanı (50.000 kayıt)
+
 export const metadata: Metadata = {
   title: 'Okuma Bülteni',
   description: 'Zihin Haritası Okuma Bülteni\'nden seçilen makaleler, kısa özetleri ve üzerlerine düşülen notlar.',
@@ -21,23 +25,49 @@ export const metadata: Metadata = {
   },
 };
 
+async function fetchAllPosts(
+  supabase: ReturnType<typeof createClient>,
+  activeCategory: string | null,
+) {
+  const all: any[] = [];
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE;
+
+    let query = supabase
+      .from('posts')
+      .select('*')
+      .eq('is_published', true)
+      .eq('post_type', 'okuma_bulteni')
+      .order('published_at', { ascending: false })
+      .order('id', { ascending: false }) // eşit tarihlerde sıralamayı sabitler
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (activeCategory) query = query.eq('category', activeCategory);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('[okuma-bulteni] Supabase hatası:', error.message);
+      break;
+    }
+    if (!data || data.length === 0) break;
+
+    all.push(...data);
+
+    if (data.length < PAGE_SIZE) break; // son sayfa
+  }
+
+  return all;
+}
+
 export default async function OkumaBulteniPage({ searchParams }: { searchParams: { kategori?: string } }) {
   const supabase = createClient();
   const activeCategory = searchParams?.kategori && CATEGORIES.some((c) => c.slug === searchParams.kategori)
     ? searchParams.kategori
     : null;
 
-  let query = supabase
-    .from('posts')
-    .select('*')
-    .eq('is_published', true)
-    .eq('post_type', 'okuma_bulteni')
-    .order('published_at', { ascending: false });
-
-  if (activeCategory) query = query.eq('category', activeCategory);
-
-  const { data: posts } = await query;
-  const postList = posts || [];
+  const postList = await fetchAllPosts(supabase, activeCategory ?? null);
 
   return (
     <>
@@ -47,8 +77,6 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
           OKUMA BÜLTENİ
         </div>
         <h1 className="blog-hero-title">Okuma Bülteni</h1>
-        <p className="blog-hero-sub">
-        </p>
       </section>
 
       <section className="category-bar" aria-label="Kategoriler">
