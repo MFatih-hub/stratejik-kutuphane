@@ -11,6 +11,14 @@ const SITE_NAME = 'Zihin Haritası';
 const AUTHOR_NAME = 'Muhammet Fatih Işık';
 const SITE_DESCRIPTION = 'Note defterim';
 
+// Google Analytics 4 ölçüm kimliği (G-XXXXXXXXXX).
+// Vercel > Project > Settings > Environment Variables > NEXT_PUBLIC_GA_ID
+// Alternatif: tırnak içine doğrudan kendi kimliğini yazabilirsin.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-KSN82G3HLW';
+
+const FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📓%3C/text%3E%3C/svg%3E";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -22,6 +30,9 @@ export const metadata: Metadata = {
   authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
   creator: AUTHOR_NAME,
   publisher: AUTHOR_NAME,
+  icons: {
+    icon: FAVICON,
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -30,7 +41,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
     types: {
-      'application/rss+xml': '/feed.xml',
+      'application/rss+xml': [{ url: '/feed.xml', title: `${SITE_NAME} RSS` }],
     },
   },
   openGraph: {
@@ -52,7 +63,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — ${AUTHOR_NAME}`,
     description: SITE_DESCRIPTION,
     images: ['/opengraph-image'],
-    creator: '@Yedikarat'
+    creator: '@Yedikarat',
   },
   robots: {
     index: true,
@@ -66,7 +77,6 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    // Google Search Console kayıt sonrası buraya kodu yapıştır:
     google: 'Mj2Vl6gc0tRK2M15UWc6nIy3MXyhHfNGz6pAe59376A',
   },
 };
@@ -108,9 +118,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     name: AUTHOR_NAME,
     url: SITE_URL,
     sameAs: [
-      // İleride sosyal medya hesaplarını ekle:
       'https://x.com/Yedikarat',
-      'https://www.linkedin.com/in/muhammet-fatih-i%C5%9F%C4%B1k-096b58301/'
+      'https://www.linkedin.com/in/muhammet-fatih-i%C5%9F%C4%B1k-096b58301/',
       // 'https://github.com/MFatih-hub',
     ],
     jobTitle: 'Yazar, Mühendis, Araştırmacı',
@@ -119,38 +128,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="tr">
-      <head>
-        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📓%3C/text%3E%3C/svg%3E" />
-        <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} RSS`} href="/feed.xml" />
-        <link rel="canonical" href={SITE_URL} />
-        <Script
-          id="schema-website"
+      <body>
+        {/* Structured Data (JSON-LD) */}
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
-        <Script
-          id="schema-person"
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
         />
-        {
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-XXXXXXXXXX');
-          `}
-        </Script>
-        }
-      </head>
-      <body>
+
+        {/* Google Analytics — GA_ID tanımlıysa yüklenir */}
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
+
         <header className="site-header">
           <div className="container site-header-inner">
             <Link href="/" className="site-brand">
