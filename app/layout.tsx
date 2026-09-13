@@ -135,9 +135,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
         />
-
-        {/* Google Analytics (opsiyonel) — açmak için yorum işaretlerini kaldır */}
-        {/*
+        {
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
           strategy="afterInteractive"
@@ -150,7 +148,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gtag('config', 'G-XXXXXXXXXX');
           `}
         </Script>
-        */}
+        }
       </head>
       <body>
         <header className="site-header">
