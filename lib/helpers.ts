@@ -103,6 +103,9 @@ export function slugify(text: string): string {
     .toLowerCase()
     .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
     .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    // Şapkalı/aksanlı harfler (â, î, û, é, ā…) harf olarak kalsın, silinmesin
+    // (ör. "Şerhu Âdâbi" → "serhu-adabi", eskiden "serhu-d-bi" oluyordu).
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .substring(0, 70);
@@ -147,6 +150,11 @@ export function stripHtml(html: string): string {
     .replace(/&#0?39;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** İçerikte gerçek metin var mı? (Toplu eklenen kitap tahlilleri boş içerikle başlar.) */
+export function hasRealContent(content?: string | null): boolean {
+  return !!content && stripHtml(content).length > 0;
 }
 
 export function calculateReadingMinutesFromHtml(html: string): number {

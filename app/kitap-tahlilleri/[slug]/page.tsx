@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, formatDate } from '@/lib/helpers';
+import { CATEGORIES, formatDate, hasRealContent } from '@/lib/helpers';
 import { extractHeadings } from '@/lib/content';
 import PostContent from '@/components/post-content';
 import ReadingProgress from '@/components/reading-progress';
@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
   const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
-  const description = post.excerpt || post.subtitle || `${post.title} — ${AUTHOR_NAME}`;
+  const written = hasRealContent(post.content);
+  const description = post.excerpt || post.subtitle
+    || (post.book_author ? `${post.book_author} — ${post.title} üzerine tahlil` : `${post.title} — ${AUTHOR_NAME}`);
 
   return {
     title: post.title,
@@ -45,6 +47,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     keywords: [...(post.tags || []), post.category, 'kitap tahlili'],
     authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
     alternates: { canonical: url },
+    // Tahlil notu henüz yazılmamış eserler arama motorlarında boş sayfa olarak görünmesin
+    ...(written ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       type: 'article',
       url,
@@ -86,6 +90,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       .select('id, slug, title, cover_image_url, category, published_at')
       .eq('is_published', true)
       .eq('post_type', 'kitap_tahlili')
+      .neq('content', '')
       .neq('id', post.id)
       .order('published_at', { ascending: false })
       .limit(3);
@@ -95,7 +100,8 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
   const category = CATEGORIES.find((c) => c.slug === post.category);
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
   const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
-  const headings = extractHeadings(post.content, post.content_format);
+  const written = hasRealContent(post.content);
+  const headings = written ? extractHeadings(post.content, post.content_format) : [];
 
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -110,7 +116,8 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     url,
     inLanguage: 'tr-TR',
-    wordCount: (post.content || '').split(/\s+/).length,
+    wordCount: (post.content || '').split(/\s+/).filter(Boolean).length,
+    ...(post.book_author ? { about: { '@type': 'Book', name: post.title, author: { '@type': 'Person', name: post.book_author } } } : {}),
     keywords: (post.tags || []).join(', '),
     articleSection: 'Kitap Tahlilleri',
   };
@@ -128,7 +135,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
   return (
     <article className="post-detail">
       {post.is_published && !isAdmin && <ViewTracker slug={post.slug} />}
-      {post.is_published && <ReadingProgress targetId="post-article-body" />}
+      {post.is_published && written && <ReadingProgress targetId="post-article-body" />}
 
       <Script id="schema-article" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <Script id="schema-breadcrumb" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
@@ -161,13 +168,20 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
         )}
         <h1 className="post-title">{post.title}</h1>
         {post.subtitle && <p className="post-subtitle">{post.subtitle}</p>}
+        {(post.book_author || post.reading_order != null) && (
+          <p className="book-detail-meta">
+            {post.book_author && <span>Yazar: <strong>{post.book_author}</strong></span>}
+            {post.book_author && post.reading_order != null && <span className="post-meta-sep"> · </span>}
+            {post.reading_order != null && <span>Okuma listesinde #{post.reading_order}</span>}
+          </p>
+        )}
         <div className="post-byline">
           <div className="author-avatar">M</div>
           <div className="author-info">
             <span className="author-name">{AUTHOR_NAME}</span>
             <span className="post-byline-meta">
               <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
-              {' · '}{post.reading_minutes} dk okuma
+              {written && <>{' · '}{post.reading_minutes} dk okuma</>}
             </span>
           </div>
         </div>
@@ -182,7 +196,19 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       {headings.length >= 3 && <TableOfContents headings={headings} />}
 
       <div id="post-article-body">
-        <PostContent content={post.content} format={post.content_format} />
+        {written ? (
+          <PostContent content={post.content} format={post.content_format} />
+        ) : (
+          <div className="empty-state" style={{ padding: '2.5rem 1rem' }}>
+            <div className="empty-state-icon">📖</div>
+            <p className="empty-state-text">Bu eser okuma listesinde; tahlil notu henüz yazılmadı.</p>
+            {isAdmin && (
+              <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-primary" style={{ marginTop: 14 }}>
+                Tahlil notunu yaz
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {post.tags && post.tags.length > 0 && (

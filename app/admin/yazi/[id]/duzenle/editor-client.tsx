@@ -56,8 +56,11 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const [sourceName, setSourceName] = useState(post?.source_name || '');
   const [sourceUrl, setSourceUrl] = useState(post?.source_url || '');
   const [sourceSummary, setSourceSummary] = useState(post?.source_summary || '');
+  const [bookAuthor, setBookAuthor] = useState(post?.book_author || '');
+  const [readingOrder, setReadingOrder] = useState(post?.reading_order != null ? String(post.reading_order) : '');
   const typeInfo = getPostTypeInfo(postType);
   const isBulletin = postType === 'okuma_bulteni';
+  const isBook = postType === 'kitap_tahlili';
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -72,7 +75,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const latestRef = useRef<any>(null);
   latestRef.current = {
     postId, title, subtitle, content, excerpt, coverUrl, category, tags, isPublished, slug, stats,
-    postType, sourceName, sourceUrl, sourceSummary,
+    postType, sourceName, sourceUrl, sourceSummary, bookAuthor, readingOrder,
   };
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,6 +214,14 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
       source_summary: isBulletinType ? (s.sourceSummary.trim() || null) : null,
     };
 
+    // Kitap tahlili alanları sadece bu türde gönderilir (diğer türlerin kaydı
+    // migration v4 çalıştırılmamış olsa bile bozulmasın diye).
+    if (s.postType === 'kitap_tahlili') {
+      const orderNum = parseInt(String(s.readingOrder).replace(/\D+/g, ''), 10);
+      payload.book_author = s.bookAuthor.trim() || null;
+      payload.reading_order = Number.isFinite(orderNum) ? orderNum : null;
+    }
+
     if (shouldPublish && !s.isPublished) {
       payload.published_at = new Date().toISOString();
     }
@@ -310,9 +321,10 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
           />
 
           {isBulletin && <p className="form-label" style={{ marginTop: 18 }}>Yorumun (opsiyonel — şimdi ya da sonra ekleyebilirsin)</p>}
+          {isBook && <p className="form-label" style={{ marginTop: 18 }}>Tahlil notun{bookAuthor ? ` — ${bookAuthor}` : ''}</p>}
           <RichTextEditor
             content={content}
-            placeholder={isBulletin ? 'Bu paylaşımla ilgili yorumun… (boş bırakabilirsin)' : 'Yazmaya başla…'}
+            placeholder={isBulletin ? 'Bu paylaşımla ilgili yorumun… (boş bırakabilirsin)' : isBook ? 'Bu eser üzerine tahlil notların…' : 'Yazmaya başla…'}
             onChange={(html) => { setContent(html); markDirty(); }}
             onStatsChange={setStats}
             onImageUpload={uploadImage}
@@ -359,6 +371,29 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
                 style={{ minHeight: 70 }}
               />
               <p className="form-hint">Liste sayfasında ve alıntı bloğunda bu özet gösterilir.</p>
+            </div>
+          )}
+
+          {isBook && (
+            <div className="sidebar-section source-fields">
+              <label className="form-label">Yazar</label>
+              <input
+                type="text"
+                className="input"
+                value={bookAuthor}
+                onChange={(e) => { setBookAuthor(e.target.value); markDirty(); }}
+                placeholder="Örn. Platon"
+              />
+              <label className="form-label" style={{ marginTop: 10 }}>Okuma listesindeki sıra</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                className="input"
+                value={readingOrder}
+                onChange={(e) => { setReadingOrder(e.target.value); markDirty(); }}
+                placeholder="Örn. 12"
+              />
+              <p className="form-hint">Kitap Tahlilleri sayfası bu sıraya göre listelenir.</p>
             </div>
           )}
 

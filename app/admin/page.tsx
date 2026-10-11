@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, POST_TYPES, getPostTypeInfo, getPostUrl, formatDate, timeAgo } from '@/lib/helpers';
+import { CATEGORIES, POST_TYPES, getPostTypeInfo, getPostUrl, formatDate, timeAgo, hasRealContent } from '@/lib/helpers';
 
 export const revalidate = 0;
 
@@ -49,7 +49,14 @@ export default async function AdminPage({ searchParams }: { searchParams: { tur?
   const totalViews = allPosts.reduce((sum, p) => sum + (p.view_count || 0), 0);
 
   const activeTab = searchParams?.tur && VALID_TABS.includes(searchParams.tur) ? searchParams.tur : 'tumu';
-  const filterByTab = (list: any[]) => (activeTab === 'tumu' ? list : list.filter((p) => (p.post_type || 'yazi') === activeTab));
+  const byReadingOrder = (a: any, b: any) =>
+    (a.reading_order ?? Number.MAX_SAFE_INTEGER) - (b.reading_order ?? Number.MAX_SAFE_INTEGER);
+  const filterByTab = (list: any[]) => {
+    if (activeTab === 'tumu') return list;
+    const filtered = list.filter((p) => (p.post_type || 'yazi') === activeTab);
+    // Kitap tahlilleri sekmesinde okuma listesi sırası korunur
+    return activeTab === 'kitap_tahlili' ? [...filtered].sort(byReadingOrder) : filtered;
+  };
   const visibleDrafts = filterByTab(drafts);
   const visiblePublished = filterByTab(published);
 
@@ -63,6 +70,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { tur?
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link href="/admin/analiz" className="btn btn-sm">📊 Analiz</Link>
           <Link href="/admin/okuma-bulteni/toplu-ekle" className="btn btn-sm">🔗 Bülten: Toplu Ekle</Link>
+          <Link href="/admin/kitap-tahlilleri/toplu-ekle" className="btn btn-sm">📚 Tahlil: Toplu Ekle</Link>
           <Link href="/admin/yazi/yeni?tur=kitap_tahlili" className="btn btn-sm">📚 Yeni Kitap Tahlili</Link>
           <Link href="/admin/yazi/yeni?tur=okuma_bulteni" className="btn btn-sm">🔗 Yeni Bülten Linki</Link>
           <Link href="/admin/yazi/yeni" className="btn btn-primary">✍️ Yeni Yazı</Link>
@@ -140,6 +148,8 @@ function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
   const typeInfo = getPostTypeInfo(post.post_type);
   const isBulletin = post.post_type === 'okuma_bulteni';
   const hasComment = isBulletin && post.content && post.content.replace(/<[^>]+>/g, '').trim().length > 0;
+  const isBook = post.post_type === 'kitap_tahlili';
+  const bookWritten = isBook && hasRealContent(post.content);
   return (
     <div className="admin-post-row">
       <div className="admin-post-info">
@@ -155,6 +165,11 @@ function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
             </span>
           )}
           {isDraft && <span className="draft-badge">Taslak</span>}
+          {isBook && (
+            <span className="draft-badge" style={{ background: bookWritten ? undefined : '#f0e6d6' }}>
+              {bookWritten ? '📝 Tahlil yazıldı' : 'Not yok'}
+            </span>
+          )}
           {isBulletin && !isDraft && (
             <span className="draft-badge" style={{ background: hasComment ? undefined : '#f0e6d6' }}>
               {hasComment ? '💬 Yorumlu' : 'Yorum yok'}
@@ -169,7 +184,11 @@ function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
             </span>
           )}
         </div>
-        <h3 className="admin-post-title">{post.title}</h3>
+        <h3 className="admin-post-title">
+          {isBook && post.reading_order != null && <span className="admin-order">#{post.reading_order}</span>}
+          {post.title}
+        </h3>
+        {isBook && post.book_author && <p className="admin-post-subtitle">{post.book_author}</p>}
         {post.subtitle && <p className="admin-post-subtitle">{post.subtitle}</p>}
         {isBulletin && post.source_name && (
           <p className="admin-post-subtitle">Kaynak: {post.source_name}</p>
@@ -178,7 +197,7 @@ function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
       <div className="admin-post-actions">
         <Link href={getPostUrl(post)} className="btn btn-sm">Önizle</Link>
         <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm btn-primary">
-          {isBulletin && !hasComment ? 'Yorum ekle' : 'Düzenle'}
+          {isBulletin && !hasComment ? 'Yorum ekle' : isBook && !bookWritten ? 'Not yaz' : 'Düzenle'}
         </Link>
       </div>
     </div>

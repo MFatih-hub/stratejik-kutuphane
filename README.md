@@ -10,7 +10,8 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
 4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
 5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (Okuma Bülteni + Kitap Tahlilleri bölümleri için `post_type` ve kaynak alanlarını ekler)
-6. "...hazır" yazan mesajları görmelisin ✓
+6. Ardından `SUPABASE-MIGRATION-v4.sql`'i çalıştır (Kitap Tahlilleri toplu ekleme için `book_author` ve `reading_order` alanlarını ekler)
+7. "...hazır" yazan mesajları görmelisin ✓
 
 > Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** eksik olan migration dosyalarını çalıştırman yeterli — hepsi eklemelidir, hiçbir yazını silmez.
 
@@ -107,6 +108,18 @@ Bir Okuma Bülteni kaydının `content` alanı (normal yazılarda "yazı gövdes
 
 Tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kullanılabilir: `Kategori:`, `Başlık:`, `Kaynak:`, `URL:`, `Özet:` etiketleriyle yazılmış, boş satırla ayrılmış bloklar halinde metin yapıştırılır, önizlenir (kategori otomatik tahmin edilir, elle düzeltilebilir) ve tek seferde eklenir.
 
+### Kitap Tahlilleri toplu ekleme (okuma listesi → site)
+
+**`/admin/kitap-tahlilleri/toplu-ekle`** (admin panelde "📚 Tahlil: Toplu Ekle"): okuma listesini tek seferde siteye aktarır. Önce `SUPABASE-MIGRATION-v4.sql` çalıştırılmış olmalı.
+
+1. Excel'de **Sıra · Yazar · Metin** sütunlarını seç (başlık satırıyla ya da onsuz), kopyala, kutuya yapıştır. İsteğe bağlı 4. sütun **Kategori**. Başlık satırı varsa sütun sırası önemli değil (Sıra/No, Yazar/Author, Metin/Başlık/Eser/Kitap, Kategori/Alan tanınır). Etiketli bloklar da çalışır (`Sıra:`, `Yazar:`, `Metin:`, `Kategori:`; bloklar boş satırla ayrılır).
+2. Önizlemede "Kontrol edilecekler" sekmesi eksik yazar/başlık, tekrarlanan sıra numarası ve sitede zaten olan eserleri gösterir. Sitede zaten olan eserler (aynı sıra + başlık) otomatik olarak işaretsiz gelir — aynı listeyi ikinci kez yapıştırmak kopya oluşturmaz.
+3. "Ekle" 100'erli partilerle yazar. Her eser `post_type = 'kitap_tahlili'`, boş `content` ile oluşur; adresi `/kitap-tahlilleri/<sıra>-<başlık>` olur.
+
+Sonra `/admin?tur=kitap_tahlili` sekmesinde (okuma sırasına göre dizili) bir esere "Not yaz" deyip tahlil notunu editörde yazarsın. Editörün sağ panelinde **Yazar** ve **Okuma listesindeki sıra** alanları da düzenlenebilir.
+
+`/kitap-tahlilleri` sayfası eserleri okuma sırasına göre, 100'erli sayfalar halinde listeler; "Tüm liste / Tahlili yazılanlar / Sırada bekleyenler" filtresi, alan filtresi, eser/yazar araması ve ilerleme çubuğu vardır. Tahlili yazılmış eserler bağlantılıdır; notu henüz yazılmamış eserlerin sayfası "tahlil henüz yazılmadı" der, arama motorlarına kapalıdır (noindex) ve sitemap'e ve site aramasına girmez.
+
 ### Otomatik gönderim (scheduled task → site)
 
 `app/api/okuma-bulteni` (`POST`), "Zihin Haritası Okuma Bülteni" scheduled task'ının doğrudan siteye yazması için var. Kimlik doğrulama Supabase login'i değil, `x-bulletin-secret` header'ındaki paylaşımlı bir sırla yapılır — scheduled task'a hiçbir zaman Supabase servis anahtarı verilmez, sadece bu dar-yetkili sır. Gövde: `[{title, source, url, category, summary}, …]` (en fazla 60 öğe). Aynı `source_url` daha önce eklenmişse atlanır (idempotent). Kurulum için `.env.example`'daki `SUPABASE_SERVICE_ROLE_KEY` ve `BULLETIN_API_SECRET` değişkenlerini Vercel'e ekle.
@@ -148,6 +161,10 @@ app/
       toplu-ekle/
         page.tsx                    # Toplu ekleme (auth guard)
         bulk-add-client.tsx         # Yapıştır → ayrıştır → önizle → ekle
+    kitap-tahlilleri/
+      toplu-ekle/
+        page.tsx                    # Kitap tahlili toplu ekleme (auth guard)
+        bulk-add-client.tsx         # Excel'den yapıştır → önizle → 100'erli partilerle ekle
     yazi/
       yeni/page.tsx                 # Yeni yazı/tahlil/link (?tur= ile ön-seçili)
       [id]/duzenle/
@@ -165,6 +182,7 @@ components/
   share-buttons.tsx                 # Sosyal paylaşım
 lib/
   helpers.ts                        # Kategoriler ve yardımcılar
+  book-import.ts                    # Excel/etiketli metinden eser listesi ayrıştırıcı
   content.ts                        # Başlık çıkarma, HTML temizleme (sanitize)
   visitor.ts                        # Anonim ziyaretçi kimliği (çerez)
   supabase-browser.ts               # Client-side Supabase
@@ -172,6 +190,7 @@ lib/
 SUPABASE-SETUP.sql                  # İlk kurulum (sıfırdan)
 SUPABASE-MIGRATION-v2.sql           # content_format, page_views, record_post_view()
 SUPABASE-MIGRATION-v3.sql           # post_type + Okuma Bülteni kaynak alanları
+SUPABASE-MIGRATION-v4.sql           # book_author + reading_order (Kitap Tahlilleri)
 SEO-CHECKLIST.md                    # Yazı öncesi/sonrası SEO kontrol listesi
 ```
 

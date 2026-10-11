@@ -1313,3 +1313,64 @@ h1, h2, h3, h4, h5 { font-weight: 500; color: var(--text-primary); line-height: 
   .bulk-item { flex-direction: column; }
   .bulk-item-check { padding-top: 0; }
 }
+
+/* ============== KİTAP TAHLİLLERİ: LİSTE ============== */
+.book-progress { margin-top: 1.25rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.book-progress-track { flex: 1; min-width: 160px; max-width: 360px; height: 6px; border-radius: 6px; background: var(--bg-tertiary); overflow: hidden; }
+.book-progress-fill { height: 100%; background: var(--accent); border-radius: 6px; min-width: 2px; }
+.book-progress-label { font-size: 13px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+.book-filters .category-bar { border-bottom: none; padding-bottom: 0; }
+.book-pill-count { font-size: 11px; opacity: 0.7; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.book-search { display: flex; gap: 8px; align-items: center; margin: 4px 0 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+.book-search .input { max-width: 360px; }
+
+.book-items { list-style: none; margin: 0; padding: 0; border-top: 0.5px solid var(--border); }
+.book-item { border-bottom: 0.5px solid var(--border); }
+.book-item-inner { display: flex; align-items: baseline; gap: 14px; padding: 12px 6px; color: var(--text-secondary); }
+.book-item-written .book-item-inner { color: var(--text-primary); }
+.book-item-written a.book-item-inner:hover { background: var(--accent-bg); }
+.book-item-written a.book-item-inner:hover .book-title { color: var(--accent); }
+.book-no { flex: 0 0 44px; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.book-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.book-title { font-family: var(--font-serif); font-size: 16px; line-height: 1.4; }
+.book-item-written .book-title { font-weight: 600; }
+.book-author { font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+.book-side { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.book-badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: var(--bg-secondary); color: var(--text-tertiary); white-space: nowrap; }
+.book-badge-done { background: var(--accent); color: #fff; }
+.book-detail-meta { margin: 0.5rem 0 1rem; font-size: 14px; color: var(--text-secondary); }
+
+.pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 2rem 0 1rem; font-size: 13px; color: var(--text-tertiary); }
+
+/* ============== ADMIN: KİTAP TAHLİLİ TOPLU EKLEME ============== */
+.bulk-add-wide { max-width: 1100px; }
+.bulk-steps { margin: 0 0 1rem; padding-left: 1.2rem; font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 0.5px solid var(--border-strong); border-bottom-width: 1.5px; border-radius: 4px; background: var(--bg-card); }
+.bulk-parse-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; }
+.bulk-progress { height: 4px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+.bulk-progress-bar { height: 100%; background: var(--accent); transition: width 0.2s; }
+.bulk-summary { font-size: 14px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--success-bg); color: var(--success); margin-bottom: 1rem; }
+.bulk-summary a { text-decoration: underline; }
+.admin-tabs button.admin-tab { background: none; cursor: pointer; font: inherit; font-size: 13px; }
+.admin-tabs button.admin-tab-active { background: var(--accent); }
+
+.book-table-wrap { overflow-x: auto; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg-card); }
+.book-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+.book-table th { text-align: left; font-weight: 500; color: var(--text-tertiary); font-size: 12px; padding: 8px 6px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); position: sticky; top: 0; }
+.book-table td { padding: 4px 6px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+.book-table .book-cell { padding: 5px 8px; font-size: 13px; width: 100%; }
+.book-status { display: flex; flex-direction: column; gap: 2px; min-height: 30px; justify-content: center; }
+.book-status .bulk-warning { font-size: 11px; line-height: 1.3; }
+.book-ok { color: var(--success); font-size: 12px; }
+.book-row-done { opacity: 0.55; }
+.book-row-skip { opacity: 0.6; }
+.book-row-error td { background: var(--danger-bg); }
+.admin-order { font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); margin-right: 8px; font-weight: 400; }
+
+@media (max-width: 700px) {
+  .book-item-inner { flex-wrap: wrap; gap: 6px 10px; }
+  .book-no { flex-basis: 32px; }
+  .book-side { flex-basis: 100%; padding-left: 42px; }
+  .book-search { flex-wrap: wrap; }
+}

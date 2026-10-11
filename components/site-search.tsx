@@ -22,12 +22,25 @@ let cachedPosts: SearchPost[] | null = null;
 async function loadPosts(): Promise<SearchPost[]> {
   if (cachedPosts) return cachedPosts;
   const supabase = createClient();
-  const { data } = await supabase
-    .from('posts')
-    .select('id, slug, title, excerpt, tags, category, published_at, post_type')
-    .eq('is_published', true)
-    .order('published_at', { ascending: false });
-  cachedPosts = data || [];
+  // PostgREST tek istekte en fazla 1000 satır döndürür → sayfa sayfa çek.
+  // Tahlil notu henüz yazılmamış kitap kayıtları aramada çıkmaz
+  // (onlar Kitap Tahlilleri sayfasının kendi aramasında bulunur).
+  const all: SearchPost[] = [];
+  for (let page = 0; page < 20; page++) {
+    const from = page * 1000;
+    const { data, error } = await supabase
+      .from('posts')
+      .select('id, slug, title, excerpt, tags, category, published_at, post_type')
+      .eq('is_published', true)
+      .or('post_type.neq.kitap_tahlili,content.neq.""')
+      .order('published_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + 999);
+    if (error || !data || data.length === 0) break;
+    all.push(...(data as SearchPost[]));
+    if (data.length < 1000) break;
+  }
+  cachedPosts = all;
   return cachedPosts;
 }
 

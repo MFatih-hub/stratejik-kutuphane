@@ -6,14 +6,26 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphan
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient();
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('slug, updated_at, published_at, post_type')
-    .eq('is_published', true)
-    .order('published_at', { ascending: false });
+  // PostgREST tek istekte en fazla 1000 satır döndürür → sayfa sayfa çek.
+  // Tahlil notu henüz yazılmamış kitap kayıtları (content = '') sitemap'e girmez.
+  const posts: any[] = [];
+  for (let page = 0; page < 50; page++) {
+    const from = page * 1000;
+    const { data, error } = await supabase
+      .from('posts')
+      .select('slug, updated_at, published_at, post_type')
+      .eq('is_published', true)
+      .or('post_type.neq.kitap_tahlili,content.neq.""')
+      .order('published_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + 999);
+    if (error || !data || data.length === 0) break;
+    posts.push(...data);
+    if (data.length < 1000) break;
+  }
 
   // Her türden yazı: kendi URL önekinde (/yazi, /kitap-tahlilleri, /okuma-bulteni)
-  const postUrls = (posts || []).map((post) => ({
+  const postUrls = posts.map((post) => ({
     url: `${SITE_URL}${getPostBasePath(post.post_type)}/${post.slug}`,
     lastModified: new Date(post.updated_at || post.published_at),
     changeFrequency: 'monthly' as const,
