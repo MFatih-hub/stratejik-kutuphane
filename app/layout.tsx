@@ -6,6 +6,9 @@ import ThemeToggle from '@/components/theme-toggle';
 import { HeaderSiteSearch } from '@/components/site-search';
 import { BrandMark, Glint } from '@/components/calm';
 import { quoteOfTheDay } from '@/lib/quotes';
+// Kur'an metni için Uthmani hattını tam destekleyen yazı tipi (siteyle birlikte
+// barındırılır; tarayıcı sadece Arapça ayet gösterildiğinde indirir, ~45 KB).
+import '@fontsource/amiri-quran/arabic-400.css';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
@@ -134,6 +137,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     description: 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazıyor.',
   };
 
+  const quote = quoteOfTheDay();
+
   return (
     <html lang="tr">
       <body>
@@ -197,11 +202,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="site-footer">
           <div className="container">
             {(() => {
-              const q = quoteOfTheDay();
+              const q = quote;
               return (
-                <figure className="footer-quote">
+                <figure className={`footer-quote${q.verses ? ' footer-quote-verses' : ''}`}>
                   <Glint still className="footer-glint" />
-                  <blockquote>{q.text}</blockquote>
+                  {q.verses ? (
+                    <>
+                      <blockquote className="quote-ar" dir="rtl" lang="ar">
+                        {q.verses.map((v) => (
+                          <span key={v.n}>
+                            {v.ar}{' '}
+                            <span className="ayah-no">﴿{v.n.toLocaleString('ar-EG')}﴾</span>{' '}
+                          </span>
+                        ))}
+                      </blockquote>
+                      <div className="quote-meal">
+                        {q.verses.map((v) => (
+                          <p key={v.n}><sup>{v.n}</sup> {v.tr}</p>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <blockquote>{q.text}</blockquote>
+                  )}
                   <figcaption>{q.who}</figcaption>
                 </figure>
               );
