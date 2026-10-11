@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type { Journey, JourneyItem } from '@/lib/reading-journey';
+import { Glint } from './calm';
+import Milestones from './milestones';
 
 // Kitap Tahlilleri sayfasının başındaki "okuma yolculuğu" görünümü:
 // her eser bir kare; tahlili yazılanlar dolu, sıradaki eser işaretli.
@@ -111,7 +113,7 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
         </div>
         {next && (
           <Link href={`/kitap-tahlilleri/${next.slug}`} className="journey-here">
-            <span className="journey-here-pin" aria-hidden="true" />
+            <Glint still className="journey-here-pin" />
             <span className="journey-here-text">
               <span className="journey-here-label">Şu an buradayım</span>
               <span className="journey-here-title">
@@ -131,6 +133,8 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
           </Link>
         )}
       </div>
+
+      <Milestones written={written} total={total} />
 
       {modules.length > COMPACT_AFTER ? (
         <CompactModules journey={journey} moduleHref={moduleHref} />

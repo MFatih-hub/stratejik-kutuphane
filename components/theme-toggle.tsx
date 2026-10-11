@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ThemeIcon } from './calm';
 
 type Theme = 'light' | 'dark' | 'blue';
 
-const ICONS: Record<Theme, string> = { light: '🌙', dark: '🌌', blue: '☀️' };
+const ICONS: Record<Theme, 'moon' | 'sea' | 'sun'> = { light: 'moon', dark: 'sea', blue: 'sun' };
 const LABELS: Record<Theme, string> = {
   light: 'Koyu temaya geç',
-  dark: 'Mavi metalik temaya geç',
+  dark: 'Metalik deniz temasına geç',
   blue: 'Açık temaya geç',
 };
 const NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'blue', blue: 'light' };
@@ -32,11 +33,11 @@ export default function ThemeToggle() {
     localStorage.setItem('theme', next);
   }
 
-  if (!mounted) return <button className="icon-btn" aria-label="Tema">⚪</button>;
+  if (!mounted) return <button className="icon-btn" aria-label="Tema"><ThemeIcon name="moon" /></button>;
 
   return (
     <button onClick={toggle} className="icon-btn" aria-label={LABELS[theme]} title={LABELS[theme]}>
-      {ICONS[theme]}
+      <ThemeIcon name={ICONS[theme]} />
     </button>
   );
 }

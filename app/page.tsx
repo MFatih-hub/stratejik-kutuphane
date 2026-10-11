@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib/helpers';
 import { InlineSiteSearch } from '@/components/site-search';
 import { fetchJourneySummary } from '@/lib/reading-journey';
+import { SeaHorizon, Glint, Horizon } from '@/components/calm';
 
 export const revalidate = 60;
 
@@ -74,7 +75,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
       />
 
-      <section className="blog-hero">
+      <section className="blog-hero blog-hero-sea">
+        <SeaHorizon />
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
           MUHAMMET FATİH IŞIK · DENEMELER VE ANALİZLER
@@ -98,7 +100,7 @@ export default async function HomePage() {
 
       {postList.length === 0 && !hasShowcase && (
         <div className="empty-state">
-          <div className="empty-state-icon">✍️</div>
+          <Horizon />
           <p className="empty-state-text">
             Henüz yazı yok. Yakında ilki gelecek.
           </p>
@@ -187,7 +189,7 @@ export default async function HomePage() {
 
               {journey.next && (
                 <Link href={`/kitap-tahlilleri/${journey.next.slug}`} className="journey-here showcase-here">
-                  <span className="journey-here-pin" aria-hidden="true" />
+                  <Glint still className="journey-here-pin" />
                   <span className="journey-here-text">
                     <span className="journey-here-label">Şu an buradayım</span>
                     <span className="journey-here-title">

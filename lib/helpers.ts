@@ -7,12 +7,12 @@
 //            next.config.js'teki yönlendirmelerle hem de aşağıdaki
 //            getCategoryByPath() ile yeni adrese gider.
 export const CATEGORIES = [
-  { slug: 'teknoloji', path: 'muhendislik', name: 'Mühendislik', description: 'Mühendislik, savunma ve teknoloji üzerine', color: '#8b2a16' },
-  { slug: 'jeopolitik', path: 'politika', name: 'Politika', description: 'Politika, jeopolitik ve strateji üzerine', color: '#2d5f3f' },
-  { slug: 'bilim', path: 'sosyoloji', name: 'Sosyoloji', description: 'Toplum ve sosyoloji üzerine', color: '#1d3d5c' },
-  { slug: 'ekonomi', path: 'finans', name: 'Finans', description: 'Finans ve ekonomi üzerine', color: '#a3691e' },
-  { slug: 'dusunce', path: 'felsefe', name: 'Felsefe', description: 'Felsefe ve düşünce üzerine', color: '#5e3d8c' },
-  { slug: 'turkiye', path: 'tarih', name: 'Tarih', description: 'Tarih üzerine', color: '#a32d2d' },
+  { slug: 'teknoloji', path: 'muhendislik', name: 'Mühendislik', description: 'Mühendislik, savunma ve teknoloji üzerine', color: '#5b6f7e' },
+  { slug: 'jeopolitik', path: 'politika', name: 'Politika', description: 'Politika, jeopolitik ve strateji üzerine', color: '#5d7368' },
+  { slug: 'bilim', path: 'sosyoloji', name: 'Sosyoloji', description: 'Toplum ve sosyoloji üzerine', color: '#56688a' },
+  { slug: 'ekonomi', path: 'finans', name: 'Finans', description: 'Finans ve ekonomi üzerine', color: '#8a7652' },
+  { slug: 'dusunce', path: 'felsefe', name: 'Felsefe', description: 'Felsefe ve düşünce üzerine', color: '#6c6488' },
+  { slug: 'turkiye', path: 'tarih', name: 'Tarih', description: 'Tarih üzerine', color: '#8a6262' },
 ];
 
 export function getCategoryBySlug(slug: string) {

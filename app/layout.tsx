@@ -4,20 +4,28 @@ import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import ThemeToggle from '@/components/theme-toggle';
 import { HeaderSiteSearch } from '@/components/site-search';
+import { BrandMark, Glint } from '@/components/calm';
+import { quoteOfTheDay } from '@/lib/quotes';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
 const SITE_NAME = 'Zihin Haritası';
 const AUTHOR_NAME = 'Muhammet Fatih Işık';
-const SITE_DESCRIPTION = 'Note defterim';
+const SITE_DESCRIPTION = 'Muhammet Fatih Işık\'ın denemeleri, okuma bülteni ve kitap tahlilleri.';
 
 // Google Analytics 4 ölçüm kimliği (G-XXXXXXXXXX).
 // Vercel > Project > Settings > Environment Variables > NEXT_PUBLIC_GA_ID
 // Alternatif: tırnak içine doğrudan kendi kimliğini yazabilirsin.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-KSN82G3HLW';
 
+// Sekme ikonu: metalik disk, ufuk çizgisi ve minik ışık (logo ile aynı)
 const FAVICON =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📓%3C/text%3E%3C/svg%3E";
+  "data:image/svg+xml," + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><defs><linearGradient id='m' x1='0' y1='0' x2='1' y2='1'>" +
+    "<stop offset='0' stop-color='#e9ecef'/><stop offset='.42' stop-color='#9ea7af'/><stop offset='.55' stop-color='#eef1f3'/><stop offset='1' stop-color='#6d7780'/>" +
+    "</linearGradient></defs><circle cx='18' cy='18' r='17' fill='url(#m)'/><path d='M5 21.5h26' stroke='#3c454e' stroke-width='1.2'/>" +
+    "<path d='M10 25h16M14 28h8' stroke='#3c454e' stroke-width='.8' opacity='.5'/><circle cx='23' cy='13' r='2' fill='#fff8e6'/></svg>"
+  );
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -160,7 +168,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="site-header">
           <div className="container site-header-inner">
             <Link href="/" className="site-brand">
-              <div className="site-brand-mark">Z</div>
+              <BrandMark />
               <div>
                 <div className="site-title">Zihin Haritası</div>
                 <div className="site-title-sub">Muhammet Fatih Işık</div>
@@ -188,7 +196,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <footer className="site-footer">
           <div className="container">
-            <p>
+            {(() => {
+              const q = quoteOfTheDay();
+              return (
+                <figure className="footer-quote">
+                  <Glint still className="footer-glint" />
+                  <blockquote>{q.text}</blockquote>
+                  <figcaption>{q.who}</figcaption>
+                </figure>
+              );
+            })()}
+            <p className="footer-meta">
               © {new Date().getFullYear()} {AUTHOR_NAME} ·{' '}
               <Link href="/feed.xml" style={{ color: 'var(--accent)' }}>RSS</Link>
             </p>

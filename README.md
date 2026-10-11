@@ -73,6 +73,17 @@ Görüntülenme sayacı artık güvenli şekilde çalışıyor: eski sürümde s
 
 Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutusu, başlık/özet/etiketlerde anlık arama yapar. Türkçe karakterler (İ/I, ı/i) doğru şekilde eşleşir.
 
+## 🌊 Görsel Dil: Durgun Deniz
+
+Sakin, metalik ve yormayan bir görünüm: hiçlik içinde tek bir küçük ışıltı.
+
+- **Temalar** (`app/globals.css` sonundaki "DURGUN DENİZ" katmanı): açık = *Sis*, koyu = *Gece Denizi*, mavi = *Metalik Deniz*. Tüm renkler CSS değişkenleri (`--metal-*`, `--glint-*`, `--sea-*`).
+- **Arka plan:** üstte açık gök, ortada sönük bir ufuk parıltısı, altta deniz tonu (sabit, hareketsiz).
+- **Işıltı** (`components/calm.tsx` → `Glint`): sitedeki tek hareket, 7 saniyede bir yavaşça nefes alır; okuma yolculuğunda "sıradaki eser" odur. `prefers-reduced-motion` açıksa durur.
+- **Logo ve sekme ikonu:** metalik disk + ufuk çizgisi + minik ışık. Ana sayfa hero'sunda durgun deniz çizimi (`SeaHorizon`).
+- **Rozetler** (`components/milestones.tsx`): ince bir çizgi üstünde yıldızlar — kazanılanlar ışıldar.
+- **Sayfa altı:** her gün değişen kısa bir söz (`lib/quotes.ts`). **404:** "Burada yalnızca durgun su var".
+
 ## 🎨 Kategoriler
 
 - Teknoloji & Mühendislik

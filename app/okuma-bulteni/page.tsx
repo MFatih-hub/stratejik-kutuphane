@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Horizon } from '@/components/calm';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, getCategoryByPath, formatDate, getCategoryColor, getCategoryName, stripHtml } from '@/lib/helpers';
@@ -95,7 +96,7 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
 
       {postList.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🔗</div>
+          <Horizon />
           <p className="empty-state-text">
             {activeCategory ? 'Bu kategoride henüz paylaşım yok.' : 'Henüz paylaşım yok.'}
           </p>

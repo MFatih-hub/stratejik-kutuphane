@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Horizon } from '@/components/calm';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, getCategoryByPath, getCategoryColor, getCategoryName } from '@/lib/helpers';
@@ -199,7 +200,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
 
       {list.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">📚</div>
+          <Horizon />
           <p className="empty-state-text">
             {totalCount === 0 && !q && !kategori ? 'Henüz kitap tahlili yok. Yakında ilki gelecek.' : 'Bu filtreyle eşleşen eser yok.'}
           </p>

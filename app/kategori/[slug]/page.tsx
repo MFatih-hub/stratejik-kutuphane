@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Horizon } from '@/components/calm';
 import Image from 'next/image';
 import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -74,7 +75,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
       {postList.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">📝</div>
+          <Horizon />
           <p className="empty-state-text">
             Bu kategoride henüz yazı yok.
           </p>

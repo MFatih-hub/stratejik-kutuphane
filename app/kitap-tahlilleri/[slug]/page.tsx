@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Horizon } from '@/components/calm';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -219,7 +220,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
           <PostContent content={post.content} format={post.content_format} />
         ) : (
           <div className="empty-state" style={{ padding: '2.5rem 1rem' }}>
-            <div className="empty-state-icon">📖</div>
+            <Horizon />
             <p className="empty-state-text">Bu eser okuma listesinde; tahlil notu henüz yazılmadı.</p>
             {isAdmin && (
               <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-primary" style={{ marginTop: 14 }}>
