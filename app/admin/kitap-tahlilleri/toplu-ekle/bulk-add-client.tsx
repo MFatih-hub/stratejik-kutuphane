@@ -15,8 +15,10 @@ type BookItem = {
   categorySlug: string;
   categoryGuessed: boolean;
   exists: boolean; // sitede zaten var
+  existingId: number | null; // sitedeki kaydın id'si (güncelleme için)
   include: boolean;
   status: 'idle' | 'saving' | 'done' | 'error';
+  result?: 'eklendi' | 'guncellendi';
   error?: string;
 };
 
@@ -24,6 +26,7 @@ const DEFAULT_CATEGORY = 'dusunce'; // Felsefe
 const PREVIEW_PAGE = 100;
 const INSERT_CHUNK = 100;
 const FETCH_PAGE = 1000;
+const UPDATE_CONCURRENCY = 6;
 
 const EXAMPLE_TSV = `Sıra\tYazar\tMetin
 1\tPlaton\tApology (Sokrates'in Savunması)
@@ -72,9 +75,15 @@ export default function BookBulkAddClient() {
   const [summaryMsg, setSummaryMsg] = useState('');
   const [page, setPage] = useState(0);
   const [view, setView] = useState<'tumu' | 'sorunlu'>('tumu');
+  // Sitede zaten olan eserler (aynı sıra numarası) atlansın mı, güncellensin mi?
+  // Güncelleme sadece başlık, yazar, sıra ve durağı yazar — tahlil notuna ve
+  // yayın durumuna dokunmaz.
+  const [updateExisting, setUpdateExisting] = useState(true);
 
-  async function fetchExistingKeys(): Promise<Set<string>> {
-    const keys = new Set<string>();
+  /** Sitedeki kitap kayıtları: sıra numarasına göre (yoksa başlığa göre) id haritası. */
+  async function fetchExisting(): Promise<{ byOrder: Map<number, number>; byTitle: Map<string, number> }> {
+    const byOrder = new Map<number, number>();
+    const byTitle = new Map<string, number>();
     for (let p = 0; p < 50; p++) {
       const from = p * FETCH_PAGE;
       const { data, error } = await supabase
@@ -84,20 +93,28 @@ export default function BookBulkAddClient() {
         .order('id', { ascending: true })
         .range(from, from + FETCH_PAGE - 1);
       if (error || !data || data.length === 0) break;
-      data.forEach((r: any) => keys.add(bookKey(r.reading_order ?? null, r.title || '')));
+      data.forEach((r: any) => {
+        if (r.reading_order != null && !byOrder.has(r.reading_order)) byOrder.set(r.reading_order, r.id);
+        byTitle.set(bookKey(null, r.title || ''), r.id);
+      });
       if (data.length < FETCH_PAGE) break;
     }
-    return keys;
+    return { byOrder, byTitle };
   }
 
   async function handleParse() {
     setParsing(true);
     setSummaryMsg('');
     const parsed = parseBookInput(raw);
-    const existing = await fetchExistingKeys();
+    const existing = await fetchExisting();
     const list: BookItem[] = parsed.map((b, i) => {
       const resolved = b.category ? resolveCategorySlug(b.category) : null;
-      const exists = existing.has(bookKey(b.order, b.title));
+      // Sıra numarası varsa eşleşme sıraya göre (başlık önceki yüklemede kesik
+      // ya da farklı yazılmış olabilir); yoksa başlığa göre.
+      const existingId = b.order !== null
+        ? existing.byOrder.get(b.order) ?? null
+        : existing.byTitle.get(bookKey(null, b.title)) ?? null;
+      const exists = existingId !== null;
       return {
         key: i,
         order: b.order !== null ? String(b.order) : '',
@@ -107,7 +124,8 @@ export default function BookBulkAddClient() {
         categorySlug: resolved || defaultCategory,
         categoryGuessed: !!b.category && !resolved,
         exists,
-        include: !exists,
+        existingId,
+        include: !exists || updateExisting,
         status: 'idle',
       };
     });
@@ -144,7 +162,7 @@ export default function BookBulkAddClient() {
     if (!it.order) out.push('Sıra yok');
     if (it.order && duplicateOrders.has(it.order)) out.push('Sıra tekrarlanıyor');
     if (it.categoryGuessed) out.push('Kategori tanınmadı');
-    if (it.exists) out.push('Sitede zaten var');
+    if (it.exists && !updateExisting) out.push('Sitede zaten var (atlanacak)');
     if (it.status === 'error') out.push(`Hata: ${it.error}`);
     return out;
   }
@@ -195,27 +213,59 @@ export default function BookBulkAddClient() {
       updateMany(new Map(invalid.map((it) => [it.key, { status: 'error' as const, error: 'Metin/başlık zorunlu' }])));
     }
 
+    const toUpdate = valid.filter((it) => it.existingId !== null);
+    const toInsert = valid.filter((it) => it.existingId === null);
+
     setRunning(true);
     setSummaryMsg('');
     setProgress({ done: 0, total: valid.length });
     let okCount = 0;
+    let updCount = 0;
     let failCount = invalid.length;
+    let doneSoFar = 0;
 
-    for (let i = 0; i < valid.length; i += INSERT_CHUNK) {
-      const chunk = valid.slice(i, i + INSERT_CHUNK);
+    // 1) Sitede olanları güncelle (aynı anda birkaç istek; tahlil notuna dokunmaz)
+    for (let i = 0; i < toUpdate.length; i += UPDATE_CONCURRENCY * 10) {
+      const batch = toUpdate.slice(i, i + UPDATE_CONCURRENCY * 10);
+      updateMany(new Map(batch.map((it) => [it.key, { status: 'saving' as const }])));
+      const patches = new Map<number, Partial<BookItem>>();
+      for (let j = 0; j < batch.length; j += UPDATE_CONCURRENCY) {
+        const group = batch.slice(j, j + UPDATE_CONCURRENCY);
+        const results = await Promise.all(group.map((it) =>
+          supabase.from('posts').update({
+            title: it.title.trim(),
+            book_author: it.author.trim() || null,
+            reading_order: toOrder(it.order),
+            ...(hasModules ? { reading_module: it.module.trim() || null } : {}),
+          }).eq('id', it.existingId as number)
+        ));
+        results.forEach(({ error }, k) => {
+          const it = group[k];
+          if (!error) { patches.set(it.key, { status: 'done', result: 'guncellendi', error: undefined }); updCount++; }
+          else { patches.set(it.key, { status: 'error', error: explainError(error.message) }); failCount++; }
+        });
+      }
+      updateMany(patches);
+      doneSoFar += batch.length;
+      setProgress({ done: doneSoFar, total: valid.length });
+    }
+
+    // 2) Yenileri 100'erli partilerle ekle
+    for (let i = 0; i < toInsert.length; i += INSERT_CHUNK) {
+      const chunk = toInsert.slice(i, i + INSERT_CHUNK);
       updateMany(new Map(chunk.map((it) => [it.key, { status: 'saving' as const }])));
 
       const { error } = await supabase.from('posts').insert(chunk.map((it) => rowFor(it, makeSlug(it, 0))));
       const patches = new Map<number, Partial<BookItem>>();
 
       if (!error) {
-        chunk.forEach((it) => patches.set(it.key, { status: 'done', error: undefined }));
+        chunk.forEach((it) => patches.set(it.key, { status: 'done', result: 'eklendi', error: undefined }));
         okCount += chunk.length;
       } else if (error.code === '23505') {
         // Partide bir adres çakışması var — bu partiyi tek tek, numaralı slug'larla dene.
         for (const it of chunk) {
           const r = await insertSingle(it);
-          if (r.ok) { patches.set(it.key, { status: 'done', error: undefined }); okCount++; }
+          if (r.ok) { patches.set(it.key, { status: 'done', result: 'eklendi', error: undefined }); okCount++; }
           else { patches.set(it.key, { status: 'error', error: r.error }); failCount++; }
         }
       } else {
@@ -224,11 +274,15 @@ export default function BookBulkAddClient() {
       }
 
       updateMany(patches);
-      setProgress({ done: Math.min(i + INSERT_CHUNK, valid.length), total: valid.length });
+      doneSoFar += chunk.length;
+      setProgress({ done: doneSoFar, total: valid.length });
     }
 
     setRunning(false);
-    setSummaryMsg(`${okCount} eser eklendi${failCount > 0 ? `, ${failCount} başarısız (Sorunlular sekmesine bak)` : ''}.`);
+    const parts = [`${okCount} eser eklendi`];
+    if (updCount > 0) parts.push(`${updCount} eser güncellendi`);
+    if (failCount > 0) parts.push(`${failCount} başarısız ("Kontrol edilecekler" sekmesine bak)`);
+    setSummaryMsg(parts.join(', ') + '.');
   }
 
   const visible = useMemo(() => {
@@ -243,6 +297,12 @@ export default function BookBulkAddClient() {
 
   const includedCount = items ? items.filter((i) => i.include && i.status !== 'done').length : 0;
   const existsCount = items ? items.filter((i) => i.exists).length : 0;
+  const updateQueued = items ? items.filter((i) => i.include && i.exists && i.status !== 'done').length : 0;
+
+  function toggleUpdateExisting(on: boolean) {
+    setUpdateExisting(on);
+    setItems((prev) => (prev ? prev.map((it) => (it.exists && it.status !== 'done' ? { ...it, include: on } : it)) : prev));
+  }
   const problemCount = items ? items.filter((i) => issuesOf(i).length > 0).length : 0;
   const doneCount = items ? items.filter((i) => i.status === 'done').length : 0;
 
@@ -298,7 +358,12 @@ export default function BookBulkAddClient() {
           <div className="bulk-toolbar">
             <div className="bulk-toolbar-left" style={{ gap: 14 }}>
               <span><strong>{items.length}</strong> eser ayrıştırıldı</span>
-              {existsCount > 0 && <span className="form-hint" style={{ margin: 0 }}>{existsCount} tanesi sitede zaten var (atlanacak)</span>}
+              {existsCount > 0 && (
+                <label title="Sıra numarası sitedekiyle aynı olan eserlerde başlık, yazar ve durak güncellenir; tahlil notu ve yayın durumu değişmez.">
+                  <input type="checkbox" checked={updateExisting} onChange={(e) => toggleUpdateExisting(e.target.checked)} disabled={running} />
+                  {' '}Sitede olan {existsCount} eseri güncelle (notlara dokunulmaz)
+                </label>
+              )}
               <label>
                 <input type="radio" name="publishMode" checked={publishMode === 'yayinla'} onChange={() => setPublishMode('yayinla')} disabled={running} /> Yayınla (listede görünsün)
               </label>
@@ -315,7 +380,11 @@ export default function BookBulkAddClient() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-sm" onClick={() => { setItems(null); setSummaryMsg(''); }} disabled={running}>← Metne dön</button>
               <button className="btn btn-primary" onClick={handleInsertAll} disabled={running || includedCount === 0}>
-                {running ? `Ekleniyor… ${progress.done}/${progress.total}` : `${includedCount} eseri ekle`}
+                {running
+                  ? `İşleniyor… ${progress.done}/${progress.total}`
+                  : updateQueued > 0
+                    ? `${includedCount - updateQueued} ekle · ${updateQueued} güncelle`
+                    : `${includedCount} eseri ekle`}
               </button>
             </div>
           </div>
@@ -383,7 +452,8 @@ export default function BookBulkAddClient() {
                       </td>
                       <td>
                         <div className="book-status">
-                          {item.status === 'done' && <span className="book-ok">✓ Eklendi</span>}
+                          {item.status === 'done' && <span className="book-ok">{item.result === 'guncellendi' ? '✓ Güncellendi' : '✓ Eklendi'}</span>}
+                          {item.status === 'idle' && item.exists && item.include && <span className="form-hint" style={{ margin: 0, fontSize: 11 }}>Sitede var · güncellenecek</span>}
                           {item.status === 'saving' && <span>…</span>}
                           {item.status !== 'done' && issues.map((m) => <span key={m} className="bulk-warning">{m}</span>)}
                         </div>

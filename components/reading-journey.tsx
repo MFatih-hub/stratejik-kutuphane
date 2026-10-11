@@ -30,6 +30,73 @@ function Cells({ items, nextId }: { items: JourneyItem[]; nextId: number | null 
   );
 }
 
+// Durak sayısı bunu aşarsa her durağın karelerini göstermek sayfayı çok
+// uzatır: o zaman sadece içinde bulunulan durak kareleriyle, diğerleri
+// ilerleme şeridi + açılır liste olarak gösterilir.
+const COMPACT_AFTER = 16;
+
+function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref: (name: string) => string }) {
+  const { items, next, modules } = journey;
+  const nextId = next?.id ?? null;
+  const activeIdx = Math.max(0, modules.findIndex((m) => m.name === next?.module));
+  const active = modules[activeIdx];
+  const activeItems = items.filter((i) => i.module === active.name);
+  const doneModules = modules.filter((m) => m.total > 0 && m.written === m.total).length;
+
+  return (
+    <div className="journey-compact">
+      <div className="journey-current">
+        <div className="journey-module-head">
+          <Link href={moduleHref(active.name)} className="journey-module-name">
+            <span className="journey-module-idx">Durak {activeIdx + 1} / {modules.length}</span> {active.name}
+          </Link>
+          <span className="journey-module-meta">
+            {active.firstOrder != null && `#${active.firstOrder}–${active.lastOrder} · `}{active.written}/{active.total}
+          </span>
+        </div>
+        <div className="journey-bar"><div className="journey-bar-fill" style={{ width: `${pct(active.written, active.total)}%` }} /></div>
+        <Cells items={activeItems} nextId={nextId} />
+      </div>
+
+      <div className="journey-track-head">
+        <span>Yolculuğun tamamı</span>
+        <span>{doneModules} / {modules.length} durak tamamlandı</span>
+      </div>
+      <div className="journey-track" role="list" aria-label="Duraklar">
+        {modules.map((m, idx) => (
+          <Link
+            key={m.name}
+            href={moduleHref(m.name)}
+            role="listitem"
+            className={`journey-seg${idx === activeIdx ? ' is-active' : ''}${m.written === m.total && m.total > 0 ? ' is-done' : ''}`}
+            style={{ flexGrow: m.total }}
+            title={`${String(idx + 1).padStart(2, '0')} · ${m.name} · ${m.written}/${m.total}`}
+            aria-label={`${m.name}: ${m.written}/${m.total}`}
+          >
+            <span className="journey-seg-fill" style={{ height: `${pct(m.written, m.total)}%` }} />
+          </Link>
+        ))}
+      </div>
+
+      <details className="journey-all">
+        <summary>Tüm durakları göster ({modules.length})</summary>
+        <ol className="journey-all-list">
+          {modules.map((m, idx) => (
+            <li key={m.name} className={idx === activeIdx ? 'is-active' : ''}>
+              <Link href={moduleHref(m.name)} className="journey-all-item">
+                <span className="journey-module-idx">{String(idx + 1).padStart(2, '0')}</span>
+                <span className="journey-all-name">{m.name}</span>
+                <span className="journey-module-meta">{m.firstOrder != null && `#${m.firstOrder} · `}{m.written}/{m.total}</span>
+                <span className="journey-bar journey-all-bar"><span className="journey-bar-fill" style={{ width: `${pct(m.written, m.total)}%`, display: 'block' }} /></span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </details>
+    </div>
+  );
+}
+
 export default function ReadingJourney({ journey, moduleHref }: { journey: Journey; moduleHref: (name: string) => string }) {
   const { items, total, written, next, lastWritten, modules } = journey;
   if (total === 0) return null;
@@ -65,7 +132,9 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
         )}
       </div>
 
-      {modules.length > 0 ? (
+      {modules.length > COMPACT_AFTER ? (
+        <CompactModules journey={journey} moduleHref={moduleHref} />
+      ) : modules.length > 0 ? (
         <div className="journey-modules">
           {modules.map((m, idx) => {
             const modItems = items.filter((i) => i.module === m.name);

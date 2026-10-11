@@ -1474,3 +1474,28 @@ a.journey-module-name:hover { color: var(--accent); }
   .site-nav a, .site-nav .nav-text { white-space: nowrap; }
 }
 .related-post-card:not(:has(.related-post-image)) .related-post-body { padding-top: 14px; border-top: 2px solid var(--accent); }
+
+/* ============== OKUMA YOLCULUĞU: ÇOK DURAKLI (KOMPAKT) GÖRÜNÜM ============== */
+.journey-current { padding: 14px 16px; border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: 1.25rem; }
+.journey-current .journey-module-name { font-size: 15px; color: var(--accent); white-space: normal; }
+.journey-current .journey-bar { margin: 6px 0 10px; }
+.journey-track-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+.journey-track { display: flex; gap: 2px; height: 34px; align-items: stretch; padding: 3px 2px; }
+.journey-seg { position: relative; min-width: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; display: block; }
+.journey-seg-fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); }
+.journey-seg:hover { outline: 1.5px solid var(--accent); outline-offset: 1px; z-index: 1; }
+.journey-seg.is-active { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 1; }
+.journey-all { margin-top: 1rem; }
+.journey-all summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.journey-all-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 0 1.5rem; }
+.journey-all-list li { border-bottom: 0.5px solid var(--border); }
+.journey-all-list li.is-active .journey-all-name { color: var(--accent); font-weight: 600; }
+.journey-all-item { display: grid; grid-template-columns: 26px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: baseline; padding: 7px 0; }
+.journey-all-item:hover .journey-all-name { color: var(--accent); }
+.journey-all-name { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
+.journey-all-bar { grid-column: 2 / 4; height: 3px; margin-top: 4px; }
+@media (max-width: 760px) {
+  .journey-track { height: 26px; gap: 0; overflow: hidden; }
+  .journey-seg { min-width: 0; border-radius: 0; box-shadow: inset -1px 0 0 var(--bg-card); }
+  .journey-all-list { grid-template-columns: 1fr; }
+}
