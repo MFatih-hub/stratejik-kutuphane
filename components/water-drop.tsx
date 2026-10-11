@@ -1,80 +1,26 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { buildEngine, playDrop, playWater, RainModel, rnd, logRnd, type Engine } from '@/lib/rain-audio';
 
 // Sayfanın sol alt köşesinde, ekranın kenarından taşan durgun bir su yüzeyi.
-// Birkaç saniyede bir yukarıdan bir damla düşer; suya değdiği an halkalar
-// açılır ve (ses açıksa) yumuşak bir damla sesi çıkar.
+// Birkaç saniyede bir yukarıdan bir damla düşer; arada "tane tane" yağmur:
+// rastgele aralıklarla, rastgele perdelerde, farklı türde damlalar (suya
+// plink, yüzeye tık, yaprağa yumuşak vuruş, ince damlacık, ara sıra iri blup).
+// Suya düşenler yüzeyde minik halkalar bırakır.
 //
-// Ses dosyası yok: damla sesi Web Audio ile üretilir (kısa, yukarı kayan bir
-// sinüs "plip" + hafif yankı). Tarayıcılar ilk tıklama/tuş basımından önce ses
+// Ses dosyası yok: hepsi Web Audio ile üretilir (sinüs ve filtrelenmiş
+// gürültü + hafif yankı, sağ-sol konum ve uzaklık rastgele). Tarayıcılar ilk tıklama/tuş basımından önce ses
 // çalmaya izin vermediği için ses, sayfayla ilk etkileşimde başlar.
 // Uygulama düzeni (layout) sayfalar arasında korunduğu için gezinirken kesilmez.
 
 const SOUND_KEY = 'zh-sound';
 export const SOUND_EVENT = 'zh-sound-change';
 
-function makeImpulse(ctx: AudioContext, seconds = 2.2, decay = 3.2) {
-  const rate = ctx.sampleRate;
-  const len = Math.floor(rate * seconds);
-  const buf = ctx.createBuffer(2, len, rate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = buf.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-  }
-  return buf;
-}
-
-type Engine = { ctx: AudioContext; out: GainNode; wet: ConvolverNode };
-
 function createEngine(): Engine | null {
   const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
   if (!AC) return null;
-  const ctx: AudioContext = new AC();
-  const out = ctx.createGain();
-  out.gain.value = 0.09; // çok kısık
-  const wet = ctx.createConvolver();
-  wet.buffer = makeImpulse(ctx);
-  const wetGain = ctx.createGain();
-  wetGain.gain.value = 0.42;
-  wet.connect(wetGain).connect(out);
-  out.connect(ctx.destination);
-  return { ctx, out, wet };
-}
-
-function playDrop(e: Engine) {
-  const { ctx, out, wet } = e;
-  const t = ctx.currentTime + 0.01;
-  const base = 520 + Math.random() * 260; // her damla biraz farklı
-
-  // Ana "plip": kısa, yukarı kayan sinüs
-  const o = ctx.createOscillator();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(base, t);
-  o.frequency.exponentialRampToValueAtTime(base * 2.6, t + 0.06);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.9, t + 0.004);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-  o.connect(g);
-  g.connect(out);
-  g.connect(wet);
-  o.start(t);
-  o.stop(t + 0.25);
-
-  // Suyun içinden gelen alçak, yumuşak bir "dum"
-  const o2 = ctx.createOscillator();
-  o2.type = 'sine';
-  o2.frequency.setValueAtTime(base * 0.42, t + 0.01);
-  o2.frequency.exponentialRampToValueAtTime(base * 0.3, t + 0.18);
-  const g2 = ctx.createGain();
-  g2.gain.setValueAtTime(0.0001, t);
-  g2.gain.exponentialRampToValueAtTime(0.25, t + 0.012);
-  g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-  o2.connect(g2);
-  g2.connect(wet);
-  o2.start(t);
-  o2.stop(t + 0.32);
+  return buildEngine(new AC());
 }
 
 export default function WaterDrop() {
@@ -90,7 +36,7 @@ export default function WaterDrop() {
     const start = () => {
       if (!soundOn.current) return;
       if (!engine.current) engine.current = createEngine();
-      engine.current?.ctx.resume().catch(() => {});
+      (engine.current?.ctx as AudioContext | undefined)?.resume().catch(() => {});
       armed.current = true;
     };
     const onGesture = () => start();
@@ -101,7 +47,7 @@ export default function WaterDrop() {
       const on = (ev as CustomEvent<boolean>).detail;
       soundOn.current = on;
       if (on) start();
-      else engine.current?.ctx.suspend().catch(() => {});
+      else (engine.current?.ctx as AudioContext | undefined)?.suspend().catch(() => {});
     };
     window.addEventListener(SOUND_EVENT, onChange);
     return () => {
@@ -111,31 +57,79 @@ export default function WaterDrop() {
     };
   }, []);
 
-  // Damla döngüsü: düşüş ~1.1 sn, sonra halkalar + ses; 4–5,5 sn'de bir
+  const ripplesRef = useRef<HTMLDivElement>(null);
+
+  /** Su yüzeyinin görünen kısmında rastgele bir noktada minik halka. */
+  const ripple = (delayMs: number) => {
+    const host = ripplesRef.current;
+    if (!host || host.childElementCount > 7) return;
+    let x = 0, y = 0;
+    for (let i = 0; i < 8; i++) {
+      x = rnd(100, 262); y = rnd(18, 72);
+      if (((x - 150) / 112) ** 2 + ((y - 76) / 58) ** 2 < 1) break;
+    }
+    const el = document.createElement('span');
+    el.className = 'pond-mini';
+    const w = rnd(26, 70);
+    el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * 0.28}px;animation-delay:${delayMs}ms`;
+    el.addEventListener('animationend', () => el.remove());
+    host.appendChild(el);
+  };
+
+  const audioReady = () => soundOn.current && armed.current && !!engine.current && engine.current.ctx.state === 'running';
+
+  // Büyük damla: yukarıdan düşer (~1.1 sn), suya değince halkalar + plink; 4–5,5 sn'de bir
   useEffect(() => {
     let alive = true;
     let fallTimer: ReturnType<typeof setTimeout>;
     let nextTimer: ReturnType<typeof setTimeout>;
     const FALL = 1100;
-
     const cycle = () => {
       if (!alive) return;
       if (document.hidden) { nextTimer = setTimeout(cycle, 2000); return; }
       setPhase((p) => p + 1);
       fallTimer = setTimeout(() => {
-        if (soundOn.current && armed.current && engine.current && engine.current.ctx.state === 'running') {
-          playDrop(engine.current);
-        }
+        if (audioReady()) playWater(engine.current!, engine.current!.ctx.currentTime + 0.005, logRnd(340, 1300), rnd(0.45, 1), rnd(0, 0.5));
       }, FALL);
-      nextTimer = setTimeout(cycle, 4000 + Math.random() * 1500);
+      // 3–10 sn, düzensiz: metronom hissi vermesin
+      nextTimer = setTimeout(cycle, 3000 + Math.random() * Math.random() * 7000);
     };
     nextTimer = setTimeout(cycle, 1200);
     return () => { alive = false; clearTimeout(fallTimer); clearTimeout(nextTimer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tane tane yağmur: rastgele aralıklarla (ortalama saniyede ~3, yavaşça
+  // sıklaşıp seyrelen) farklı türde damlalar; suya düşenler halka bırakır.
+  useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const model = new RainModel();
+    let lastGap = 0.3;
+    let sinceBed = 0;
+    const tick = () => {
+      if (!alive) return;
+      if (document.hidden) { timer = setTimeout(tick, 1500); return; }
+      const { gap, kind } = model.next(lastGap);
+      if (audioReady()) {
+        const e = engine.current!;
+        playDrop(e, kind);
+        sinceBed += lastGap;
+        if (sinceBed > 2) { model.driftBed(e, e.ctx.currentTime); sinceBed = 0; }
+      }
+      if (kind === 'su' || kind === 'blup' || (kind === 'sicrama' && Math.random() < 0.5)) ripple(0);
+      lastGap = gap;
+      timer = setTimeout(tick, gap * 1000);
+    };
+    timer = setTimeout(tick, 800);
+    return () => { alive = false; clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="pond" aria-hidden="true">
       <div className="pond-water" />
+      <div className="pond-minis" ref={ripplesRef} />
       {phase > 0 && (
         <div className="pond-anim" key={phase}>
           <span className="pond-drop" />

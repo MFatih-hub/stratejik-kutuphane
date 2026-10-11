@@ -2002,3 +2002,17 @@ body.writing-mode .site-header { visibility: hidden; }
 @media (max-width: 700px) { .pond { transform: scale(0.72); transform-origin: 0 100%; } }
 @media (prefers-reduced-motion: reduce) { .pond-anim { display: none; } }
 @media print { .pond { display: none; } }
+.pond-minis { position: absolute; inset: 0; }
+.pond-mini {
+  position: absolute;
+  border: 1px solid var(--pond-ring);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.1);
+  animation: pond-mini 1.9s cubic-bezier(0.2, 0.6, 0.35, 1) forwards;
+}
+@keyframes pond-mini {
+  0% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .pond-minis { display: none; } }

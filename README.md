@@ -99,7 +99,7 @@ Sakin, metalik ve yormayan bir görünüm: hiçlik içinde tek bir küçük ış
 - **Işıltı** (`components/calm.tsx` → `Glint`): sitedeki tek hareket, 7 saniyede bir yavaşça nefes alır; okuma yolculuğunda "sıradaki eser" odur. `prefers-reduced-motion` açıksa durur.
 - **Logo ve sekme ikonu:** metalik disk + ufuk çizgisi + minik ışık. Ana sayfa hero'sunda durgun deniz çizimi (`SeaHorizon`).
 - **Rozetler** (`components/milestones.tsx`): ince bir çizgi üstünde yıldızlar — kazanılanlar ışıldar.
-- **Durgun su ve damla** (`components/water-drop.tsx`): sol alt köşede kenardan taşan su yüzeyine birkaç saniyede bir damla düşer, halkalar açılır. Damla sesi dosyasız, Web Audio ile üretilir (kısık); tarayıcı kuralı gereği sayfayla ilk tıklama/tuşta başlar, başlıktaki damla düğmesiyle kapatılır (tercih hatırlanır).
+- **Durgun su ve damla** (`components/water-drop.tsx`): sol alt köşede kenardan taşan su yüzeyine birkaç saniyede bir damla düşer, halkalar açılır. Arkada "tane tane" yağmur sesi (`lib/rain-audio.ts`): her damla canlı sentezlenir (Minnaert kabarcık modeli + çarpma tıkı, altı farklı damla türü, rastgele perde/uzaklık/konum), yoğunluk ve tür karışımı yavaşça sürüklenir, uzun bir gürültü zemini kayar — hiçbir şey döngüye girmez. Ses dosyası yoktur (kısık); tarayıcı kuralı gereği sayfayla ilk tıklama/tuşta başlar, başlıktaki damla düğmesiyle kapatılır (tercih hatırlanır).
 - **Sayfa altı:** her gün değişen kısa bir söz (`lib/quotes.ts`). **404:** "Burada yalnızca durgun su var".
 
 ## 🎨 Kategoriler
