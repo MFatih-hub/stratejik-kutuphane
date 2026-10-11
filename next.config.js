@@ -7,11 +7,17 @@ const nextConfig = {
       teknoloji: 'muhendislik', jeopolitik: 'politika', bilim: 'sosyoloji',
       ekonomi: 'finans', dusunce: 'felsefe', turkiye: 'tarih',
     };
-    return Object.entries(map).map(([from, to]) => ({
-      source: `/kategori/${from}`,
-      destination: `/kategori/${to}`,
-      permanent: true,
-    }));
+    return [
+      ...Object.entries(map).map(([from, to]) => ({
+        source: `/kategori/${from}`,
+        destination: `/kategori/${to}`,
+        permanent: true,
+      })),
+      // Okuma Bülteni bölümü kaldırıldı; eski bağlantılar ana sayfaya gider
+      { source: '/okuma-bulteni', destination: '/', permanent: false },
+      { source: '/okuma-bulteni/:path*', destination: '/', permanent: false },
+      { source: '/admin/okuma-bulteni/:path*', destination: '/admin', permanent: false },
+    ];
   },
   images: {
     remotePatterns: [

@@ -46,7 +46,6 @@ export function getCategoryColor(slug: string) {
 export const POST_TYPES = [
   { value: 'yazi', label: 'Yazı', pluralLabel: 'Yazılar', basePath: '/yazi' },
   { value: 'kitap_tahlili', label: 'Kitap Tahlili', pluralLabel: 'Kitap Tahlilleri', basePath: '/kitap-tahlilleri' },
-  { value: 'okuma_bulteni', label: 'Okuma Bülteni Linki', pluralLabel: 'Okuma Bülteni', basePath: '/okuma-bulteni' },
 ] as const;
 
 export type PostType = (typeof POST_TYPES)[number]['value'];

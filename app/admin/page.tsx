@@ -1,187 +1,179 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, POST_TYPES, getPostTypeInfo, getPostUrl, formatDate, timeAgo, hasRealContent } from '@/lib/helpers';
+import { CATEGORIES, formatDate, timeAgo, hasRealContent } from '@/lib/helpers';
+import { STATUS_LABELS, type ReadingStatus } from '@/lib/reading';
 
 export const revalidate = 0;
 
-const VALID_TABS = ['tumu', 'yazi', 'kitap_tahlili', 'okuma_bulteni'];
+// İçerik yönetimi: kitap tahlilleri (okuma listesi) ve yazılar.
+// Eskiden bütün kayıtlar tek seferde çekiliyordu; 3.650+ eserle yavaşlamasın
+// diye artık sayfa sayfa (50'şer), filtre ve aramayla çalışır.
+const PAGE = 50;
+type Tur = 'kitap_tahlili' | 'yazi';
+type Durum = 'hepsi' | ReadingStatus | 'taslak';
+type Params = { tur?: string; durum?: string; q?: string; sayfa?: string };
 
-// PostgREST tek istekte en fazla 1000 satır döndürür; bu yüzden sayfa sayfa çekiyoruz.
-const PAGE_SIZE = 1000;
-const MAX_PAGES = 50; // güvenlik tavanı (50.000 kayıt)
+const DURUMLAR: { value: Durum; label: string }[] = [
+  { value: 'hepsi', label: 'Hepsi' },
+  { value: 'okunuyor', label: 'Okunuyor' },
+  { value: 'okundu', label: 'Tahlil bekliyor' },
+  { value: 'yazildi', label: 'Tahlili yazıldı' },
+  { value: 'sirada', label: 'Sırada' },
+  { value: 'taslak', label: 'Taslak' },
+];
 
-async function fetchAllPosts(supabase: ReturnType<typeof createClient>) {
-  const all: any[] = [];
-
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const from = page * PAGE_SIZE;
-
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .order('id', { ascending: false }) // eşit tarihlerde sıralamayı sabitler
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) {
-      console.error('[admin] Supabase hatası:', error.message);
-      break;
-    }
-    if (!data || data.length === 0) break;
-
-    all.push(...data);
-
-    if (data.length < PAGE_SIZE) break; // son sayfa
-  }
-
-  return all;
+function cleanQuery(q?: string) {
+  return (q || '').replace(/[,()*%\\:"]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
 }
 
-export default async function AdminPage({ searchParams }: { searchParams: { tur?: string } }) {
+function href(p: Params) {
+  const sp = new URLSearchParams();
+  if (p.tur && p.tur !== 'kitap_tahlili') sp.set('tur', p.tur);
+  if (p.durum && p.durum !== 'hepsi') sp.set('durum', p.durum);
+  if (p.q) sp.set('q', p.q);
+  if (p.sayfa && p.sayfa !== '1') sp.set('sayfa', p.sayfa);
+  const s = sp.toString();
+  return `/admin${s ? `?${s}` : ''}`;
+}
+
+export default async function AdminPage({ searchParams }: { searchParams: Params }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/giris');
 
-  const allPosts = await fetchAllPosts(supabase);
-  const drafts = allPosts.filter((p) => !p.is_published);
-  const published = allPosts.filter((p) => p.is_published);
-  const totalViews = allPosts.reduce((sum, p) => sum + (p.view_count || 0), 0);
+  const tur: Tur = searchParams.tur === 'yazi' ? 'yazi' : 'kitap_tahlili';
+  const durum: Durum = DURUMLAR.some((d) => d.value === searchParams.durum) ? (searchParams.durum as Durum) : 'hepsi';
+  const q = cleanQuery(searchParams.q);
+  const page = Math.max(1, parseInt(searchParams.sayfa || '1', 10) || 1);
+  const from = (page - 1) * PAGE;
+  const cur: Params = { tur, durum, q, sayfa: String(page) };
 
-  const activeTab = searchParams?.tur && VALID_TABS.includes(searchParams.tur) ? searchParams.tur : 'tumu';
-  const byReadingOrder = (a: any, b: any) =>
-    (a.reading_order ?? Number.MAX_SAFE_INTEGER) - (b.reading_order ?? Number.MAX_SAFE_INTEGER);
-  const filterByTab = (list: any[]) => {
-    if (activeTab === 'tumu') return list;
-    const filtered = list.filter((p) => (p.post_type || 'yazi') === activeTab);
-    // Kitap tahlilleri sekmesinde okuma listesi sırası korunur
-    return activeTab === 'kitap_tahlili' ? [...filtered].sort(byReadingOrder) : filtered;
-  };
-  const visibleDrafts = filterByTab(drafts);
-  const visiblePublished = filterByTab(published);
+  const count = (fn: (x: any) => any) => fn(supabase.from('posts').select('id', { count: 'exact', head: true }));
+  const [kitapAll, yaziAll, okunuyor, okundu, yazildi] = await Promise.all([
+    count((x) => x.eq('post_type', 'kitap_tahlili')),
+    count((x) => x.eq('post_type', 'yazi')),
+    count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okunuyor')),
+    count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okundu')),
+    count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'yazildi')),
+  ]);
+  const statusReady = !okunuyor.error;
+
+  let list = supabase.from('posts').select('*', { count: 'exact' }).eq('post_type', tur);
+  if (q) {
+    const num = /^#?(\d{1,5})$/.exec(q);
+    list = num && tur === 'kitap_tahlili'
+      ? list.eq('reading_order', parseInt(num[1], 10))
+      : list.or(tur === 'kitap_tahlili' ? `title.ilike.%${q}%,book_author.ilike.%${q}%` : `title.ilike.%${q}%`);
+  }
+  if (durum === 'taslak') list = list.eq('is_published', false);
+  else if (durum === 'sirada' && statusReady) list = list.is('reading_status', null).eq('content', '');
+  else if (durum !== 'hepsi' && statusReady && tur === 'kitap_tahlili') list = list.eq('reading_status', durum);
+
+  list = tur === 'kitap_tahlili'
+    ? list.order('reading_order', { ascending: true, nullsFirst: false }).order('id', { ascending: true })
+    : list.order('updated_at', { ascending: false });
+  const { data: rows, count: total, error } = await list.range(from, from + PAGE - 1);
+  if (error) console.error('[admin] Supabase hatası:', error.message);
+
+  const posts = rows || [];
+  const pages = Math.max(1, Math.ceil((total || 0) / PAGE));
 
   return (
     <>
       <div className="admin-header">
         <div>
-          <h1 className="admin-title">İçerik Yönetimi</h1>
-          <p className="admin-sub">Yazılarını, kitap tahlillerini ve okuma bülteni linklerini buradan yönet</p>
+          <h1 className="admin-title">İçerik</h1>
+          <p className="admin-sub">Okuma listesi, tahliller ve yazılar</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/admin/analiz" className="btn btn-sm">📊 Analiz</Link>
-          <Link href="/admin/okuma-bulteni/toplu-ekle" className="btn btn-sm">🔗 Bülten: Toplu Ekle</Link>
-          <Link href="/admin/kitap-tahlilleri/toplu-ekle" className="btn btn-sm">📚 Tahlil: Toplu Ekle</Link>
-          <Link href="/admin/yazi/yeni?tur=kitap_tahlili" className="btn btn-sm">📚 Yeni Kitap Tahlili</Link>
-          <Link href="/admin/yazi/yeni?tur=okuma_bulteni" className="btn btn-sm">🔗 Yeni Bülten Linki</Link>
-          <Link href="/admin/yazi/yeni" className="btn btn-primary">✍️ Yeni Yazı</Link>
+          <Link href="/admin/bugun" className="btn btn-primary">Bugün</Link>
+          <Link href="/admin/notlar" className="btn btn-sm">Fişler</Link>
+          <Link href="/admin/harita" className="btn btn-sm">Zihin haritası</Link>
+          <Link href="/admin/kitap-tahlilleri/toplu-ekle" className="btn btn-sm">Tahlil: Toplu Ekle</Link>
+          <Link href="/admin/yazi/yeni" className="btn btn-sm">Yeni Yazı</Link>
+          <Link href="/admin/analiz" className="btn btn-sm">Analiz</Link>
         </div>
       </div>
 
       <div className="admin-stats">
-        <div className="stat-card">
-          <span className="stat-label">Toplam</span>
-          <span className="stat-value">{allPosts.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Yayında</span>
-          <span className="stat-value">{published.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Taslak</span>
-          <span className="stat-value">{drafts.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Görüntülenme</span>
-          <span className="stat-value">{totalViews}</span>
-        </div>
+        <div className="stat-card"><span className="stat-label">Okuma listesi</span><span className="stat-value">{kitapAll.count || 0}</span></div>
+        <div className="stat-card"><span className="stat-label">Okunuyor</span><span className="stat-value">{statusReady ? okunuyor.count || 0 : '—'}</span></div>
+        <div className="stat-card"><span className="stat-label">Tahlil bekliyor</span><span className="stat-value">{statusReady ? okundu.count || 0 : '—'}</span></div>
+        <div className="stat-card"><span className="stat-label">Tahlili yazıldı</span><span className="stat-value">{statusReady ? yazildi.count || 0 : '—'}</span></div>
       </div>
 
-      <div className="admin-tabs" role="tablist" aria-label="İçerik türüne göre filtrele">
-        <Link href="/admin" className={`admin-tab${activeTab === 'tumu' ? ' admin-tab-active' : ''}`}>
-          Tümü <span className="count-badge">{allPosts.length}</span>
-        </Link>
-        {POST_TYPES.map((t) => {
-          const count = allPosts.filter((p) => (p.post_type || 'yazi') === t.value).length;
-          return (
-            <Link key={t.value} href={`/admin?tur=${t.value}`} className={`admin-tab${activeTab === t.value ? ' admin-tab-active' : ''}`}>
-              {t.pluralLabel} <span className="count-badge">{count}</span>
-            </Link>
-          );
-        })}
-      </div>
-
-      {visibleDrafts.length > 0 && (
-        <section className="admin-section">
-          <h2 className="admin-section-title">
-            Taslaklar <span className="count-badge">{visibleDrafts.length}</span>
-          </h2>
-          <div className="admin-posts">
-            {visibleDrafts.map((post) => (
-              <PostRow key={post.id} post={post} isDraft />
-            ))}
-          </div>
-        </section>
+      {!statusReady && (
+        <div className="today-banner">Okuma durumları ve fişler için Supabase'de <code>SUPABASE-MIGRATION-v5.sql</code> dosyasını çalıştır.</div>
       )}
+
+      <div className="admin-tabs" role="tablist">
+        <Link href={href({ tur: 'kitap_tahlili' })} className={`admin-tab${tur === 'kitap_tahlili' ? ' admin-tab-active' : ''}`}>
+          Kitap Tahlilleri <span className="count-badge">{kitapAll.count || 0}</span>
+        </Link>
+        <Link href={href({ tur: 'yazi' })} className={`admin-tab${tur === 'yazi' ? ' admin-tab-active' : ''}`}>
+          Yazılar <span className="count-badge">{yaziAll.count || 0}</span>
+        </Link>
+      </div>
+
+      <div className="admin-filters">
+        <div className="category-bar" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>
+          {DURUMLAR.filter((d) => tur === 'kitap_tahlili' || d.value === 'hepsi' || d.value === 'taslak').map((d) => (
+            <Link key={d.value} href={href({ ...cur, durum: d.value, sayfa: '1' })} className={`category-pill${durum === d.value ? ' category-pill-active' : ''}`}>
+              {d.label}
+            </Link>
+          ))}
+        </div>
+        <form action="/admin" className="book-search" style={{ border: 'none', padding: 0, margin: '12px 0 0' }}>
+          {tur !== 'kitap_tahlili' && <input type="hidden" name="tur" value={tur} />}
+          {durum !== 'hepsi' && <input type="hidden" name="durum" value={durum} />}
+          <input name="q" defaultValue={q} className="input" placeholder={tur === 'kitap_tahlili' ? 'Eser, yazar ya da #sıra…' : 'Başlık…'} />
+          <button className="btn btn-sm" type="submit">Ara</button>
+          {q && <Link href={href({ ...cur, q: '', sayfa: '1' })} className="btn btn-sm">Temizle</Link>}
+        </form>
+      </div>
 
       <section className="admin-section">
         <h2 className="admin-section-title">
-          Yayındaki İçerikler <span className="count-badge">{visiblePublished.length}</span>
+          {total || 0} kayıt {pages > 1 && <span className="count-badge">sayfa {page}/{pages}</span>}
         </h2>
-        {visiblePublished.length === 0 ? (
-          <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-            {activeTab === 'tumu' ? 'Henüz yayınlanmış içerik yok.' : 'Bu türde henüz yayınlanmış içerik yok.'}
-          </p>
+        {posts.length === 0 ? (
+          <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Bu filtreyle kayıt yok.</p>
         ) : (
           <div className="admin-posts">
-            {visiblePublished.map((post) => (
-              <PostRow key={post.id} post={post} />
-            ))}
+            {posts.map((post: any) => <PostRow key={post.id} post={post} />)}
           </div>
+        )}
+        {pages > 1 && (
+          <nav className="pager">
+            {page > 1 ? <Link className="btn btn-sm" href={href({ ...cur, sayfa: String(page - 1) })}>← Önceki</Link> : <span />}
+            <span>Sayfa {page} / {pages}</span>
+            {page < pages ? <Link className="btn btn-sm" href={href({ ...cur, sayfa: String(page + 1) })}>Sonraki →</Link> : <span />}
+          </nav>
         )}
       </section>
     </>
   );
 }
 
-function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
+function PostRow({ post }: { post: any }) {
   const category = CATEGORIES.find((c) => c.slug === post.category);
-  const typeInfo = getPostTypeInfo(post.post_type);
-  const isBulletin = post.post_type === 'okuma_bulteni';
-  const hasComment = isBulletin && post.content && post.content.replace(/<[^>]+>/g, '').trim().length > 0;
   const isBook = post.post_type === 'kitap_tahlili';
-  const bookWritten = isBook && hasRealContent(post.content);
+  const written = isBook && hasRealContent(post.content);
+  const status: ReadingStatus | null = post.reading_status || (written ? 'yazildi' : null);
+  const base = isBook ? '/kitap-tahlilleri' : '/yazi';
   return (
     <div className="admin-post-row">
       <div className="admin-post-info">
         <div className="admin-post-meta">
-          {post.post_type && post.post_type !== 'yazi' && (
-            <span className="type-badge">{typeInfo.label}</span>
-          )}
           {category && (
-            <span className="post-category" style={{
-              background: `${category.color}15`, color: category.color
-            }}>
-              {category.name}
-            </span>
+            <span className="post-category" style={{ background: `${category.color}15`, color: category.color }}>{category.name}</span>
           )}
-          {isDraft && <span className="draft-badge">Taslak</span>}
-          {isBook && (
-            <span className="draft-badge" style={{ background: bookWritten ? undefined : '#f0e6d6' }}>
-              {bookWritten ? '📝 Tahlil yazıldı' : 'Not yok'}
-            </span>
-          )}
-          {isBulletin && !isDraft && (
-            <span className="draft-badge" style={{ background: hasComment ? undefined : '#f0e6d6' }}>
-              {hasComment ? '💬 Yorumlu' : 'Yorum yok'}
-            </span>
-          )}
-          <span className="admin-post-date">
-            {isDraft ? `${timeAgo(post.updated_at)} düzenlendi` : formatDate(post.published_at)}
-          </span>
-          {!isDraft && (
-            <span className="admin-post-views">
-              👁 {post.view_count || 0}
-            </span>
+          {!post.is_published && <span className="draft-badge">Taslak</span>}
+          {isBook && status && <span className={`status-badge status-${status}`}>{STATUS_LABELS[status]}</span>}
+          {isBook && post.reading_module && <span className="admin-post-date">{post.reading_module}</span>}
+          {!isBook && (
+            <span className="admin-post-date">{post.is_published ? formatDate(post.published_at) : `${timeAgo(post.updated_at)} düzenlendi`}</span>
           )}
         </div>
         <h3 className="admin-post-title">
@@ -189,15 +181,11 @@ function PostRow({ post, isDraft }: { post: any; isDraft?: boolean }) {
           {post.title}
         </h3>
         {isBook && post.book_author && <p className="admin-post-subtitle">{post.book_author}</p>}
-        {post.subtitle && <p className="admin-post-subtitle">{post.subtitle}</p>}
-        {isBulletin && post.source_name && (
-          <p className="admin-post-subtitle">Kaynak: {post.source_name}</p>
-        )}
       </div>
       <div className="admin-post-actions">
-        <Link href={getPostUrl(post)} className="btn btn-sm">Önizle</Link>
+        <Link href={`${base}/${post.slug}`} className="btn btn-sm">Önizle</Link>
         <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm btn-primary">
-          {isBulletin && !hasComment ? 'Yorum ekle' : isBook && !bookWritten ? 'Not yaz' : 'Düzenle'}
+          {isBook && !written ? 'Tahlil yaz' : 'Düzenle'}
         </Link>
       </div>
     </div>

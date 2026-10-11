@@ -9,8 +9,9 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 2. Sol menüden **SQL Editor** → **New query**
 3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
 4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
-5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (Okuma Bülteni + Kitap Tahlilleri bölümleri için `post_type` ve kaynak alanlarını ekler)
-6. Ardından `SUPABASE-MIGRATION-v4.sql`'i çalıştır (Kitap Tahlilleri için `book_author`, `reading_order` ve `reading_module` alanlarını ekler — daha önce çalıştırdıysan tekrar çalıştırmak güvenli)
+5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (içerik türleri için `post_type` ve kaynak alanlarını ekler)
+6. Ardından `SUPABASE-MIGRATION-v4.sql`'i ve `SUPABASE-MIGRATION-v5.sql`'i çalıştır (v5: okuma durumu, fişler, okuma günleri)
+   — v4: (Kitap Tahlilleri için `book_author`, `reading_order` ve `reading_module` alanlarını ekler — daha önce çalıştırdıysan tekrar çalıştırmak güvenli)
 7. "...hazır" yazan mesajları görmelisin ✓
 
 > Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** eksik olan migration dosyalarını çalıştırman yeterli — hepsi eklemelidir, hiçbir yazını silmez.
@@ -73,6 +74,22 @@ Görüntülenme sayacı artık güvenli şekilde çalışıyor: eski sürümde s
 
 Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutusu, başlık/özet/etiketlerde anlık arama yapar. Türkçe karakterler (İ/I, ı/i) doğru şekilde eşleşir.
 
+## 📖 Günlük Kullanım: Bugün, Fişler, Harita
+
+Site artık okuma sürecini de taşır (önce `SUPABASE-MIGRATION-v5.sql` çalıştırılmalı):
+
+- **`/admin/bugun` — Bugün:** okuduğun eser(ler), kaldığın sayfa, hızlı fiş kutusu (Not / Alıntı / Soru, sayfa numarası, Ctrl+Enter), o esere ait fişler (düzenle/sil), "Bitirdim", "Tahlili yaz". Yanda: *Bugün hatırla* (her gün bir haftadan eski bir fiş), *Tempo* (son 30 gün, sıradaki eşik ve listenin sonu için tahmini tarih, son 120 günün okuma noktaları) ve *Tahlil bekleyenler*.
+- **Okuma durumu** (`posts.reading_status`): sırada → okunuyor → okundu (tahlil bekliyor) → yazıldı. Tahlil içeriği dolunca veritabanı tetikleyicisi durumu kendiliğinden "yazıldı" yapar.
+- **Fişler** (`notes` tablosu, sadece admin görür): `/admin/notlar` tam metin arama + türe göre filtre.
+- **Çevrimdışı:** bağlantı yokken alınan fiş tarayıcıda saklanır, bağlantı gelince gönderilir.
+- **Editör:** kitap tahlilinde sağ panelde o eserin fişleri — "Metne ekle" ile imlecin olduğu yere eklenir. "Yazma modu" (Esc ile çıkış) her şeyi karartır; sadece metin, ufuk ve ışıltı kalır.
+- **`[[bağlantılar]]`:** fişte ya da tahlilde `[[#247]]`, `[[Etika]]`, `[[Spinoza, Etika]]` → `/eser?ad=…` esere yönlendirir. Tahlil sayfasında "Bu esere değinen tahliller" listelenir. `/admin/harita`: bütün bağlar ufuk çizgisi üzerinde yaylar olarak.
+- **Telefon:** site ana ekrana eklenebilir (manifest + ikon); açılınca doğrudan Bugün gelir.
+- **Admin listesi** sayfalı (50'şer), duruma göre filtre ve `#sıra` / başlık / yazar araması.
+- **Dokunuşlar:** ışıltı tahlil sayısıyla çok yavaş güçlenir; bir durak bitince bir kerelik parlar. Tema düğmesi varsayılan *Otomatik*: İstanbul'da gün batımından sonra Gece Denizi. Uzun metinlerde yazı boyu / satır aralığı ayarı.
+
+**Okuma Bülteni bölümü kaldırıldı** (sayfalar, API, toplu ekleme). Veritabanındaki eski bülten kayıtları silinmedi; eski adresler ana sayfaya yönlenir.
+
 ## 🌊 Görsel Dil: Durgun Deniz
 
 Sakin, metalik ve yormayan bir görünüm: hiçlik içinde tek bir küçük ışıltı.
@@ -103,21 +120,8 @@ Site üç ayrı, birbirine karışmayan bölümde yayın yapar. Hepsi aynı `pos
 |---|---|---|---|
 | Yazı | `yazi` | `/yazi/…` | Kendi denemelerin/analizlerin. Ana sayfa ve kategori sayfaları sadece bunları listeler. |
 | Kitap Tahlili | `kitap_tahlili` | `/kitap-tahlilleri/…` | Okuduğun kitaplar üzerine tahliller — kendi ayrı bölümü. |
-| Okuma Bülteni | `okuma_bulteni` | `/okuma-bulteni/…` | Zihin Haritası Okuma Bülteni'nden paylaşılan linkler + özetleri. |
 
 `/admin`'deki **"İçerik Türü"** seçiciyle (yeni yazı / düzenleme ekranında) bir kaydın türünü belirlersin.
-
-### Okuma Bülteni linkleri nasıl çalışır (retweet + alıntı mantığı)
-
-Bir Okuma Bülteni kaydının `content` alanı (normal yazılarda "yazı gövdesi" olan alan) burada **senin o linke yazdığın yorum** için kullanılır — Twitter/X'te bir şeyi retweet edip altına kendi yorumunu eklemek gibi:
-
-1. **Kaynak Adı**, **Kaynak URL** ve **Kaynağın Özeti** alanlarını doldurup yayınla — link+özet siteye çıkar, yorum alanı boş kalabilir.
-2. İstediğin zaman `/admin`'den o kaydı aç, editördeki ana metin alanına (artık "Yorumun" olarak etiketlenir) yorumunu yaz, kaydet.
-3. `/okuma-bulteni/senin-linkin` sayfası artık hem alıntılanan kaynağı (kutu içinde, kaynağa link vererek) hem de altında senin yorumunu gösterir. Yorum yoksa o bölüm hiç görünmez — sayfa sade bir paylaşım gibi kalır.
-
-### Toplu ekleme (elle)
-
-Tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kullanılabilir: `Kategori:`, `Başlık:`, `Kaynak:`, `URL:`, `Özet:` etiketleriyle yazılmış, boş satırla ayrılmış bloklar halinde metin yapıştırılır, önizlenir (kategori otomatik tahmin edilir, elle düzeltilebilir) ve tek seferde eklenir.
 
 ### Kitap Tahlilleri toplu ekleme (okuma listesi → site)
 
@@ -130,13 +134,9 @@ Tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kull
 
 Sonra `/admin?tur=kitap_tahlili` sekmesinde (okuma sırasına göre dizili) bir esere "Not yaz" deyip tahlil notunu editörde yazarsın. Editörün sağ panelinde **Yazar** ve **Okuma listesindeki sıra** alanları da düzenlenebilir.
 
-**Okuma yolculuğu:** `/kitap-tahlilleri` sayfasının başında her eser bir kare olarak görünür (tahlili yazılan dolu, sıradaki eser yanıp sönen çerçeveli). "Şu an buradayım" = tahlili yazılmamış en küçük sıra numaralı eser; "En son tamamlanan" = en son güncellenen tahlil. Eserlere Durak verilmişse kareler duraklara ayrılır (16'dan fazla durak varsa kompakt görünüm: sadece içinde bulunulan durağın kareleri, altında tüm yolculuğu gösteren durak şeridi ve açılır durak listesi) ve her durağın ilerleme çubuğu görünür (durak adına tıklayınca liste o durağa süzülür, `?modul=`). Tahlil sayfasında okuma listesindeki önceki/sonraki eser bağlantıları vardır. Ana sayfada Okuma Bülteni'nin son paylaşımları ve bu yolculuğun özeti gösterilir.
+**Okuma yolculuğu:** `/kitap-tahlilleri` sayfasının başında her eser bir kare olarak görünür (tahlili yazılan dolu, sıradaki eser yanıp sönen çerçeveli). "Şu an buradayım" = tahlili yazılmamış en küçük sıra numaralı eser; "En son tamamlanan" = en son güncellenen tahlil. Eserlere Durak verilmişse kareler duraklara ayrılır (16'dan fazla durak varsa kompakt görünüm: sadece içinde bulunulan durağın kareleri, altında tüm yolculuğu gösteren durak şeridi ve açılır durak listesi) ve her durağın ilerleme çubuğu görünür (durak adına tıklayınca liste o durağa süzülür, `?modul=`). Tahlil sayfasında okuma listesindeki önceki/sonraki eser bağlantıları vardır. Ana sayfada son tahliller ve bu yolculuğun özeti gösterilir.
 
 `/kitap-tahlilleri` sayfası eserleri okuma sırasına göre, 100'erli sayfalar halinde listeler; "Tüm liste / Tahlili yazılanlar / Sırada bekleyenler" filtresi, alan filtresi, eser/yazar araması ve ilerleme çubuğu vardır. Tahlili yazılmış eserler bağlantılıdır; notu henüz yazılmamış eserlerin sayfası "tahlil henüz yazılmadı" der, arama motorlarına kapalıdır (noindex) ve sitemap'e ve site aramasına girmez.
-
-### Otomatik gönderim (scheduled task → site)
-
-`app/api/okuma-bulteni` (`POST`), "Zihin Haritası Okuma Bülteni" scheduled task'ının doğrudan siteye yazması için var. Kimlik doğrulama Supabase login'i değil, `x-bulletin-secret` header'ındaki paylaşımlı bir sırla yapılır — scheduled task'a hiçbir zaman Supabase servis anahtarı verilmez, sadece bu dar-yetkili sır. Gövde: `[{title, source, url, category, summary}, …]` (en fazla 60 öğe). Aynı `source_url` daha önce eklenmişse atlanır (idempotent). Kurulum için `.env.example`'daki `SUPABASE_SERVICE_ROLE_KEY` ve `BULLETIN_API_SECRET` değişkenlerini Vercel'e ekle.
 
 ## 🛠️ Yerel Geliştirme
 
@@ -159,11 +159,7 @@ app/
   kitap-tahlilleri/
     page.tsx                        # Kitap Tahlilleri listesi
     [slug]/page.tsx                 # Kitap Tahlili detay
-  okuma-bulteni/
-    page.tsx                        # Okuma Bülteni listesi (kategori filtresiyle)
-    [slug]/page.tsx                 # Tekil link + alıntı bloğu + yorum
   api/
-    okuma-bulteni/route.ts          # Scheduled task'ın siteye otomatik yazdığı uç nokta
   giris/page.tsx                    # Admin giriş
   admin/
     page.tsx                        # İçerik yönetim paneli (tür sekmeleriyle)
@@ -171,10 +167,6 @@ app/
       page.tsx                      # Okuyucu analitiği (sunucu tarafı veri)
       analytics-client.tsx          # Canlı akış + grafikler
     cikis/page.tsx                  # Çıkış
-    okuma-bulteni/
-      toplu-ekle/
-        page.tsx                    # Toplu ekleme (auth guard)
-        bulk-add-client.tsx         # Yapıştır → ayrıştır → önizle → ekle
     kitap-tahlilleri/
       toplu-ekle/
         page.tsx                    # Kitap tahlili toplu ekleme (auth guard)

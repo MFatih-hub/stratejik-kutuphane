@@ -13,7 +13,6 @@ export default function NotFound() {
       <div className="not-found-actions">
         <Link href="/" className="btn btn-primary">Ana sayfaya dön</Link>
         <Link href="/kitap-tahlilleri" className="btn">Okuma yolculuğu</Link>
-        <Link href="/okuma-bulteni" className="btn">Okuma Bülteni</Link>
       </div>
     </section>
   );

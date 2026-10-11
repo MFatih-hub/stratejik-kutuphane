@@ -32,6 +32,7 @@ async function loadPosts(): Promise<SearchPost[]> {
       .from('posts')
       .select('id, slug, title, excerpt, tags, category, published_at, post_type')
       .eq('is_published', true)
+      .neq('post_type', 'okuma_bulteni')
       .or('post_type.neq.kitap_tahlili,content.neq.""')
       .order('published_at', { ascending: false })
       .order('id', { ascending: false })

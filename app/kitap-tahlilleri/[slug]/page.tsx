@@ -6,6 +6,9 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, hasRealContent } from '@/lib/helpers';
+import { extractWikiLinks, linkifyWikiHtml } from '@/lib/reading';
+import { resolveLinkText } from '@/lib/wiki-server';
+import ReadingSettings from '@/components/reading-settings';
 import { extractHeadings } from '@/lib/content';
 import PostContent from '@/components/post-content';
 import ReadingProgress from '@/components/reading-progress';
@@ -112,6 +115,25 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
     nextItem = (n.data || [])[0] || null;
   }
 
+  // Bu esere [[...]] ile değinen yayındaki tahliller
+  const backlinks: any[] = [];
+  {
+    const { data: sources } = await supabase.from('posts')
+      .select('id, slug, title, book_author, reading_order, content')
+      .eq('is_published', true).eq('post_type', 'kitap_tahlili')
+      .neq('id', post.id).ilike('content', '%[[%').limit(300);
+    const cache = new Map<string, number | null>();
+    for (const src of sources || []) {
+      const raws = extractWikiLinks((src.content || '').replace(/<[^>]+>/g, ' '));
+      for (const raw of raws) {
+        const key = raw.toLowerCase();
+        if (!cache.has(key)) cache.set(key, (await resolveLinkText(supabase, raw))?.id ?? null);
+        if (cache.get(key) === post.id) { backlinks.push(src); break; }
+      }
+      if (cache.size > 120) break; // aşırı yükten kaçın
+    }
+  }
+
   const category = CATEGORIES.find((c) => c.slug === post.category);
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
   const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
@@ -213,11 +235,12 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
         </div>
       )}
 
+      {written && <ReadingSettings />}
       {headings.length >= 3 && <TableOfContents headings={headings} />}
 
       <div id="post-article-body">
         {written ? (
-          <PostContent content={post.content} format={post.content_format} />
+          <PostContent content={post.content_format === 'html' ? linkifyWikiHtml(post.content) : post.content} format={post.content_format} />
         ) : (
           <div className="empty-state" style={{ padding: '2.5rem 1rem' }}>
             <Horizon />
@@ -237,6 +260,17 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
             <span key={tag} className="post-tag">#{tag}</span>
           ))}
         </div>
+      )}
+
+      {backlinks.length > 0 && (
+        <section className="backlinks">
+          <h3 className="post-footer-title">Bu esere değinen tahliller</h3>
+          <ul>
+            {backlinks.map((b) => (
+              <li key={b.id}><Link href={`/kitap-tahlilleri/${b.slug}`}><span className="today-no">#{b.reading_order}</span> {b.title}</Link>{b.book_author && <span className="book-author"> · {b.book_author}</span>}</li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {(prevItem || nextItem) && (

@@ -20,28 +20,19 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const supabase = createClient();
-  const [{ data: posts }, { data: bulletin }, journey] = await Promise.all([
+  const [{ data: posts }, journey] = await Promise.all([
     supabase
       .from('posts')
       .select('*')
       .eq('is_published', true)
       .eq('post_type', 'yazi')
       .order('published_at', { ascending: false }),
-    supabase
-      .from('posts')
-      .select('id, slug, title, source_name, category, published_at')
-      .eq('is_published', true)
-      .eq('post_type', 'okuma_bulteni')
-      .order('published_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(6),
     fetchJourneySummary(supabase),
   ]);
 
   const postList = posts || [];
-  const bulletinList = bulletin || [];
   const journeyPct = journey.total ? Math.round((journey.written / journey.total) * 1000) / 10 : 0;
-  const hasShowcase = bulletinList.length > 0 || journey.total > 0;
+  const hasShowcase = journey.total > 0;
   const featured = postList[0];
   const rest = postList.slice(1);
 
@@ -75,7 +66,10 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
       />
 
-      <section className="blog-hero blog-hero-sea">
+      <section
+        className="blog-hero blog-hero-sea"
+        style={{ ['--glint-boost' as any]: Math.min(1, Math.sqrt(journey.written / Math.max(1, journey.total))).toFixed(3) }}
+      >
         <SeaHorizon />
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
@@ -149,29 +143,30 @@ export default async function HomePage() {
 
       {hasShowcase && (
         <section className="showcase" aria-label="Bölümler">
-          {bulletinList.length > 0 && (
-            <div className="showcase-panel">
-              <div className="showcase-head">
-                <span className="showcase-kicker">Okuma Bülteni</span>
-                <Link href="/okuma-bulteni" className="showcase-more">Tümü →</Link>
-              </div>
-              <h2 className="showcase-title">Son paylaşımlar</h2>
+          <div className="showcase-panel">
+            <div className="showcase-head">
+              <span className="showcase-kicker">Kitap Tahlilleri</span>
+              <Link href="/kitap-tahlilleri?durum=yazilan" className="showcase-more">Tümü →</Link>
+            </div>
+            <h2 className="showcase-title">Son tahliller</h2>
+            {journey.recent.length > 0 ? (
               <ul className="showcase-list">
-                {bulletinList.map((b: any) => (
-                  <li key={b.id}>
-                    <Link href={`/okuma-bulteni/${b.slug}`} className="showcase-item">
-                      <span className="showcase-item-title">{b.title}</span>
+                {journey.recent.map((r: any) => (
+                  <li key={r.slug}>
+                    <Link href={`/kitap-tahlilleri/${r.slug}`} className="showcase-item">
+                      <span className="showcase-item-title">{r.title}</span>
                       <span className="showcase-item-meta">
-                        <span style={{ color: getCategoryColor(b.category) }}>{getCategoryName(b.category)}</span>
-                        {b.source_name && <> · {b.source_name}</>}
-                        {' · '}{formatDate(b.published_at)}
+                        {r.reading_order != null && <>#{r.reading_order} · </>}
+                        {r.book_author || ''}{r.book_author ? ' · ' : ''}{formatDate(r.updated_at)}
                       </span>
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="showcase-note" style={{ fontStyle: 'italic' }}>İlk tahlil, sakin bir sabah yazılacak.</p>
+            )}
+          </div>
 
           {journey.total > 0 && (
             <div className="showcase-panel showcase-panel-journey">
@@ -200,21 +195,6 @@ export default async function HomePage() {
                 </Link>
               )}
 
-              {journey.recent.length > 0 && (
-                <>
-                  <p className="showcase-sub">Son tahliller</p>
-                  <ul className="showcase-list">
-                    {journey.recent.map((r: any) => (
-                      <li key={r.slug}>
-                        <Link href={`/kitap-tahlilleri/${r.slug}`} className="showcase-item">
-                          <span className="showcase-item-title">{r.title}</span>
-                          <span className="showcase-item-meta">{r.book_author || ''}{r.book_author ? ' · ' : ''}{formatDate(r.updated_at)}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
             </div>
           )}
         </section>

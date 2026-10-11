@@ -44,6 +44,7 @@ export const metadata: Metadata = {
   icons: {
     icon: FAVICON,
   },
+  appleWebApp: { capable: true, title: 'Zihin', statusBarStyle: 'black-translucent' },
   formatDetection: {
     email: false,
     address: false,
@@ -97,8 +98,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf8f3' },
-    { media: '(prefers-color-scheme: dark)', color: '#16140f' },
+    { media: '(prefers-color-scheme: light)', color: '#f1f2f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0c0f' },
   ],
 };
 
@@ -183,10 +184,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <HeaderSiteSearch />
               <ThemeToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
-              <Link href="/okuma-bulteni"><span className="nav-text">Okuma Bülteni</span></Link>
               <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
               {user && (
                 <>
+                  <Link href="/admin/bugun"><span className="nav-text">Bugün</span></Link>
                   <Link href="/admin"><span className="nav-text">Admin</span></Link>
                   <Link href="/admin/cikis"><span className="nav-text">Çıkış</span></Link>
                 </>

@@ -84,7 +84,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
     applyCommon(
       supabase
         .from('posts')
-        .select('id, slug, title, book_author, reading_order, category, content, published_at', { count: 'exact' })
+        .select('id, slug, title, book_author, reading_order, category, content, published_at, reading_status', { count: 'exact' })
     ),
     durum
   )
@@ -227,7 +227,13 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
                     >
                       {getCategoryName(post.category)}
                     </span>
-                    {written ? <span className="book-badge book-badge-done">Tahlil →</span> : <span className="book-badge">Sırada</span>}
+                    {written
+                      ? <span className="book-badge book-badge-done">Tahlil →</span>
+                      : post.reading_status === 'okunuyor'
+                        ? <span className="book-badge book-badge-reading">Okunuyor</span>
+                        : post.reading_status === 'okundu'
+                          ? <span className="book-badge">Okundu</span>
+                          : <span className="book-badge">Sırada</span>}
                   </span>
                 </>
               );

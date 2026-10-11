@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase-browser';
 import { CATEGORIES, POST_TYPES, getPostTypeInfo, slugify, stripHtml, generateExcerptFromHtml } from '@/lib/helpers';
 import { SANITIZE_CONFIG } from '@/lib/content';
 import type { RichTextEditorStats } from '@/components/rich-text-editor';
+import NotesPanel from './notes-panel';
 
 const RichTextEditor = dynamic(() => import('@/components/rich-text-editor'), {
   ssr: false,
@@ -65,6 +66,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const isBook = postType === 'kitap_tahlili';
 
   const [saving, setSaving] = useState(false);
+  const [insertRequest, setInsertRequest] = useState<{ key: number; html: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState('');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -331,6 +333,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
             onChange={(html) => { setContent(html); markDirty(); }}
             onStatsChange={setStats}
             onImageUpload={uploadImage}
+            insertRequest={insertRequest}
           />
           {!(isBulletin && stripHtml(content).length === 0) && (
             <p className="editor-reading-time">~{readingMinutes} dakika okuma süresi</p>
@@ -375,6 +378,10 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
               />
               <p className="form-hint">Liste sayfasında ve alıntı bloğunda bu özet gösterilir.</p>
             </div>
+          )}
+
+          {isBook && postId !== null && (
+            <NotesPanel postId={postId} onInsert={(html) => setInsertRequest({ key: Date.now(), html })} />
           )}
 
           {isBook && (

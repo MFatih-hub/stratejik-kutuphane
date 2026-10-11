@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Journey, JourneyItem } from '@/lib/reading-journey';
 import { Glint } from './calm';
 import Milestones from './milestones';
+import DurakFlare from './durak-flare';
 
 // Kitap Tahlilleri sayfasının başındaki "okuma yolculuğu" görünümü:
 // her eser bir kare; tahlili yazılanlar dolu, sıradaki eser işaretli.
@@ -105,7 +106,13 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
   const nextId = next?.id ?? null;
 
   return (
-    <section className="journey" aria-label="Okuma yolculuğu">
+    <section
+      className="journey"
+      aria-label="Okuma yolculuğu"
+      // Işıltı, tahlil sayısıyla birlikte çok yavaş güçlenir
+      style={{ ['--glint-boost' as any]: Math.min(1, Math.sqrt(written / Math.max(1, total))).toFixed(3) }}
+    >
+      <DurakFlare completed={modules.filter((m) => m.total > 0 && m.written === m.total).map((m) => m.name)} />
       <div className="journey-head">
         <div className="journey-stat">
           <span className="journey-stat-value">{written}<span className="journey-stat-of"> / {total}</span></span>

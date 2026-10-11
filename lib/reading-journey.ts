@@ -18,6 +18,7 @@ export type JourneyItem = {
   module: string | null;
   written: boolean;
   updatedAt: string | null;
+  status: string | null;
 };
 
 export type JourneyModule = {
@@ -54,6 +55,7 @@ async function fetchPaged(build: (from: number, to: number) => any): Promise<{ r
 }
 
 const FIELD_SETS = [
+  'id, slug, title, updated_at, book_author, reading_order, reading_module, reading_status',
   'id, slug, title, updated_at, book_author, reading_order, reading_module',
   'id, slug, title, updated_at, book_author, reading_order',
   'id, slug, title, updated_at',
@@ -87,10 +89,14 @@ export async function fetchJourney(supabase: any): Promise<Journey> {
     module: r.reading_module ? String(r.reading_module).trim() || null : null,
     written: writtenIds.has(r.id),
     updatedAt: r.updated_at ?? null,
+    status: r.reading_status ?? null,
   }));
 
   const written = items.filter((i) => i.written).length;
-  const next = items.find((i) => !i.written && i.order !== null) || items.find((i) => !i.written) || null;
+  // "Şu an buradayım": okunmakta olan eser; yoksa tahlili yazılmamış ilk eser
+  const next = items.find((i) => i.status === 'okunuyor')
+    || items.find((i) => !i.written && i.status !== 'okundu' && i.order !== null)
+    || items.find((i) => !i.written) || null;
 
   // Modüller listede ilk görüldükleri sırayla
   const modMap = new Map<string, JourneyModule>();
@@ -122,6 +128,10 @@ export async function fetchJourneySummary(supabase: any) {
 
   let nextRes: any = await supabase.from('posts')
     .select('slug, title, book_author, reading_order')
+    .eq('is_published', true).eq('post_type', 'kitap_tahlili').eq('reading_status', 'okunuyor')
+    .order('reading_order', { ascending: true, nullsFirst: false }).limit(1);
+  if (nextRes.error || !(nextRes.data || []).length) nextRes = await supabase.from('posts')
+    .select('slug, title, book_author, reading_order')
     .eq('is_published', true).eq('post_type', 'kitap_tahlili').eq('content', '')
     .order('reading_order', { ascending: true, nullsFirst: false }).limit(1);
   if (nextRes.error) nextRes = { data: [] };
@@ -129,12 +139,12 @@ export async function fetchJourneySummary(supabase: any) {
   let recentRes: any = await supabase.from('posts')
     .select('slug, title, book_author, reading_order, updated_at')
     .eq('is_published', true).eq('post_type', 'kitap_tahlili').neq('content', '')
-    .order('updated_at', { ascending: false }).limit(3);
+    .order('updated_at', { ascending: false }).limit(6);
   if (recentRes.error) {
     recentRes = await supabase.from('posts')
       .select('slug, title, updated_at')
       .eq('is_published', true).eq('post_type', 'kitap_tahlili').neq('content', '')
-      .order('updated_at', { ascending: false }).limit(3);
+      .order('updated_at', { ascending: false }).limit(6);
   }
 
   return {

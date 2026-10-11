@@ -66,9 +66,10 @@ export function SeaHorizon() {
 }
 
 /** Tema düğmesi için ince çizgi ikonları. */
-export function ThemeIcon({ name }: { name: 'moon' | 'sea' | 'sun' }) {
+export function ThemeIcon({ name }: { name: 'moon' | 'sea' | 'sun' | 'auto' }) {
   const d =
-    name === 'moon' ? 'M15.5 3.5a7.5 7.5 0 1 0 5 13 6 6 0 0 1-5-13z'
+    name === 'auto' ? 'M12 3.5a8.5 8.5 0 1 0 0 17zM12 3.5a8.5 8.5 0 0 1 0 17M3.5 12h17'
+    : name === 'moon' ? 'M15.5 3.5a7.5 7.5 0 1 0 5 13 6 6 0 0 1-5-13z'
     : name === 'sea' ? 'M3 10h18M5 14h14M8 18h8M12 3.5v2'
     : 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4';
   return (

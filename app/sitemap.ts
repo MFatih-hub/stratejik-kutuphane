@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from('posts')
       .select('slug, updated_at, published_at, post_type')
       .eq('is_published', true)
+      .neq('post_type', 'okuma_bulteni')
       .or('post_type.neq.kitap_tahlili,content.neq.""')
       .order('published_at', { ascending: false })
       .order('id', { ascending: false })
@@ -24,12 +25,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (data.length < 1000) break;
   }
 
-  // Her türden yazı: kendi URL önekinde (/yazi, /kitap-tahlilleri, /okuma-bulteni)
+  // Yazılar ve kitap tahlilleri, kendi URL öneklerinde
   const postUrls = posts.map((post) => ({
     url: `${SITE_URL}${getPostBasePath(post.post_type)}/${post.slug}`,
     lastModified: new Date(post.updated_at || post.published_at),
     changeFrequency: 'monthly' as const,
-    priority: post.post_type === 'okuma_bulteni' ? 0.5 : 0.8,
+    priority: 0.8,
   }));
 
   // Kategori sayfaları (sadece yazılar için)
@@ -42,7 +43,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Bölüm indeksleri
   const sectionUrls = [
-    { url: `${SITE_URL}/okuma-bulteni`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
     { url: `${SITE_URL}/kitap-tahlilleri`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
   ];
 

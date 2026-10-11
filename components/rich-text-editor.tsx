@@ -21,6 +21,8 @@ interface RichTextEditorProps {
   onStatsChange?: (stats: RichTextEditorStats) => void;
   onImageUpload: (file: File) => Promise<string | null>;
   placeholder?: string;
+  /** Dışarıdan metne eklenecek HTML (ör. bir fiş). `key` her istekte değişmeli. */
+  insertRequest?: { key: number; html: string } | null;
 }
 
 export default function RichTextEditor({
@@ -29,8 +31,17 @@ export default function RichTextEditor({
   onStatsChange,
   onImageUpload,
   placeholder,
+  insertRequest,
 }: RichTextEditorProps) {
   const [fullscreen, setFullscreen] = useState(false);
+  // Yazma modunda Esc ile çık
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false); };
+    document.addEventListener('keydown', onKey);
+    document.body.classList.add('writing-mode');
+    return () => { document.removeEventListener('keydown', onKey); document.body.classList.remove('writing-mode'); };
+  }, [fullscreen]);
   const [linkMenuOpen, setLinkMenuOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const linkMenuRef = useRef<HTMLDivElement>(null);
@@ -95,6 +106,16 @@ export default function RichTextEditor({
       });
     },
   });
+
+  // Dışarıdan gelen ekleme isteği: editör henüz hazır değilse bekletilir,
+  // hazır olunca bir kez uygulanır.
+  const appliedInsertKey = useRef<number | null>(null);
+  useEffect(() => {
+    if (!editor || !insertRequest || appliedInsertKey.current === insertRequest.key) return;
+    appliedInsertKey.current = insertRequest.key;
+    editor.chain().focus().insertContent(insertRequest.html).run();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertRequest?.key, editor]);
 
   useEffect(() => {
     if (editor && onStatsChange) {
@@ -287,8 +308,8 @@ export default function RichTextEditor({
         </div>
 
         <div className="rte-toolbar-group rte-toolbar-group-push">
-          <ToolbarButton label={fullscreen ? 'Tam ekrandan çık' : 'Tam ekran yaz'} onClick={() => setFullscreen((v) => !v)}>
-            {fullscreen ? 'Daralt' : 'Tam ekran'}
+          <ToolbarButton label={fullscreen ? 'Yazma modundan çık (Esc)' : 'Yazma modu: her şey kararır, sadece metin kalır'} onClick={() => setFullscreen((v) => !v)}>
+            {fullscreen ? 'Çık' : 'Yazma modu'}
           </ToolbarButton>
         </div>
       </div>
@@ -303,10 +324,16 @@ export default function RichTextEditor({
         </span>
         {fullscreen && (
           <button type="button" className="btn btn-sm" onClick={() => setFullscreen(false)}>
-            Daralt
+            Yazma modundan çık (Esc)
           </button>
         )}
       </div>
+      {fullscreen && (
+        <div className="rte-sea" aria-hidden="true">
+          <span className="rte-sea-line" />
+          <span className="glint rte-sea-glint" />
+        </div>
+      )}
     </div>
   );
 }

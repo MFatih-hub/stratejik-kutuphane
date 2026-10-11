@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate } from '@/lib/helpers';
 import { extractHeadings } from '@/lib/content';
 import PostContent from '@/components/post-content';
+import ReadingSettings from '@/components/reading-settings';
 import ReadingProgress from '@/components/reading-progress';
 import TableOfContents from '@/components/table-of-contents';
 import RelatedPosts from '@/components/related-posts';
@@ -247,6 +248,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
         </div>
       )}
 
+      <ReadingSettings />
       {headings.length >= 3 && <TableOfContents headings={headings} />}
 
       <div id="post-article-body">
