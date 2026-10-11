@@ -216,16 +216,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                           </span>
                         ))}
                       </blockquote>
-                      <div className="quote-meal">
-                        {q.verses.map((v) => (
-                          <p key={v.n}><sup>{v.n}</sup> {v.tr}</p>
-                        ))}
-                      </div>
                     </>
                   ) : (
                     <blockquote>{q.text}</blockquote>
                   )}
-                  <figcaption>{q.who}</figcaption>
+                  {!q.verses && <figcaption>{q.who}</figcaption>}
                 </figure>
               );
             })()}
