@@ -1924,3 +1924,81 @@ body.writing-mode .site-header { visibility: hidden; }
   border-color: var(--accent);
   color: var(--on-accent);
 }
+
+/* =====================================================================
+   DURGUN SU VE DAMLA — sol alt köşede, kenardan taşan su yüzeyi
+   ===================================================================== */
+:root { --pond-hi: rgba(255, 255, 255, 0.75); --pond: rgba(128, 144, 158, 0.18); --pond-ring: rgba(80, 94, 108, 0.45); }
+[data-theme="dark"] { --pond-hi: rgba(175, 190, 205, 0.10); --pond: rgba(120, 135, 150, 0.06); --pond-ring: rgba(190, 200, 212, 0.38); }
+[data-theme="blue"] { --pond-hi: rgba(160, 195, 225, 0.12); --pond: rgba(110, 150, 185, 0.08); --pond-ring: rgba(170, 200, 228, 0.40); }
+
+.pond {
+  position: fixed;
+  left: -90px;
+  bottom: -72px;
+  width: 300px;
+  height: 152px;
+  pointer-events: none;
+  z-index: 1;
+}
+.pond-water {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, var(--pond-hi) 0%, var(--pond) 55%, transparent 72%);
+}
+.pond-anim { position: absolute; left: 176px; top: 40px; width: 0; height: 0; }
+.pond-drop {
+  position: absolute;
+  left: -2.5px;
+  top: -4px;
+  width: 5px;
+  height: 7px;
+  border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%;
+  background: linear-gradient(160deg, var(--metal-3), var(--metal-2) 55%, var(--metal-4));
+  box-shadow: 0 0 4px var(--glint-halo);
+  opacity: 0;
+  animation: pond-fall 1.1s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+@keyframes pond-fall {
+  0% { transform: translateY(-160px) scaleY(0.9); opacity: 0; }
+  12% { opacity: 0.95; }
+  92% { transform: translateY(0) scaleY(1.15); opacity: 0.95; }
+  100% { transform: translateY(2px) scaleY(0.4); opacity: 0; }
+}
+.pond-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 170px;
+  height: 46px;
+  border: 1px solid var(--pond-ring);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.06);
+  animation: pond-ring 2.8s cubic-bezier(0.2, 0.6, 0.35, 1) forwards;
+}
+.pond-ring-1 { animation-delay: 1.08s; }
+.pond-ring-2 { animation-delay: 1.38s; width: 130px; height: 35px; }
+.pond-ring-3 { animation-delay: 1.72s; width: 95px; height: 26px; }
+@keyframes pond-ring {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.06); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+.pond-glint {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--glint-core);
+  box-shadow: 0 0 4px 1px var(--glint-glow), 0 0 14px 4px var(--glint-halo);
+  opacity: 0;
+  animation: pond-flash 1s ease-out 1.08s forwards;
+}
+@keyframes pond-flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+.sound-btn.is-off { opacity: 0.55; }
+@media (max-width: 700px) { .pond { transform: scale(0.72); transform-origin: 0 100%; } }
+@media (prefers-reduced-motion: reduce) { .pond-anim { display: none; } }
+@media print { .pond { display: none; } }

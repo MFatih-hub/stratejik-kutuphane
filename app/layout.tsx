@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import ThemeToggle from '@/components/theme-toggle';
+import WaterDrop, { SoundToggle } from '@/components/water-drop';
 import { HeaderSiteSearch } from '@/components/site-search';
 import { BrandMark, Glint } from '@/components/calm';
 import { FOOTER_QUOTE } from '@/lib/quotes';
@@ -183,6 +184,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="site-nav">
               <HeaderSiteSearch />
               <ThemeToggle />
+              <SoundToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
               <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
               {user && (
@@ -199,6 +201,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className="container" style={{ minHeight: 'calc(100vh - 200px)' }}>
           {children}
         </main>
+
+        <WaterDrop />
 
         <footer className="site-footer">
           <div className="container">
