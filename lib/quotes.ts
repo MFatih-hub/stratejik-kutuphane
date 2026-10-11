@@ -65,3 +65,7 @@ export function quoteOfTheDay(date = new Date()) {
   const day = Math.floor((date.getTime() + 3 * 3600_000) / 86_400_000);
   return QUOTES[day % QUOTES.length];
 }
+
+/** Sayfa altında sabit duran metin: Bakara Sûresi 30–34 (yalnızca Arapça).
+ *  Günlük dönen söze geri dönmek için layout'ta quoteOfTheDay() kullan. */
+export const FOOTER_QUOTE: Quote = QUOTES.find((q) => q.verses)!;

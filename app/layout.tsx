@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 import ThemeToggle from '@/components/theme-toggle';
 import { HeaderSiteSearch } from '@/components/site-search';
 import { BrandMark, Glint } from '@/components/calm';
-import { quoteOfTheDay } from '@/lib/quotes';
+import { FOOTER_QUOTE } from '@/lib/quotes';
 // Kur'an metni için Uthmani hattını tam destekleyen yazı tipi (siteyle birlikte
 // barındırılır; tarayıcı sadece Arapça ayet gösterildiğinde indirir, ~45 KB).
 import '@fontsource/amiri-quran/arabic-400.css';
@@ -137,7 +137,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     description: 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazıyor.',
   };
 
-  const quote = quoteOfTheDay();
+  const quote = FOOTER_QUOTE;
 
   return (
     <html lang="tr">
