@@ -11,6 +11,7 @@ type BookItem = {
   order: string; // input'ta düzenlenebilsin diye metin
   author: string;
   title: string;
+  module: string;
   categorySlug: string;
   categoryGuessed: boolean;
   exists: boolean; // sitede zaten var
@@ -45,7 +46,7 @@ function toOrder(value: string): number | null {
 
 /** Veritabanı hatasını okunur hale getirir (migration v4 çalıştırılmamışsa bunu söyler). */
 function explainError(message: string): string {
-  if (/book_author|reading_order/.test(message)) {
+  if (/book_author|reading_order|reading_module/.test(message)) {
     return 'Veritabanında yazar/sıra alanları yok — önce Supabase\'de SUPABASE-MIGRATION-v4.sql\'i çalıştır.';
   }
   return message;
@@ -102,6 +103,7 @@ export default function BookBulkAddClient() {
         order: b.order !== null ? String(b.order) : '',
         author: b.author,
         title: b.title,
+        module: b.module,
         categorySlug: resolved || defaultCategory,
         categoryGuessed: !!b.category && !resolved,
         exists,
@@ -147,6 +149,8 @@ export default function BookBulkAddClient() {
     return out;
   }
 
+  const hasModules = !!items && items.some((it) => it.module.trim());
+
   function rowFor(item: BookItem, slug: string) {
     const now = new Date().toISOString();
     const isPub = publishMode === 'yayinla';
@@ -166,6 +170,8 @@ export default function BookBulkAddClient() {
       post_type: 'kitap_tahlili',
       book_author: item.author.trim() || null,
       reading_order: toOrder(item.order),
+      // Durak alanı sadece listede durak varsa gönderilir
+      ...(hasModules ? { reading_module: item.module.trim() || null } : {}),
     };
   }
 
@@ -256,7 +262,7 @@ export default function BookBulkAddClient() {
         <section className="admin-section">
           <ol className="bulk-steps">
             <li>Excel'de <strong>Sıra · Yazar · Metin</strong> sütunlarını (başlık satırıyla birlikte ya da onsuz) seç, <kbd>Ctrl</kbd>+<kbd>C</kbd>.</li>
-            <li>Aşağıdaki kutuya <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştır. İsteğe bağlı 4. sütun: <strong>Kategori</strong>.</li>
+            <li>Aşağıdaki kutuya <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştır. İsteğe bağlı sütunlar: <strong>Kategori</strong> ve <strong>Durak</strong> (modül; okuma yolculuğunda eserleri gruplar).</li>
             <li>Önizlemede kontrol et, "ekle"ye bas. Sitede zaten olan eserler otomatik atlanır.</li>
           </ol>
           <textarea
@@ -281,7 +287,7 @@ export default function BookBulkAddClient() {
             </div>
           </div>
           <p className="form-hint" style={{ marginTop: 10 }}>
-            Etiketler: Sıra, Yazar, Metin (veya Başlık/Eser), Kategori. Kategori satırda yoksa varsayılan kategori kullanılır.
+            Etiketler: Sıra, Yazar, Metin (veya Başlık/Eser), Kategori, Durak (veya Modül). Kategori satırda yoksa varsayılan kategori kullanılır.
             Başlık "(12) Eser adı" biçimindeyse sıra numarası oradan alınır.
           </p>
         </section>
@@ -350,6 +356,7 @@ export default function BookBulkAddClient() {
                   <th style={{ width: 70 }}>Sıra</th>
                   <th style={{ width: '24%' }}>Yazar</th>
                   <th>Metin</th>
+                  {hasModules && <th style={{ width: 150 }}>Durak</th>}
                   <th style={{ width: 130 }}>Kategori</th>
                   <th style={{ width: 120 }}>Durum</th>
                 </tr>
@@ -366,6 +373,9 @@ export default function BookBulkAddClient() {
                       <td><input className="input book-cell" value={item.order} disabled={locked} onChange={(e) => updateItem(item.key, { order: e.target.value })} inputMode="numeric" /></td>
                       <td><input className="input book-cell" value={item.author} disabled={locked} onChange={(e) => updateItem(item.key, { author: e.target.value })} /></td>
                       <td><input className="input book-cell" value={item.title} disabled={locked} onChange={(e) => updateItem(item.key, { title: e.target.value })} /></td>
+                      {hasModules && (
+                        <td><input className="input book-cell" value={item.module} disabled={locked} onChange={(e) => updateItem(item.key, { module: e.target.value })} /></td>
+                      )}
                       <td>
                         <select className="select book-cell" value={item.categorySlug} disabled={locked} onChange={(e) => updateItem(item.key, { categorySlug: e.target.value, categoryGuessed: false })}>
                           {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
@@ -382,7 +392,7 @@ export default function BookBulkAddClient() {
                   );
                 })}
                 {pageItems.length === 0 && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' }}>Kontrol edilecek satır yok.</td></tr>
+                  <tr><td colSpan={hasModules ? 7 : 6} style={{ textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' }}>Kontrol edilecek satır yok.</td></tr>
                 )}
               </tbody>
             </table>

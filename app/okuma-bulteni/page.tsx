@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, formatDate, getCategoryColor, getCategoryName, stripHtml } from '@/lib/helpers';
+import { CATEGORIES, getCategoryByPath, formatDate, getCategoryColor, getCategoryName, stripHtml } from '@/lib/helpers';
 
 export const revalidate = 60;
 
@@ -63,9 +63,8 @@ async function fetchAllPosts(
 
 export default async function OkumaBulteniPage({ searchParams }: { searchParams: { kategori?: string } }) {
   const supabase = createClient();
-  const activeCategory = searchParams?.kategori && CATEGORIES.some((c) => c.slug === searchParams.kategori)
-    ? searchParams.kategori
-    : null;
+  // ?kategori= hem yeni adres parçasını (felsefe) hem eski iç değeri (dusunce) kabul eder
+  const activeCategory = getCategoryByPath(searchParams?.kategori)?.slug ?? null;
 
   const postList = await fetchAllPosts(supabase, activeCategory ?? null);
 
@@ -86,7 +85,7 @@ export default async function OkumaBulteniPage({ searchParams }: { searchParams:
         {CATEGORIES.map((c) => (
           <Link
             key={c.slug}
-            href={`/okuma-bulteni?kategori=${c.slug}`}
+            href={`/okuma-bulteni?kategori=${c.path}`}
             className={`category-pill${activeCategory === c.slug ? ' category-pill-active' : ''}`}
           >
             {c.name}

@@ -1,16 +1,33 @@
 // lib/helpers.ts — Zihin Haritası Blog
 
+// `slug`  → veritabanında (posts.category) saklanan iç değer. Değiştirme:
+//            mevcut kayıtlar bu değerle duruyor.
+// `path`  → ziyaretçinin gördüğü adres (/kategori/<path>, ?kategori=<path>).
+//            Kategori adlarıyla eşleşir. Eski adresler (iç slug'lar) hem
+//            next.config.js'teki yönlendirmelerle hem de aşağıdaki
+//            getCategoryByPath() ile yeni adrese gider.
 export const CATEGORIES = [
-  { slug: 'teknoloji', name: 'Mühendislik', description: 'Mühendislik', color: '#8b2a16' },
-  { slug: 'jeopolitik', name: 'Politika', description: 'Politika', color: '#2d5f3f' },
-  { slug: 'bilim', name: 'Sosyoloji', description: 'Sosyoloji', color: '#1d3d5c' },
-  { slug: 'ekonomi', name: 'Finans', description: 'Finans', color: '#a3691e' },
-  { slug: 'dusunce', name: 'Felsefe', description: 'Felsefe', color: '#5e3d8c' },
-  { slug: 'turkiye', name: 'Tarih', description: 'Tarih', color: '#a32d2d' },
+  { slug: 'teknoloji', path: 'muhendislik', name: 'Mühendislik', description: 'Mühendislik, savunma ve teknoloji üzerine', color: '#8b2a16' },
+  { slug: 'jeopolitik', path: 'politika', name: 'Politika', description: 'Politika, jeopolitik ve strateji üzerine', color: '#2d5f3f' },
+  { slug: 'bilim', path: 'sosyoloji', name: 'Sosyoloji', description: 'Toplum ve sosyoloji üzerine', color: '#1d3d5c' },
+  { slug: 'ekonomi', path: 'finans', name: 'Finans', description: 'Finans ve ekonomi üzerine', color: '#a3691e' },
+  { slug: 'dusunce', path: 'felsefe', name: 'Felsefe', description: 'Felsefe ve düşünce üzerine', color: '#5e3d8c' },
+  { slug: 'turkiye', path: 'tarih', name: 'Tarih', description: 'Tarih üzerine', color: '#a32d2d' },
 ];
 
 export function getCategoryBySlug(slug: string) {
   return CATEGORIES.find((c) => c.slug === slug) || null;
+}
+
+/** Adresteki kategori parçasını (yeni path ya da eski slug) kategoriye çevirir. */
+export function getCategoryByPath(value?: string | null) {
+  if (!value) return null;
+  return CATEGORIES.find((c) => c.path === value) || CATEGORIES.find((c) => c.slug === value) || null;
+}
+
+/** İç slug'dan ziyaretçinin göreceği adres parçasını verir. */
+export function getCategoryPath(slug: string): string {
+  return getCategoryBySlug(slug)?.path || slug;
 }
 
 export function getCategoryName(slug: string) {

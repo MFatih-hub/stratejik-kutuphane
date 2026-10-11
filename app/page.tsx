@@ -5,6 +5,7 @@ import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib/helpers';
 import { InlineSiteSearch } from '@/components/site-search';
+import { fetchJourneySummary } from '@/lib/reading-journey';
 
 export const revalidate = 60;
 
@@ -12,20 +13,34 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphan
 
 export const metadata: Metadata = {
   title: 'Zihin Haritası — Muhammet Fatih Işık',
-  description: 'Not defteri',
+  description: 'Muhammet Fatih Işık\'ın mühendislik, politika, sosyoloji, finans, felsefe ve tarih üzerine denemeleri, okuma bülteni ve kitap tahlilleri.',
   alternates: { canonical: SITE_URL },
 };
 
 export default async function HomePage() {
   const supabase = createClient();
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('is_published', true)
-    .eq('post_type', 'yazi')
-    .order('published_at', { ascending: false });
+  const [{ data: posts }, { data: bulletin }, journey] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('*')
+      .eq('is_published', true)
+      .eq('post_type', 'yazi')
+      .order('published_at', { ascending: false }),
+    supabase
+      .from('posts')
+      .select('id, slug, title, source_name, category, published_at')
+      .eq('is_published', true)
+      .eq('post_type', 'okuma_bulteni')
+      .order('published_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(6),
+    fetchJourneySummary(supabase),
+  ]);
 
   const postList = posts || [];
+  const bulletinList = bulletin || [];
+  const journeyPct = journey.total ? Math.round((journey.written / journey.total) * 1000) / 10 : 0;
+  const hasShowcase = bulletinList.length > 0 || journey.total > 0;
   const featured = postList[0];
   const rest = postList.slice(1);
 
@@ -66,7 +81,7 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Kağıt fiyatları çok arttı.
+          Mühendislik, politika, sosyoloji, finans, felsefe ve tarih üzerine denemeler, okuma notları ve kitap tahlilleri.
         </p>
         <div className="hero-search">
           <InlineSiteSearch />
@@ -75,13 +90,13 @@ export default async function HomePage() {
 
       <section className="category-bar" aria-label="Kategoriler">
         {CATEGORIES.map((c) => (
-          <Link key={c.slug} href={`/kategori/${c.slug}`} className="category-pill">
+          <Link key={c.slug} href={`/kategori/${c.path}`} className="category-pill">
             {c.name}
           </Link>
         ))}
       </section>
 
-      {postList.length === 0 && (
+      {postList.length === 0 && !hasShowcase && (
         <div className="empty-state">
           <div className="empty-state-icon">✍️</div>
           <p className="empty-state-text">
@@ -127,6 +142,80 @@ export default async function HomePage() {
             </div>
           </Link>
         </article>
+      )}
+
+
+      {hasShowcase && (
+        <section className="showcase" aria-label="Bölümler">
+          {bulletinList.length > 0 && (
+            <div className="showcase-panel">
+              <div className="showcase-head">
+                <span className="showcase-kicker">Okuma Bülteni</span>
+                <Link href="/okuma-bulteni" className="showcase-more">Tümü →</Link>
+              </div>
+              <h2 className="showcase-title">Son paylaşımlar</h2>
+              <ul className="showcase-list">
+                {bulletinList.map((b: any) => (
+                  <li key={b.id}>
+                    <Link href={`/okuma-bulteni/${b.slug}`} className="showcase-item">
+                      <span className="showcase-item-title">{b.title}</span>
+                      <span className="showcase-item-meta">
+                        <span style={{ color: getCategoryColor(b.category) }}>{getCategoryName(b.category)}</span>
+                        {b.source_name && <> · {b.source_name}</>}
+                        {' · '}{formatDate(b.published_at)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {journey.total > 0 && (
+            <div className="showcase-panel showcase-panel-journey">
+              <div className="showcase-head">
+                <span className="showcase-kicker">Kitap Tahlilleri</span>
+                <Link href="/kitap-tahlilleri" className="showcase-more">Okuma yolculuğu →</Link>
+              </div>
+              <h2 className="showcase-title">
+                {journey.written} <span className="showcase-title-of">/ {journey.total} eser</span>
+              </h2>
+              <div className="journey-bar" style={{ margin: '6px 0 4px' }}>
+                <div className="journey-bar-fill" style={{ width: `${journeyPct}%` }} />
+              </div>
+              <p className="showcase-note">%{journeyPct} tamamlandı</p>
+
+              {journey.next && (
+                <Link href={`/kitap-tahlilleri/${journey.next.slug}`} className="journey-here showcase-here">
+                  <span className="journey-here-pin" aria-hidden="true" />
+                  <span className="journey-here-text">
+                    <span className="journey-here-label">Şu an buradayım</span>
+                    <span className="journey-here-title">
+                      {journey.next.reading_order != null && <span className="journey-here-no">#{journey.next.reading_order}</span>} {journey.next.title}
+                    </span>
+                    {journey.next.book_author && <span className="journey-here-author">{journey.next.book_author}</span>}
+                  </span>
+                </Link>
+              )}
+
+              {journey.recent.length > 0 && (
+                <>
+                  <p className="showcase-sub">Son tahliller</p>
+                  <ul className="showcase-list">
+                    {journey.recent.map((r: any) => (
+                      <li key={r.slug}>
+                        <Link href={`/kitap-tahlilleri/${r.slug}`} className="showcase-item">
+                          <span className="showcase-item-title">{r.title}</span>
+                          <span className="showcase-item-meta">{r.book_author || ''}{r.book_author ? ' · ' : ''}{formatDate(r.updated_at)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       {rest.length > 0 && (

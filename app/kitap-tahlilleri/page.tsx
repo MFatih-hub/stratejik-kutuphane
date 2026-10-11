@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, getCategoryColor, getCategoryName } from '@/lib/helpers';
+import { CATEGORIES, getCategoryByPath, getCategoryColor, getCategoryName } from '@/lib/helpers';
+import { fetchJourney } from '@/lib/reading-journey';
+import ReadingJourney from '@/components/reading-journey';
 
 export const revalidate = 60;
 
@@ -29,7 +31,7 @@ const DURUMLAR: { value: Durum; label: string }[] = [
   { value: 'bekleyen', label: 'Sırada bekleyenler' },
 ];
 
-type Params = { sayfa?: string; durum?: string; kategori?: string; q?: string };
+type Params = { sayfa?: string; durum?: string; kategori?: string; modul?: string; q?: string };
 
 /** PostgREST `or()` filtresini bozabilecek karakterleri temizler. */
 function cleanQuery(q?: string): string {
@@ -53,15 +55,20 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   const supabase = createClient();
 
   const durum: Durum = DURUMLAR.some((d) => d.value === searchParams?.durum) ? (searchParams.durum as Durum) : 'tumu';
-  const kategori = searchParams?.kategori && CATEGORIES.some((c) => c.slug === searchParams.kategori) ? searchParams.kategori : '';
+  // Adreste yeni kategori adı (felsefe) ya da eski iç değer (dusunce) olabilir
+  const kategoriCat = getCategoryByPath(searchParams?.kategori);
+  const kategori = kategoriCat?.slug || '';
+  const modul = (searchParams?.modul || '').trim().slice(0, 120);
   const q = cleanQuery(searchParams?.q);
   const pageNum = Math.max(1, parseInt(searchParams?.sayfa || '1', 10) || 1);
-  const current: Params = { durum, kategori, q, sayfa: String(pageNum) };
+  const current: Params = { durum, kategori: kategoriCat?.path || '', modul, q, sayfa: String(pageNum) };
+  const showJourney = !q && !kategori && !modul && durum === 'tumu' && pageNum === 1;
 
   // Ortak filtreler (durum hariç) — sekme sayaçları için de kullanılır
   const applyCommon = (query: any) => {
     let qq = query.eq('is_published', true).eq('post_type', 'kitap_tahlili');
     if (kategori) qq = qq.eq('category', kategori);
+    if (modul) qq = qq.eq('reading_module', modul);
     if (q) qq = qq.or(`title.ilike.%${q}%,book_author.ilike.%${q}%`);
     return qq;
   };
@@ -87,10 +94,11 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   const countQuery = (d: Durum) =>
     applyDurum(applyCommon(supabase.from('posts').select('id', { count: 'exact', head: true })), d);
 
-  let [{ data: rows, count, error }, totalRes, writtenRes] = await Promise.all([
+  let [{ data: rows, count, error }, totalRes, writtenRes, journey] = await Promise.all([
     listQuery,
     countQuery('tumu'),
     countQuery('yazilan'),
+    showJourney ? fetchJourney(supabase) : Promise.resolve(null),
   ]);
 
   if (error) {
@@ -103,6 +111,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
       .eq('is_published', true)
       .eq('post_type', 'kitap_tahlili');
     if (kategori) fallback = fallback.eq('category', kategori);
+    if (modul) fallback = fallback.eq('id', -1); // durak alanı yoksa durak filtresi boş döner
     if (q) fallback = fallback.ilike('title', `%${q}%`);
     if (durum === 'yazilan') fallback = fallback.neq('content', '');
     if (durum === 'bekleyen') fallback = fallback.eq('content', '');
@@ -129,7 +138,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
         <p className="blog-hero-sub">
           Okuma listesi ve okunan eserler üzerine notlar. Tahlili yazılan eserler bağlantılıdır.
         </p>
-        {totalCount > 0 && (
+        {totalCount > 0 && !journey && (
           <div className="book-progress" aria-label="Tahlil ilerlemesi">
             <div className="book-progress-track">
               <div className="book-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -140,6 +149,17 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
           </div>
         )}
       </section>
+
+      {journey && (
+        <ReadingJourney journey={journey} moduleHref={(name) => buildHref(current, { modul: name, sayfa: '1' })} />
+      )}
+
+      {modul && (
+        <div className="book-module-banner">
+          Durak: <strong>{modul}</strong>
+          <Link href={buildHref(current, { modul: '', sayfa: '1' })} className="btn btn-sm">× Tüm liste</Link>
+        </div>
+      )}
 
       <section className="book-filters" aria-label="Filtreler">
         <div className="category-bar" style={{ marginBottom: 10 }}>
@@ -160,7 +180,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
           {CATEGORIES.map((c) => (
             <Link
               key={c.slug}
-              href={buildHref(current, { kategori: c.slug, sayfa: '1' })}
+              href={buildHref(current, { kategori: c.path, sayfa: '1' })}
               className={`category-pill${kategori === c.slug ? ' category-pill-active' : ''}`}
             >
               {c.name}
@@ -169,7 +189,8 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
         </div>
         <form method="get" action="/kitap-tahlilleri" className="book-search">
           {durum !== 'tumu' && <input type="hidden" name="durum" value={durum} />}
-          {kategori && <input type="hidden" name="kategori" value={kategori} />}
+          {current.kategori && <input type="hidden" name="kategori" value={current.kategori} />}
+          {modul && <input type="hidden" name="modul" value={modul} />}
           <input type="search" name="q" defaultValue={q} className="input" placeholder="Eser ya da yazar ara…" />
           <button type="submit" className="btn btn-sm">Ara</button>
           {q && <Link href={buildHref(current, { q: '', sayfa: '1' })} className="btn btn-sm">Temizle</Link>}
@@ -210,7 +231,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
                 </>
               );
               return (
-                <li key={post.id} className={`book-item${written ? ' book-item-written' : ''}`}>
+                <li key={post.id} id={post.reading_order != null ? `eser-${post.reading_order}` : undefined} className={`book-item${written ? ' book-item-written' : ''}`}>
                   {written ? (
                     <Link href={`/kitap-tahlilleri/${post.slug}`} className="book-item-inner">{inner}</Link>
                   ) : (

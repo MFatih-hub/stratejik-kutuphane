@@ -1,19 +1,19 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, getCategoryBySlug, formatDate } from '@/lib/helpers';
+import { CATEGORIES, getCategoryByPath, formatDate } from '@/lib/helpers';
 
 export const revalidate = 60;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const category = getCategoryBySlug(params.slug);
+  const category = getCategoryByPath(params.slug);
   if (!category) return { title: 'Kategori bulunamadı' };
 
-  const url = `${SITE_URL}/kategori/${category.slug}`;
+  const url = `${SITE_URL}/kategori/${category.path}`;
   return {
     title: category.name,
     description: `${category.name} kategorisindeki tüm yazılar. ${category.description}`,
@@ -31,12 +31,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // Tüm kategori sayfalarını önceden build et (SEO için)
 export async function generateStaticParams() {
-  return CATEGORIES.map((c) => ({ slug: c.slug }));
+  return CATEGORIES.map((c) => ({ slug: c.path }));
 }
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = getCategoryBySlug(params.slug);
+  const category = getCategoryByPath(params.slug);
   if (!category) notFound();
+  if (params.slug !== category.path) permanentRedirect(`/kategori/${category.path}`);
 
   const supabase = createClient();
   const { data: posts } = await supabase
@@ -44,7 +45,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
     .select('*')
     .eq('is_published', true)
     .eq('post_type', 'yazi')
-    .eq('category', params.slug)
+    .eq('category', category.slug)
     .order('published_at', { ascending: false });
 
   const postList = posts || [];
@@ -64,8 +65,8 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
       <section className="category-bar">
         <Link href="/" className="category-pill">← Tüm yazılar</Link>
-        {CATEGORIES.filter((c) => c.slug !== params.slug).map((c) => (
-          <Link key={c.slug} href={`/kategori/${c.slug}`} className="category-pill">
+        {CATEGORIES.filter((c) => c.slug !== category.slug).map((c) => (
+          <Link key={c.slug} href={`/kategori/${c.path}`} className="category-pill">
             {c.name}
           </Link>
         ))}

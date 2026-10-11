@@ -57,6 +57,8 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const [sourceUrl, setSourceUrl] = useState(post?.source_url || '');
   const [sourceSummary, setSourceSummary] = useState(post?.source_summary || '');
   const [bookAuthor, setBookAuthor] = useState(post?.book_author || '');
+  const [readingModule, setReadingModule] = useState(post?.reading_module || '');
+  const hadModule = !!post?.reading_module;
   const [readingOrder, setReadingOrder] = useState(post?.reading_order != null ? String(post.reading_order) : '');
   const typeInfo = getPostTypeInfo(postType);
   const isBulletin = postType === 'okuma_bulteni';
@@ -75,7 +77,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const latestRef = useRef<any>(null);
   latestRef.current = {
     postId, title, subtitle, content, excerpt, coverUrl, category, tags, isPublished, slug, stats,
-    postType, sourceName, sourceUrl, sourceSummary, bookAuthor, readingOrder,
+    postType, sourceName, sourceUrl, sourceSummary, bookAuthor, readingOrder, readingModule,
   };
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -220,6 +222,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
       const orderNum = parseInt(String(s.readingOrder).replace(/\D+/g, ''), 10);
       payload.book_author = s.bookAuthor.trim() || null;
       payload.reading_order = Number.isFinite(orderNum) ? orderNum : null;
+      if (s.readingModule.trim() || hadModule) payload.reading_module = s.readingModule.trim() || null;
     }
 
     if (shouldPublish && !s.isPublished) {
@@ -394,6 +397,14 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
                 placeholder="Örn. 12"
               />
               <p className="form-hint">Kitap Tahlilleri sayfası bu sıraya göre listelenir.</p>
+              <label className="form-label" style={{ marginTop: 10 }}>Durak / modül (opsiyonel)</label>
+              <input
+                type="text"
+                className="input"
+                value={readingModule}
+                onChange={(e) => { setReadingModule(e.target.value); markDirty(); }}
+                placeholder="Örn. Mantık"
+              />
             </div>
           )}
 

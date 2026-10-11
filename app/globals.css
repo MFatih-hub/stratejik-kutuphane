@@ -1374,3 +1374,103 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 
   .book-side { flex-basis: 100%; padding-left: 42px; }
   .book-search { flex-wrap: wrap; }
 }
+
+/* ============== ANA SAYFA: BÖLÜM VİTRİNİ ============== */
+.showcase { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin: 0 0 3rem; }
+.showcase-panel { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); padding: 1.5rem 1.6rem 1.25rem; display: flex; flex-direction: column; }
+.showcase-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.showcase-kicker { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.showcase-more { font-size: 13px; color: var(--text-tertiary); }
+.showcase-more:hover { color: var(--accent); }
+.showcase-title { font-family: var(--font-serif); font-size: 24px; font-weight: 500; margin: 0 0 12px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.showcase-title-of { font-size: 16px; color: var(--text-tertiary); }
+.showcase-note { font-size: 12px; color: var(--text-tertiary); margin: 0 0 14px; }
+.showcase-sub { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-tertiary); margin: 16px 0 4px; }
+.showcase-list { list-style: none; margin: 0; padding: 0; }
+.showcase-list li + li { border-top: 0.5px solid var(--border); }
+.showcase-item { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; }
+.showcase-item-title { font-family: var(--font-serif); font-size: 15.5px; line-height: 1.4; color: var(--text-primary); }
+.showcase-item:hover .showcase-item-title { color: var(--accent); }
+.showcase-item-meta { font-size: 12px; color: var(--text-tertiary); }
+.showcase-here { margin-top: 2px; }
+
+/* ============== KİTAP TAHLİLLERİ: OKUMA YOLCULUĞU ============== */
+.journey { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); padding: 1.5rem; margin: -0.5rem 0 2rem; }
+.journey-head { display: grid; grid-template-columns: auto 1fr 1fr; gap: 1rem 1.5rem; align-items: stretch; margin-bottom: 1.25rem; }
+.journey-stat { display: flex; flex-direction: column; justify-content: center; padding-right: 1.5rem; border-right: 0.5px solid var(--border); }
+.journey-stat-value { font-family: var(--font-serif); font-size: 34px; line-height: 1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.journey-stat-of { font-size: 18px; color: var(--text-tertiary); }
+.journey-stat-label { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+
+.journey-here, .journey-last { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-md); background: var(--accent-bg); border: 0.5px solid transparent; transition: border-color 0.15s; min-width: 0; }
+.journey-last { flex-direction: column; gap: 3px; background: var(--bg-secondary); }
+.journey-here:hover, .journey-last:hover { border-color: var(--accent); }
+.journey-here-pin { flex: 0 0 auto; width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-bg), 0 0 0 5px var(--accent); animation: journey-pulse 2.4s ease-in-out infinite; }
+.journey-here-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.journey-here-label { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.journey-here-title { font-family: var(--font-serif); font-size: 15px; line-height: 1.35; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.journey-here-no { font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); }
+.journey-here-author { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
+@keyframes journey-pulse { 0%, 100% { box-shadow: 0 0 0 4px var(--accent-bg), 0 0 0 5px var(--accent); } 50% { box-shadow: 0 0 0 6px var(--accent-bg), 0 0 0 7px transparent; } }
+@media (prefers-reduced-motion: reduce) { .journey-here-pin, .journey-cell.is-next { animation: none; } }
+
+.journey-grid { display: grid; grid-template-columns: repeat(auto-fill, 9px); gap: 2px; }
+.journey-cell { display: block; width: 9px; height: 9px; border-radius: 2px; background: var(--bg-tertiary); }
+.journey-cell.is-written { background: var(--accent); }
+a.journey-cell.is-written:hover { transform: scale(1.6); position: relative; z-index: 1; }
+.journey-cell.is-next { background: var(--bg-card); outline: 2px solid var(--accent); outline-offset: 0; animation: journey-blink 1.6s ease-in-out infinite; position: relative; z-index: 1; }
+@keyframes journey-blink { 50% { outline-color: transparent; } }
+
+.journey-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem 1.5rem; }
+.journey-module { min-width: 0; }
+.journey-module-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.journey-module-name { font-size: 13.5px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.journey-module-name:hover { color: var(--accent); }
+.journey-module-idx { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+.journey-module-meta { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.journey-module.is-active .journey-module-name { color: var(--accent); }
+.journey-module .journey-bar { margin-bottom: 8px; }
+
+.journey-bar { height: 4px; border-radius: 4px; background: var(--bg-tertiary); overflow: hidden; }
+.journey-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; min-width: 2px; }
+
+.journey-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 1.1rem; font-size: 12px; color: var(--text-tertiary); align-items: center; }
+.journey-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.journey-legend .journey-cell { display: inline-block; animation: none; }
+.journey-legend-hint { margin-left: auto; font-style: italic; }
+
+.book-module-banner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 1rem; border-radius: var(--radius-md); background: var(--accent-bg); font-size: 14px; }
+.book-module-banner .btn { margin-left: auto; }
+.book-item:target .book-item-inner { background: var(--accent-bg); }
+
+/* ============== KİTAP TAHLİLİ: ÖNCEKİ / SONRAKİ ============== */
+.book-seq { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 2.5rem 0 1rem; }
+.book-seq-link { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg-card); min-width: 0; }
+.book-seq-link:hover { border-color: var(--accent); }
+.book-seq-next { text-align: right; align-items: flex-end; }
+.book-seq-dir { font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-tertiary); font-family: var(--font-mono); }
+.book-seq-title { font-family: var(--font-serif); font-size: 15px; line-height: 1.35; color: var(--text-primary); }
+.book-seq-author { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
+.book-detail-meta a { color: var(--accent); }
+.book-detail-meta a:hover { text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .journey { padding: 1.1rem; }
+  .journey-head { grid-template-columns: 1fr; }
+  .journey-stat { border-right: none; padding-right: 0; flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .journey-grid { grid-template-columns: repeat(auto-fill, 7px); }
+  .journey-cell { width: 7px; height: 7px; }
+  .journey-legend-hint { margin-left: 0; }
+  .book-seq { grid-template-columns: 1fr; }
+  .showcase { grid-template-columns: 1fr; }
+}
+
+/* ============== MOBİL BAŞLIK ============== */
+@media (max-width: 640px) {
+  .site-header-inner { flex-wrap: wrap; row-gap: 10px; }
+  .site-title-sub { display: none; }
+  .site-nav { width: 100%; overflow-x: auto; gap: 1rem; font-size: 13.5px; padding-bottom: 2px; scrollbar-width: none; }
+  .site-nav::-webkit-scrollbar { display: none; }
+  .site-nav a, .site-nav .nav-text { white-space: nowrap; }
+}
+.related-post-card:not(:has(.related-post-image)) .related-post-body { padding-top: 14px; border-top: 2px solid var(--accent); }

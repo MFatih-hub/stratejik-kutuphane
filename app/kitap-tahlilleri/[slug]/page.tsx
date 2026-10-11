@@ -87,7 +87,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
   if (post.is_published) {
     const { data: recent } = await supabase
       .from('posts')
-      .select('id, slug, title, cover_image_url, category, published_at')
+      .select('*')
       .eq('is_published', true)
       .eq('post_type', 'kitap_tahlili')
       .neq('content', '')
@@ -95,6 +95,20 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       .order('published_at', { ascending: false })
       .limit(3);
     relatedPosts = recent || [];
+  }
+
+  // Okuma listesinde önceki / sonraki eser (yayındakiler arasında, sıraya göre)
+  let prevItem: any = null;
+  let nextItem: any = null;
+  if (post.reading_order != null) {
+    const sel = 'slug, title, book_author, reading_order';
+    const base = () => supabase.from('posts').select(sel).eq('is_published', true).eq('post_type', 'kitap_tahlili');
+    const [p, n] = await Promise.all([
+      base().lt('reading_order', post.reading_order).order('reading_order', { ascending: false }).limit(1),
+      base().gt('reading_order', post.reading_order).order('reading_order', { ascending: true }).limit(1),
+    ]);
+    prevItem = (p.data || [])[0] || null;
+    nextItem = (n.data || [])[0] || null;
   }
 
   const category = CATEGORIES.find((c) => c.slug === post.category);
@@ -162,7 +176,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
           Kitap Tahlili
         </span>
         {category && (
-          <Link href={`/kitap-tahlilleri`} className="post-category-large" style={{ background: `${category.color}15`, color: category.color, marginLeft: 8 }}>
+          <Link href={`/kitap-tahlilleri?kategori=${category.path}`} className="post-category-large" style={{ background: `${category.color}15`, color: category.color, marginLeft: 8 }}>
             {category.name}
           </Link>
         )}
@@ -172,7 +186,12 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
           <p className="book-detail-meta">
             {post.book_author && <span>Yazar: <strong>{post.book_author}</strong></span>}
             {post.book_author && post.reading_order != null && <span className="post-meta-sep"> · </span>}
-            {post.reading_order != null && <span>Okuma listesinde #{post.reading_order}</span>}
+            {post.reading_order != null && (
+              <Link href={`/kitap-tahlilleri?sayfa=${Math.max(1, Math.ceil(post.reading_order / 100))}#eser-${post.reading_order}`}>
+                Okuma listesinde #{post.reading_order}
+              </Link>
+            )}
+            {post.reading_module && <><span className="post-meta-sep"> · </span><span>Durak: {post.reading_module}</span></>}
           </p>
         )}
         <div className="post-byline">
@@ -217,6 +236,25 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
             <span key={tag} className="post-tag">#{tag}</span>
           ))}
         </div>
+      )}
+
+      {(prevItem || nextItem) && (
+        <nav className="book-seq" aria-label="Okuma listesinde gezin">
+          {prevItem ? (
+            <Link href={`/kitap-tahlilleri/${prevItem.slug}`} className="book-seq-link">
+              <span className="book-seq-dir">← Önceki · #{prevItem.reading_order}</span>
+              <span className="book-seq-title">{prevItem.title}</span>
+              {prevItem.book_author && <span className="book-seq-author">{prevItem.book_author}</span>}
+            </Link>
+          ) : <span />}
+          {nextItem ? (
+            <Link href={`/kitap-tahlilleri/${nextItem.slug}`} className="book-seq-link book-seq-next">
+              <span className="book-seq-dir">Sonraki · #{nextItem.reading_order} →</span>
+              <span className="book-seq-title">{nextItem.title}</span>
+              {nextItem.book_author && <span className="book-seq-author">{nextItem.book_author}</span>}
+            </Link>
+          ) : <span />}
+        </nav>
       )}
 
       <footer className="post-footer">

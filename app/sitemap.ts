@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Kategori sayfaları (sadece yazılar için)
   const categoryUrls = CATEGORIES.map((c) => ({
-    url: `${SITE_URL}/kategori/${c.slug}`,
+    url: `${SITE_URL}/kategori/${c.path}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.6,

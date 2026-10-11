@@ -10,8 +10,9 @@ export default function RelatedPosts({ posts, basePath = '/yazi', title = 'Bunla
       <div className="related-posts-grid">
         {posts.map((post) => (
           <Link key={post.id} href={`${basePath}/${post.slug}`} className="related-post-card">
-            <div className="related-post-image">
-              {post.cover_image_url ? (
+            {/* Kapak yoksa boş gri kutu yerine kart sadece metinle görünür */}
+            {post.cover_image_url && (
+              <div className="related-post-image">
                 <Image
                   src={post.cover_image_url}
                   alt={post.title}
@@ -19,10 +20,8 @@ export default function RelatedPosts({ posts, basePath = '/yazi', title = 'Bunla
                   sizes="(max-width: 700px) 100vw, 33vw"
                   style={{ objectFit: 'cover' }}
                 />
-              ) : (
-                <div className="related-post-image-placeholder" style={{ background: `${getCategoryColor(post.category)}12` }} />
-              )}
-            </div>
+              </div>
+            )}
             <div className="related-post-body">
               <span
                 className="post-category"
@@ -31,6 +30,7 @@ export default function RelatedPosts({ posts, basePath = '/yazi', title = 'Bunla
                 {getCategoryName(post.category)}
               </span>
               <h3 className="related-post-title">{post.title}</h3>
+              {post.book_author && <span className="book-author">{post.book_author}</span>}
               <span className="post-date">{formatDate(post.published_at)}</span>
             </div>
           </Link>

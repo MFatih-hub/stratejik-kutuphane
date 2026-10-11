@@ -142,7 +142,7 @@ export default async function OkumaBulteniDetailPage({ params }: { params: { slu
 
       <header className="post-header">
         {category && (
-          <Link href={`/okuma-bulteni?kategori=${category.slug}`} className="post-category-large"
+          <Link href={`/okuma-bulteni?kategori=${category.path}`} className="post-category-large"
             style={{ background: `${category.color}15`, color: category.color }}>
             {category.name}
           </Link>

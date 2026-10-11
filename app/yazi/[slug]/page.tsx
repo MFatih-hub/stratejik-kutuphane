@@ -169,7 +169,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
         '@type': 'ListItem',
         position: 2,
         name: category.name,
-        item: `${SITE_URL}/kategori/${category.slug}`,
+        item: `${SITE_URL}/kategori/${category.path}`,
       }] : []),
       {
         '@type': 'ListItem',
@@ -201,7 +201,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <span className="breadcrumb-sep">›</span>
         {category && (
           <>
-            <Link href={`/kategori/${category.slug}`}>{category.name}</Link>
+            <Link href={`/kategori/${category.path}`}>{category.name}</Link>
             <span className="breadcrumb-sep">›</span>
           </>
         )}
@@ -222,7 +222,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
       <header className="post-header">
         {category && (
-          <Link href={`/kategori/${category.slug}`} className="post-category-large"
+          <Link href={`/kategori/${category.path}`} className="post-category-large"
             style={{ background: `${category.color}15`, color: category.color }}>
             {category.name}
           </Link>

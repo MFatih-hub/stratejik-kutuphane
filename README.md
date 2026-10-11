@@ -10,7 +10,7 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
 4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
 5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (Okuma Bülteni + Kitap Tahlilleri bölümleri için `post_type` ve kaynak alanlarını ekler)
-6. Ardından `SUPABASE-MIGRATION-v4.sql`'i çalıştır (Kitap Tahlilleri toplu ekleme için `book_author` ve `reading_order` alanlarını ekler)
+6. Ardından `SUPABASE-MIGRATION-v4.sql`'i çalıştır (Kitap Tahlilleri için `book_author`, `reading_order` ve `reading_module` alanlarını ekler — daha önce çalıştırdıysan tekrar çalıştırmak güvenli)
 7. "...hazır" yazan mesajları görmelisin ✓
 
 > Zaten çalışan bir siten varsa (yazıların DB'de duruyor) **sadece** eksik olan migration dosyalarını çalıştırman yeterli — hepsi eklemelidir, hiçbir yazını silmez.
@@ -82,7 +82,7 @@ Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutus
 - Düşünce & Felsefe
 - Türkiye
 
-Kategorileri değiştirmek için: `lib/helpers.ts` → `CATEGORIES` array'ini düzenle.
+Kategorileri değiştirmek için: `lib/helpers.ts` → `CATEGORIES` array'ini düzenle. Her kategorinin iki kimliği var: `slug` veritabanında saklanan iç değerdir (değiştirme — mevcut kayıtlar bu değerle duruyor), `path` ise adreste görünendir (`/kategori/felsefe`). Eski adresler (`/kategori/dusunce` gibi) `next.config.js`'teki yönlendirmelerle yenisine gider.
 
 ## 🗂️ Üç İçerik Türü
 
@@ -112,11 +112,13 @@ Tek tek admin formundan girmek yerine **`/admin/okuma-bulteni/toplu-ekle`** kull
 
 **`/admin/kitap-tahlilleri/toplu-ekle`** (admin panelde "📚 Tahlil: Toplu Ekle"): okuma listesini tek seferde siteye aktarır. Önce `SUPABASE-MIGRATION-v4.sql` çalıştırılmış olmalı.
 
-1. Excel'de **Sıra · Yazar · Metin** sütunlarını seç (başlık satırıyla ya da onsuz), kopyala, kutuya yapıştır. İsteğe bağlı 4. sütun **Kategori**. Başlık satırı varsa sütun sırası önemli değil (Sıra/No, Yazar/Author, Metin/Başlık/Eser/Kitap, Kategori/Alan tanınır). Etiketli bloklar da çalışır (`Sıra:`, `Yazar:`, `Metin:`, `Kategori:`; bloklar boş satırla ayrılır).
+1. Excel'de **Sıra · Yazar · Metin** sütunlarını seç (başlık satırıyla ya da onsuz), kopyala, kutuya yapıştır. İsteğe bağlı sütunlar: **Kategori** ve **Durak** (modül, ör. "Mantık"). Başlık satırı varsa sütun sırası önemli değil (Sıra/No, Yazar/Author, Metin/Başlık/Eser/Kitap, Kategori/Alan tanınır). Etiketli bloklar da çalışır (`Sıra:`, `Yazar:`, `Metin:`, `Kategori:`; bloklar boş satırla ayrılır).
 2. Önizlemede "Kontrol edilecekler" sekmesi eksik yazar/başlık, tekrarlanan sıra numarası ve sitede zaten olan eserleri gösterir. Sitede zaten olan eserler (aynı sıra + başlık) otomatik olarak işaretsiz gelir — aynı listeyi ikinci kez yapıştırmak kopya oluşturmaz.
 3. "Ekle" 100'erli partilerle yazar. Her eser `post_type = 'kitap_tahlili'`, boş `content` ile oluşur; adresi `/kitap-tahlilleri/<sıra>-<başlık>` olur.
 
 Sonra `/admin?tur=kitap_tahlili` sekmesinde (okuma sırasına göre dizili) bir esere "Not yaz" deyip tahlil notunu editörde yazarsın. Editörün sağ panelinde **Yazar** ve **Okuma listesindeki sıra** alanları da düzenlenebilir.
+
+**Okuma yolculuğu:** `/kitap-tahlilleri` sayfasının başında her eser bir kare olarak görünür (tahlili yazılan dolu, sıradaki eser yanıp sönen çerçeveli). "Şu an buradayım" = tahlili yazılmamış en küçük sıra numaralı eser; "En son tamamlanan" = en son güncellenen tahlil. Eserlere Durak verilmişse kareler duraklara ayrılır ve her durağın ilerleme çubuğu görünür (durak adına tıklayınca liste o durağa süzülür, `?modul=`). Tahlil sayfasında okuma listesindeki önceki/sonraki eser bağlantıları vardır. Ana sayfada Okuma Bülteni'nin son paylaşımları ve bu yolculuğun özeti gösterilir.
 
 `/kitap-tahlilleri` sayfası eserleri okuma sırasına göre, 100'erli sayfalar halinde listeler; "Tüm liste / Tahlili yazılanlar / Sırada bekleyenler" filtresi, alan filtresi, eser/yazar araması ve ilerleme çubuğu vardır. Tahlili yazılmış eserler bağlantılıdır; notu henüz yazılmamış eserlerin sayfası "tahlil henüz yazılmadı" der, arama motorlarına kapalıdır (noindex) ve sitemap'e ve site aramasına girmez.
 

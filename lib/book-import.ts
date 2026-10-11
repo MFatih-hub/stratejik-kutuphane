@@ -18,6 +18,7 @@ export type RawBook = {
   author: string;
   title: string;
   category: string;
+  module: string;
 };
 
 type Field = keyof RawBook;
@@ -28,6 +29,7 @@ const HEADER_ALIASES: Record<string, Field> = {
   'metin': 'title', 'eser': 'title', 'kitap': 'title', 'başlık': 'title', 'baslik': 'title', 'title': 'title',
   'eser adı': 'title', 'eser adi': 'title', 'kitap adı': 'title', 'kitap adi': 'title',
   'kategori': 'category', 'category': 'category', 'alan': 'category',
+  'modül': 'module', 'modul': 'module', 'module': 'module', 'durak': 'module', 'ünite': 'module', 'unite': 'module',
 };
 
 function headerField(label: string): Field | undefined {
@@ -101,13 +103,13 @@ function fromTsv(text: string): RawBook[] {
   } else {
     // Başlıksız: ilk sütun sayıysa Sıra, Yazar, Metin, Kategori; değilse Yazar, Metin, Kategori
     const firstIsNumber = /^\d+\.?$/.test(rows[0][0] || '');
-    mapping = firstIsNumber ? ['order', 'author', 'title', 'category'] : ['author', 'title', 'category'];
+    mapping = firstIsNumber ? ['order', 'author', 'title', 'category', 'module'] : ['author', 'title', 'category', 'module'];
   }
 
   const out: RawBook[] = [];
   for (let r = start; r < rows.length; r++) {
     const cells = rows[r];
-    const book: RawBook = { order: null, author: '', title: '', category: '' };
+    const book: RawBook = { order: null, author: '', title: '', category: '', module: '' };
     cells.forEach((cell, idx) => {
       const f = mapping[idx];
       if (!f) return;
@@ -122,7 +124,7 @@ function fromTsv(text: string): RawBook[] {
 function fromLabeledBlocks(text: string): RawBook[] {
   const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
   return blocks.map((block) => {
-    const book: RawBook = { order: null, author: '', title: '', category: '' };
+    const book: RawBook = { order: null, author: '', title: '', category: '', module: '' };
     let last: Field | null = null;
     for (const rawLine of block.split('\n')) {
       const line = rawLine.trim();
@@ -155,6 +157,7 @@ export function parseBookInput(input: string): RawBook[] {
         order: b.order ?? numbered.order,
         author: b.author.trim(),
         category: b.category.trim(),
+        module: b.module.trim(),
       };
     })
     .filter((b) => b.title || b.author);
