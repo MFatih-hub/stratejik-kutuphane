@@ -1,43 +1,72 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { buildEngine, playDrop, playWater, RainModel, rnd, logRnd, type Engine } from '@/lib/rain-audio';
+import { buildEngine, bigDrop, rnd, type Engine } from '@/lib/rain-audio';
 
 // Sayfanın sol alt köşesinde, ekranın kenarından taşan durgun bir su yüzeyi.
-// Birkaç saniyede bir yukarıdan bir damla düşer; arada "tane tane" yağmur:
-// rastgele aralıklarla, rastgele perdelerde, farklı türde damlalar (suya
-// plink, yüzeye tık, yaprağa yumuşak vuruş, ince damlacık, ara sıra iri blup).
-// Suya düşenler yüzeyde minik halkalar bırakır.
+// Birkaç saniyede bir (düzensiz) yukarıdan büyük bir damla düşer; arada
+// "tane tane" yağmur: rastgele aralıklarla, farklı türde, farklı uzaklıkta
+// damlalar. Suya düşenler yüzeyde minik halkalar bırakır.
 //
-// Ses dosyası yok: hepsi Web Audio ile üretilir (sinüs ve filtrelenmiş
-// gürültü + hafif yankı, sağ-sol konum ve uzaklık rastgele). Tarayıcılar ilk tıklama/tuş basımından önce ses
-// çalmaya izin vermediği için ses, sayfayla ilk etkileşimde başlar.
+// Ses dosyası yok: ses public/rain-worklet.js içinde örnek örnek, fiziksel
+// ölçülere göre üretilir; hiçbir şey döngüye girmez. Tarayıcılar ilk
+// tıklama/tuş basımından önce ses çalmaya izin vermediği için ses, sayfayla
+// ilk etkileşimde (yavaşça açılarak) başlar. Sekme arkadayken susar.
 // Uygulama düzeni (layout) sayfalar arasında korunduğu için gezinirken kesilmez.
 
 const SOUND_KEY = 'zh-sound';
 export const SOUND_EVENT = 'zh-sound-change';
 
-function createEngine(): Engine | null {
-  const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AC) return null;
-  return buildEngine(new AC());
-}
-
 export default function WaterDrop() {
-  const [phase, setPhase] = useState(0); // her damlada artar → animasyonları yeniden başlatır
+  const [phase, setPhase] = useState(0); // her büyük damlada artar → animasyonu yeniden başlatır
+  const ctxRef = useRef<AudioContext | null>(null);
   const engine = useRef<Engine | null>(null);
+  const building = useRef(false);
   const soundOn = useRef(true);
-  const armed = useRef(false);
+  const ripplesRef = useRef<HTMLDivElement>(null);
+
+  /** Su yüzeyinin görünen kısmında rastgele bir noktada minik halka. */
+  const ripple = () => {
+    const host = ripplesRef.current;
+    if (!host || host.childElementCount > 7 || document.hidden) return;
+    let x = 0, y = 0;
+    for (let i = 0; i < 8; i++) {
+      x = rnd(100, 262); y = rnd(18, 72);
+      if (((x - 150) / 112) ** 2 + ((y - 76) / 58) ** 2 < 1) break;
+    }
+    const el = document.createElement('span');
+    el.className = 'pond-mini';
+    const w = rnd(26, 70);
+    el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * 0.28}px`;
+    el.addEventListener('animationend', () => el.remove());
+    host.appendChild(el);
+  };
+
+  const audioRunning = () => soundOn.current && !!engine.current && ctxRef.current?.state === 'running';
 
   // Ses tercihi + ilk etkileşimde ses motorunu başlat
   useEffect(() => {
     try { soundOn.current = localStorage.getItem(SOUND_KEY) !== 'off'; } catch { /* yok */ }
 
     const start = () => {
-      if (!soundOn.current) return;
-      if (!engine.current) engine.current = createEngine();
-      (engine.current?.ctx as AudioContext | undefined)?.resume().catch(() => {});
-      armed.current = true;
+      if (!soundOn.current || document.hidden) return;
+      if (!ctxRef.current) {
+        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (!AC) return;
+        ctxRef.current = new AC();
+      }
+      const ctx = ctxRef.current!;
+      ctx.resume().catch(() => {}); // kullanıcı hareketi içinde çağrılmalı (iOS)
+      if (!engine.current && !building.current) {
+        building.current = true;
+        buildEngine(ctx, { report: true })
+          .then((e) => {
+            engine.current = e;
+            if (e) e.node.port.onmessage = (ev) => { if (ev.data?.type === 'drip') ripple(); };
+          })
+          .catch(() => { /* ses olmadan devam */ })
+          .finally(() => { building.current = false; });
+      }
     };
     const onGesture = () => start();
     window.addEventListener('pointerdown', onGesture, { passive: true });
@@ -47,38 +76,28 @@ export default function WaterDrop() {
       const on = (ev as CustomEvent<boolean>).detail;
       soundOn.current = on;
       if (on) start();
-      else (engine.current?.ctx as AudioContext | undefined)?.suspend().catch(() => {});
+      else ctxRef.current?.suspend().catch(() => {});
     };
     window.addEventListener(SOUND_EVENT, onChange);
+
+    // sekme arkadayken sus, dönünce devam et
+    const onVis = () => {
+      const ctx = ctxRef.current;
+      if (!ctx) return;
+      if (document.hidden) ctx.suspend().catch(() => {});
+      else if (soundOn.current) ctx.resume().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVis);
     return () => {
       window.removeEventListener('pointerdown', onGesture);
       window.removeEventListener('keydown', onGesture);
       window.removeEventListener(SOUND_EVENT, onChange);
+      document.removeEventListener('visibilitychange', onVis);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ripplesRef = useRef<HTMLDivElement>(null);
-
-  /** Su yüzeyinin görünen kısmında rastgele bir noktada minik halka. */
-  const ripple = (delayMs: number) => {
-    const host = ripplesRef.current;
-    if (!host || host.childElementCount > 7) return;
-    let x = 0, y = 0;
-    for (let i = 0; i < 8; i++) {
-      x = rnd(100, 262); y = rnd(18, 72);
-      if (((x - 150) / 112) ** 2 + ((y - 76) / 58) ** 2 < 1) break;
-    }
-    const el = document.createElement('span');
-    el.className = 'pond-mini';
-    const w = rnd(26, 70);
-    el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * 0.28}px;animation-delay:${delayMs}ms`;
-    el.addEventListener('animationend', () => el.remove());
-    host.appendChild(el);
-  };
-
-  const audioReady = () => soundOn.current && armed.current && !!engine.current && engine.current.ctx.state === 'running';
-
-  // Büyük damla: yukarıdan düşer (~1.1 sn), suya değince halkalar + plink; 4–5,5 sn'de bir
+  // Büyük damla: yukarıdan düşer (~1.1 sn), suya değince halkalar + ses; 3–10 sn'de bir, düzensiz
   useEffect(() => {
     let alive = true;
     let fallTimer: ReturnType<typeof setTimeout>;
@@ -88,10 +107,7 @@ export default function WaterDrop() {
       if (!alive) return;
       if (document.hidden) { nextTimer = setTimeout(cycle, 2000); return; }
       setPhase((p) => p + 1);
-      fallTimer = setTimeout(() => {
-        if (audioReady()) playWater(engine.current!, engine.current!.ctx.currentTime + 0.005, logRnd(340, 1300), rnd(0.45, 1), rnd(0, 0.5));
-      }, FALL);
-      // 3–10 sn, düzensiz: metronom hissi vermesin
+      fallTimer = setTimeout(() => { if (audioRunning()) bigDrop(engine.current!); }, FALL);
       nextTimer = setTimeout(cycle, 3000 + Math.random() * Math.random() * 7000);
     };
     nextTimer = setTimeout(cycle, 1200);
@@ -99,29 +115,16 @@ export default function WaterDrop() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Tane tane yağmur: rastgele aralıklarla (ortalama saniyede ~3, yavaşça
-  // sıklaşıp seyrelen) farklı türde damlalar; suya düşenler halka bırakır.
+  // Ses kapalıyken de yüzeyde ara sıra minik halkalar (ses açıkken halkaları ses motoru tetikler)
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
-    const model = new RainModel();
-    let lastGap = 0.3;
-    let sinceBed = 0;
     const tick = () => {
       if (!alive) return;
-      if (document.hidden) { timer = setTimeout(tick, 1500); return; }
-      const { gap, kind } = model.next(lastGap);
-      if (audioReady()) {
-        const e = engine.current!;
-        playDrop(e, kind);
-        sinceBed += lastGap;
-        if (sinceBed > 2) { model.driftBed(e, e.ctx.currentTime); sinceBed = 0; }
-      }
-      if (kind === 'su' || kind === 'blup' || (kind === 'sicrama' && Math.random() < 0.5)) ripple(0);
-      lastGap = gap;
-      timer = setTimeout(tick, gap * 1000);
+      if (!audioRunning()) ripple();
+      timer = setTimeout(tick, Math.max(150, -Math.log(1 - Math.random()) * 1100));
     };
-    timer = setTimeout(tick, 800);
+    timer = setTimeout(tick, 900);
     return () => { alive = false; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
