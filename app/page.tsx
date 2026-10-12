@@ -7,6 +7,8 @@ import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib
 import { InlineSiteSearch } from '@/components/site-search';
 import { fetchJourneySummary } from '@/lib/reading-journey';
 import { SeaHorizon, Glint, Horizon } from '@/components/calm';
+import SubscribeForm from '@/components/subscribe-form';
+import { newsletterEnabled } from '@/lib/server-env';
 
 export const revalidate = 60;
 
@@ -232,6 +234,12 @@ export default async function HomePage() {
               </Link>
             </article>
           ))}
+        </section>
+      )}
+
+      {newsletterEnabled() && (
+        <section className="home-subscribe">
+          <SubscribeForm />
         </section>
       )}
     </>

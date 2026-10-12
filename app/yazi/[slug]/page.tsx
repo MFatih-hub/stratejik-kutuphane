@@ -13,6 +13,12 @@ import TableOfContents from '@/components/table-of-contents';
 import RelatedPosts from '@/components/related-posts';
 import ViewTracker from '@/components/view-tracker';
 import ShareButtons from '@/components/share-buttons';
+import DownloadMenu from '@/components/download-menu';
+import ListenButton from '@/components/listen-button';
+import SeriesBox from '@/components/series-box';
+import SubscribeForm from '@/components/subscribe-form';
+import { conceptHref } from '@/lib/concepts';
+import { newsletterEnabled } from '@/lib/server-env';
 
 export const revalidate = 60;
 
@@ -248,17 +254,22 @@ export default async function PostPage({ params }: { params: { slug: string } })
         </div>
       )}
 
-      <ReadingSettings />
+      <div className="post-tools">
+        <ListenButton />
+        <ReadingSettings />
+      </div>
       {headings.length >= 3 && <TableOfContents headings={headings} />}
 
       <div id="post-article-body">
-        <PostContent content={post.content} format={post.content_format} />
+        <PostContent content={post.content} format={post.content_format} bibliography={post.bibliography} wiki />
       </div>
+
+      <SeriesBox supabase={supabase} post={post} isAdmin={isAdmin} />
 
       {post.tags && post.tags.length > 0 && (
         <div className="post-tags">
           {post.tags.map((tag: string) => (
-            <span key={tag} className="post-tag">#{tag}</span>
+            <Link key={tag} href={conceptHref(tag)} className="post-tag">#{tag}</Link>
           ))}
         </div>
       )}
@@ -266,6 +277,8 @@ export default async function PostPage({ params }: { params: { slug: string } })
       <footer className="post-footer">
         <h3 className="post-footer-title">Bu yazıyı paylaş</h3>
         <ShareButtons url={url} title={post.title} />
+        <DownloadMenu id={post.id} />
+        {post.is_published && newsletterEnabled() && <SubscribeForm />}
       </footer>
 
       <RelatedPosts posts={relatedPosts} />

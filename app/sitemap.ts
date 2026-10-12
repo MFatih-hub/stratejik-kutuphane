@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, getPostBasePath } from '@/lib/helpers';
+import { fetchJourney } from '@/lib/reading-journey';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
 
@@ -44,7 +45,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Bölüm indeksleri
   const sectionUrls = [
     { url: `${SITE_URL}/kitap-tahlilleri`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
+    { url: `${SITE_URL}/kavram`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 },
   ];
+
+  // Duraklar ve yazı dizileri
+  const extraUrls: MetadataRoute.Sitemap = [];
+  try {
+    const journey = await fetchJourney(supabase);
+    for (const m of journey.modules) {
+      if (m.written > 0) extraUrls.push({ url: `${SITE_URL}/durak/${encodeURIComponent(m.name)}`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 });
+    }
+    const { data: ser, error } = await supabase.from('posts').select('series').eq('is_published', true).not('series', 'is', null).limit(1000);
+    if (!error) {
+      for (const name of Array.from(new Set((ser || []).map((r: any) => r.series as string)))) {
+        extraUrls.push({ url: `${SITE_URL}/dizi/${encodeURIComponent(name)}`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 });
+      }
+    }
+  } catch { /* önemli değil */ }
 
   // Ana sayfa
   const homeUrl = {
@@ -54,5 +71,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 1.0,
   };
 
-  return [homeUrl, ...sectionUrls, ...categoryUrls, ...postUrls];
+  return [homeUrl, ...sectionUrls, ...extraUrls, ...categoryUrls, ...postUrls];
 }

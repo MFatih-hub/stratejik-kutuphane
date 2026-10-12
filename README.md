@@ -10,7 +10,7 @@ Muhammet Fatih Işık'ın kişisel yazı sitesi. Next.js 14 + Supabase + Vercel.
 3. `SUPABASE-SETUP.sql` dosyasının tüm içeriğini kopyala ve yapıştır, **Run** bas
 4. Ardından **aynı şekilde** `SUPABASE-MIGRATION-v2.sql` dosyasını da çalıştır (yeni editör, analitik ve okuyucu takibi için gereken tablo/fonksiyonları ekler)
 5. Ardından `SUPABASE-MIGRATION-v3.sql`'i çalıştır (içerik türleri için `post_type` ve kaynak alanlarını ekler)
-6. Ardından `SUPABASE-MIGRATION-v4.sql`'i ve `SUPABASE-MIGRATION-v5.sql`'i çalıştır (v5: okuma durumu, fişler, okuma günleri)
+6. Ardından `SUPABASE-MIGRATION-v4.sql`, `SUPABASE-MIGRATION-v5.sql` ve `SUPABASE-MIGRATION-v6.sql`'i sırayla çalıştır (v5: okuma durumu, fişler, okuma günleri · v6: diziler, kaynakça, sürüm geçmişi, sayfa kaydı, aboneler)
    — v4: (Kitap Tahlilleri için `book_author`, `reading_order` ve `reading_module` alanlarını ekler — daha önce çalıştırdıysan tekrar çalıştırmak güvenli)
 7. "...hazır" yazan mesajları görmelisin ✓
 
@@ -87,6 +87,35 @@ Site artık okuma sürecini de taşır (önce `SUPABASE-MIGRATION-v5.sql` çalı
 - **Telefon:** site ana ekrana eklenebilir (manifest + ikon); açılınca doğrudan Bugün gelir.
 - **Admin listesi** sayfalı (50'şer), duruma göre filtre ve `#sıra` / başlık / yazar araması.
 - **Dokunuşlar:** ışıltı tahlil sayısıyla çok yavaş güçlenir; bir durak bitince bir kerelik parlar. Tema düğmesi varsayılan *Otomatik*: İstanbul'da gün batımından sonra Gece Denizi. Uzun metinlerde yazı boyu / satır aralığı ayarı.
+
+## 📦 Yazmak, saklamak, paylaşmak (v6)
+
+`SUPABASE-MIGRATION-v6.sql` çalıştırıldıktan sonra:
+
+- **İndir:** her yazı ve tahlilin altında *PDF · Word · Markdown*. PDF, tarayıcının yazdırma penceresinden kaydedilir (`/yazdir/[id]`, A4, sayfa numaralı); Word gerçek `.docx`'tir (başlık stilleri, gerçek dipnotlar, gömülü görseller, Arapça sağdan sola); Markdown başında bilgi bloğuyla (Obsidian'a uygun).
+- **Kitap notlarını indir:** editörde bir eserin bütün fişleri sayfa sırasıyla PDF / Word / Markdown.
+- **Tam yedek:** Admin → *Tam yedek indir* → tek ZIP (yazılar ve notlar Markdown, bütün tablolar JSON). **Haftalık otomatik yedek:** her pazartesi 06:00'da (İstanbul) aynı ZIP e-postana gelir (`vercel.json` cron → `/api/cron/yedek`). GitHub deposu herkese açık olduğu için yedek bilerek oraya konmuyor.
+- **Sürüm geçmişi:** veritabanı yazının eski hâllerini kendiliğinden saklar (en fazla 10 dakikada bir; bir bölüm silindiğinde hemen; yazı başına son 200). Editör → *Sürüm geçmişi* → önizle → *Bu sürüme dön*.
+- **Dipnot:** metinde `((dipnot metni))` (editörde x¹ düğmesi) → numaralı dipnot. **Kaynakça:** editörde her satıra bir kaynak. Üç ve daha fazla ara başlıklı yazılarda içindekiler.
+- **Kavramlar:** fişte ya da yazıda `#adalet`, `#zaman-algısı` → `/kavram/adalet`. Etiketler de kavram sayılır. Kavram sayfasında ona değinen yazılar, tahliller ve (yalnızca sana) fişler, eserlere göre; *birlikte anılan kavramlar*. `/kavram`: hepsi.
+- **Yazı dizileri:** editörde *Dizi* + *sıra* → yazıların altında dizi kutusu, `/dizi/[ad]` sayfası.
+- **Duraklar:** `/durak/[ad]` — duraktaki eserler, ilerleme, önceki/sonraki durak. Bir yazıyı *Durak değerlendirmesi* olarak işaretlersen o durağın sayfasında görünür; bir durağın bütün eserleri bitince Bugün ekranı değerlendirmeyi yazmayı önerir.
+- **Paylaşım görseli:** her yazı ve tahlil için gece denizi temalı görsel (WhatsApp, X önizlemesi).
+- **Dinle:** cihazın Türkçe sesiyle sesli okuma (Türkçe ses yoksa düğme görünmez); okunan paragraf belirginleşir.
+- **Okuma özeti:** `/admin/ozet` — yıl takvimi, ay ay okuma günü ve sayfa, bitirilen kitaplar, yazılan tahliller, fişler, en uzun seri. Sayfa sayısı, Bugün ekranında "kaldığın yer" ilerledikçe kendiliğinden kaydedilir.
+- **E-posta aboneliği:** onaylı abonelik (çift onay), her e-postada tek tıkla ayrılma. Editörde yayındaki yazı için *Önce bana deneme* ve *Gönder*. `/admin/aboneler`: liste, CSV.
+
+### E-posta ve haftalık yedek için bir kerelik kurulum
+
+1. [resend.com](https://resend.com)'da ücretsiz hesap aç → *Domains* → `zihinharitasi.org` ekle → verdiği DNS kayıtlarını alan adı sağlayıcına gir (doğrulanınca yeşil olur) → *API Keys* → yeni anahtar.
+2. Supabase → Project Settings → API → **service_role** anahtarını kopyala (gizli tut; yalnızca Vercel'e girilir).
+3. Vercel → proje → Settings → Environment Variables:
+   - `SUPABASE_SERVICE_ROLE_KEY` — 2. adımdaki anahtar
+   - `RESEND_API_KEY` — 1. adımdaki anahtar
+   - `MAIL_FROM` — `Zihin Haritası <bulten@zihinharitasi.org>`
+   - `BACKUP_EMAIL` — yedeğin geleceği adres
+   - `CRON_SECRET` — uzun rastgele bir metin (Vercel cron isteğini bununla imzalar)
+4. Vercel → Deployments → son dağıtım → *Redeploy*. `/admin/aboneler` sayfasında hepsi yeşil görünür; abonelik formu kendiliğinden açılır.
 
 **Okuma Bülteni bölümü kaldırıldı** (sayfalar, API, toplu ekleme). Veritabanındaki eski bülten kayıtları silinmedi; eski adresler ana sayfaya yönlenir.
 

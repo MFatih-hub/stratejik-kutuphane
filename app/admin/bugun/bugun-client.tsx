@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-browser';
-import { NOTE_KINDS, WIKILINK_RE, istanbulDay, markReadingDay, wikiHref } from '@/lib/reading';
+import { NOTE_KINDS, istanbulDay, markReadingDay } from '@/lib/reading';
+import NoteBody from '@/components/note-body';
 import { Glint } from '@/components/calm';
 
 type Book = {
@@ -26,19 +27,7 @@ function writeQueue(q: QueuedNote[]) {
 }
 
 /** Fiş metnini [[bağlantılar]] tıklanabilir olacak şekilde basar. */
-export function NoteBody({ text }: { text: string }) {
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  for (const m of text.matchAll(WIKILINK_RE)) {
-    const i = m.index ?? 0;
-    if (i > last) parts.push(text.slice(last, i));
-    const label = m[1].trim();
-    parts.push(<a key={i} href={wikiHref(label)} className="wikilink">{label}</a>);
-    last = i + m[0].length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return <p className="note-body">{parts}</p>;
-}
+export { NoteBody };
 
 function formatWhen(iso: string, today: string): string {
   const d = new Date(iso);
@@ -56,8 +45,10 @@ function longDate(day: string): string {
 export default function BugunClient(props: {
   schemaReady: boolean; today: string; current: Book[]; suggestion: Book | null; notes: Note[]; waiting: any[];
   days: string[]; stats: { total: number; finished: number; finished30: number; todayNotes: number }; recall: Note | null;
+  durakPrompts?: string[];
 }) {
   const { schemaReady, today, current, suggestion, waiting, days, stats, recall } = props;
+  const durakPrompts = props.durakPrompts || [];
   const supabase = createClient();
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>(props.notes);
@@ -300,6 +291,15 @@ export default function BugunClient(props: {
             {!readToday && <button className="btn btn-sm" onClick={markToday}>Bugün okudum</button>}
           </div>
 
+          {durakPrompts.map((d) => (
+            <div key={d} className="today-card durak-prompt">
+              <p className="today-kicker">Durak tamamlandı</p>
+              <p className="durak-prompt-name"><Link href={`/durak/${encodeURIComponent(d)}`}>{d}</Link></p>
+              <p className="form-hint">Bu durağın bütün eserlerini bitirdin. Onları bir arada düşünen bir değerlendirme yazmak ister misin?</p>
+              <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(d)}`} className="btn btn-sm btn-primary" style={{ marginTop: 8 }}>Değerlendirmeyi yaz</Link>
+            </div>
+          ))}
+
           {waiting.length > 0 && (
             <div className="today-card">
               <p className="today-kicker">Tahlil bekleyenler</p>
@@ -318,6 +318,8 @@ export default function BugunClient(props: {
           <div className="today-links">
             <Link href="/admin/notlar">Tüm fişler</Link>
             <Link href="/admin/harita">Zihin haritası</Link>
+            <Link href="/kavram">Kavramlar</Link>
+            <Link href="/admin/ozet">Okuma özeti</Link>
             <Link href="/kitap-tahlilleri">Okuma yolculuğu</Link>
             <Link href="/admin">İçerik</Link>
           </div>

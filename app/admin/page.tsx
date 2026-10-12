@@ -93,6 +93,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
           <Link href="/admin/kitap-tahlilleri/toplu-ekle" className="btn btn-sm">Tahlil: Toplu Ekle</Link>
           <Link href="/admin/yazi/yeni" className="btn btn-sm">Yeni Yazı</Link>
           <Link href="/admin/analiz" className="btn btn-sm">Analiz</Link>
+          <Link href="/kavram" className="btn btn-sm">Kavramlar</Link>
+          <Link href="/admin/ozet" className="btn btn-sm">Okuma özeti</Link>
+          <Link href="/admin/aboneler" className="btn btn-sm">Aboneler</Link>
+          <a href="/api/admin/yedek" className="btn btn-sm" title="Bütün yazılar, notlar ve veriler tek bir ZIP dosyasında">Tam yedek indir</a>
         </div>
       </div>
 

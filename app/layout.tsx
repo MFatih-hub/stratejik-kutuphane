@@ -187,6 +187,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <SoundToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
               <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
+              <Link href="/kavram"><span className="nav-text">Kavramlar</span></Link>
               {user && (
                 <>
                   <Link href="/admin/bugun"><span className="nav-text">Bugün</span></Link>

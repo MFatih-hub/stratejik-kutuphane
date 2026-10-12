@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, hasRealContent } from '@/lib/helpers';
-import { extractWikiLinks, linkifyWikiHtml } from '@/lib/reading';
+import { extractWikiLinks } from '@/lib/reading';
 import { resolveLinkText } from '@/lib/wiki-server';
 import ReadingSettings from '@/components/reading-settings';
 import { extractHeadings } from '@/lib/content';
@@ -16,6 +16,12 @@ import TableOfContents from '@/components/table-of-contents';
 import RelatedPosts from '@/components/related-posts';
 import ViewTracker from '@/components/view-tracker';
 import ShareButtons from '@/components/share-buttons';
+import DownloadMenu from '@/components/download-menu';
+import ListenButton from '@/components/listen-button';
+import SeriesBox from '@/components/series-box';
+import SubscribeForm from '@/components/subscribe-form';
+import { conceptHref } from '@/lib/concepts';
+import { newsletterEnabled } from '@/lib/server-env';
 
 export const revalidate = 60;
 
@@ -40,7 +46,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/kitap-tahlilleri/${post.slug}/opengraph-image`;
   const written = hasRealContent(post.content);
   const description = post.excerpt || post.subtitle
     || (post.book_author ? `${post.book_author} — ${post.title} üzerine tahlil` : `${post.title} — ${AUTHOR_NAME}`);
@@ -136,7 +142,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
 
   const category = CATEGORIES.find((c) => c.slug === post.category);
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/opengraph-image`;
+  const imageUrl = post.cover_image_url || `${SITE_URL}/kitap-tahlilleri/${post.slug}/opengraph-image`;
   const written = hasRealContent(post.content);
   const headings = written ? extractHeadings(post.content, post.content_format) : [];
 
@@ -214,7 +220,7 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
                 Okuma listesinde #{post.reading_order}
               </Link>
             )}
-            {post.reading_module && <><span className="post-meta-sep"> · </span><span>Durak: {post.reading_module}</span></>}
+            {post.reading_module && <><span className="post-meta-sep"> · </span><span>Durak: <Link href={`/durak/${encodeURIComponent(post.reading_module)}`}>{post.reading_module}</Link></span></>}
           </p>
         )}
         <div className="post-byline">
@@ -235,12 +241,17 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
         </div>
       )}
 
-      {written && <ReadingSettings />}
+      {written && (
+        <div className="post-tools">
+          <ListenButton />
+          <ReadingSettings />
+        </div>
+      )}
       {headings.length >= 3 && <TableOfContents headings={headings} />}
 
       <div id="post-article-body">
         {written ? (
-          <PostContent content={post.content_format === 'html' ? linkifyWikiHtml(post.content) : post.content} format={post.content_format} />
+          <PostContent content={post.content} format={post.content_format} bibliography={post.bibliography} wiki />
         ) : (
           <div className="empty-state" style={{ padding: '2.5rem 1rem' }}>
             <Horizon />
@@ -257,10 +268,12 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       {post.tags && post.tags.length > 0 && (
         <div className="post-tags">
           {post.tags.map((tag: string) => (
-            <span key={tag} className="post-tag">#{tag}</span>
+            <Link key={tag} href={conceptHref(tag)} className="post-tag">#{tag}</Link>
           ))}
         </div>
       )}
+
+      {written && <SeriesBox supabase={supabase} post={post} isAdmin={isAdmin} />}
 
       {backlinks.length > 0 && (
         <section className="backlinks">
@@ -295,6 +308,8 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       <footer className="post-footer">
         <h3 className="post-footer-title">Bu tahlili paylaş</h3>
         <ShareButtons url={url} title={post.title} />
+        {written && <DownloadMenu id={post.id} />}
+        {written && post.is_published && newsletterEnabled() && <SubscribeForm />}
       </footer>
 
       <RelatedPosts posts={relatedPosts} basePath="/kitap-tahlilleri" title="Diğer kitap tahlilleri" />

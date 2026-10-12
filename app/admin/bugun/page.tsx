@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { istanbulDay } from '@/lib/reading';
 import BugunClient from './bugun-client';
+import { fetchJourney } from '@/lib/reading-journey';
 
 export const revalidate = 0;
 export const metadata: Metadata = { title: 'Bugün', robots: { index: false, follow: false } };
@@ -71,8 +72,26 @@ export default async function BugunPage() {
     recall = (data || [])[0] || null;
   }
 
+  // Okunması biten ama henüz değerlendirmesi yazılmamış duraklar
+  let durakPrompts: string[] = [];
+  try {
+    const [journey, sums] = await Promise.all([
+      fetchJourney(supabase),
+      supabase.from('posts').select('durak_summary').not('durak_summary', 'is', null),
+    ]);
+    if (!sums.error) {
+      const have = new Set((sums.data || []).map((r: any) => r.durak_summary));
+      durakPrompts = journey.modules
+        .filter((m) => m.total > 0 && !have.has(m.name))
+        .filter((m) => journey.items.filter((i) => i.module === m.name).every((i) => i.written || i.status === 'okundu' || i.status === 'yazildi'))
+        .map((m) => m.name)
+        .slice(0, 2);
+    }
+  } catch { /* önemli değil */ }
+
   return (
     <BugunClient
+      durakPrompts={durakPrompts}
       schemaReady={schemaReady}
       today={today}
       current={current}

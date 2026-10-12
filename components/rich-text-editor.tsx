@@ -23,6 +23,8 @@ interface RichTextEditorProps {
   placeholder?: string;
   /** Dışarıdan metne eklenecek HTML (ör. bir fiş). `key` her istekte değişmeli. */
   insertRequest?: { key: number; html: string } | null;
+  /** Metnin tamamını değiştir (ör. eski bir sürüme dönmek). `key` her istekte değişmeli. */
+  replaceRequest?: { key: number; html: string } | null;
 }
 
 export default function RichTextEditor({
@@ -32,6 +34,7 @@ export default function RichTextEditor({
   onImageUpload,
   placeholder,
   insertRequest,
+  replaceRequest,
 }: RichTextEditorProps) {
   const [fullscreen, setFullscreen] = useState(false);
   // Yazma modunda Esc ile çık
@@ -116,6 +119,26 @@ export default function RichTextEditor({
     editor.chain().focus().insertContent(insertRequest.html).run();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertRequest?.key, editor]);
+
+  const appliedReplaceKey = useRef<number | null>(null);
+  useEffect(() => {
+    if (!editor || !replaceRequest || appliedReplaceKey.current === replaceRequest.key) return;
+    appliedReplaceKey.current = replaceRequest.key;
+    editor.commands.setContent(replaceRequest.html, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replaceRequest?.key, editor]);
+
+  /** ((dipnot)): seçili metni sarar ya da boş bir dipnot açıp imleci içine koyar. */
+  function insertFootnote() {
+    if (!editor) return;
+    const { from, to, empty } = editor.state.selection;
+    if (empty) {
+      editor.chain().focus().insertContent('(())').setTextSelection(from + 2).run();
+    } else {
+      const text = editor.state.doc.textBetween(from, to, ' ');
+      editor.chain().focus().insertContentAt({ from, to }, `((${text}))`).run();
+    }
+  }
 
   useEffect(() => {
     if (editor && onStatsChange) {
@@ -248,6 +271,9 @@ export default function RichTextEditor({
           </ToolbarButton>
           <ToolbarButton label="Ayırıcı çizgi" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
             <span className="rte-glyph">—</span>
+          </ToolbarButton>
+          <ToolbarButton label="Dipnot ekle — ((metin)) yazıda numaralı dipnota dönüşür" onClick={insertFootnote}>
+            <span className="rte-glyph">x¹</span>
           </ToolbarButton>
         </div>
 

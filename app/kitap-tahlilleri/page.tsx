@@ -152,7 +152,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
       </section>
 
       {journey && (
-        <ReadingJourney journey={journey} moduleHref={(name) => buildHref(current, { modul: name, sayfa: '1' })} />
+        <ReadingJourney journey={journey} moduleHref={(name) => `/durak/${encodeURIComponent(name)}`} />
       )}
 
       {modul && (

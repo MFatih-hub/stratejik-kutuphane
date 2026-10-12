@@ -10,6 +10,8 @@ import { CATEGORIES, POST_TYPES, getPostTypeInfo, slugify, stripHtml, generateEx
 import { SANITIZE_CONFIG } from '@/lib/content';
 import type { RichTextEditorStats } from '@/components/rich-text-editor';
 import NotesPanel from './notes-panel';
+import RevisionsPanel from './revisions-panel';
+import NewsletterPanel from './newsletter-panel';
 
 const RichTextEditor = dynamic(() => import('@/components/rich-text-editor'), {
   ssr: false,
@@ -33,7 +35,11 @@ function formatSavedTime(d: Date): string {
   return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export default function EditorClient({ post, initialType }: { post: any | null; initialType?: string }) {
+export default function EditorClient({
+  post, initialType, initialDurak, modules = [], seriesNames = [], newsletter = false,
+}: {
+  post: any | null; initialType?: string; initialDurak?: string; modules?: string[]; seriesNames?: string[]; newsletter?: boolean;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const bucket = process.env.NEXT_PUBLIC_BUCKET_NAME || 'documentspdfs';
@@ -41,7 +47,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const [postId, setPostId] = useState<number | null>(post?.id ?? null);
   const isNew = postId === null;
 
-  const [title, setTitle] = useState(post?.title || '');
+  const [title, setTitle] = useState(post?.title || (initialDurak ? `${initialDurak} — Durak değerlendirmesi` : ''));
   const [subtitle, setSubtitle] = useState(post?.subtitle || '');
   const [content, setContent] = useState<string>(() => toInitialHtml(post));
   const [stats, setStats] = useState<RichTextEditorStats>({ words: 0, characters: 0 });
@@ -61,6 +67,14 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   const [readingModule, setReadingModule] = useState(post?.reading_module || '');
   const hadModule = !!post?.reading_module;
   const [readingOrder, setReadingOrder] = useState(post?.reading_order != null ? String(post.reading_order) : '');
+  // Migration v6 alanları — yalnızca doluysa (ya da önceden doluysa) gönderilir,
+  // böylece migration çalıştırılmamışken kaydetme bozulmaz.
+  const [series, setSeries] = useState(post?.series || '');
+  const [seriesOrder, setSeriesOrder] = useState(post?.series_order != null ? String(post.series_order) : '');
+  const [bibliography, setBibliography] = useState(post?.bibliography || '');
+  const [durakSummary, setDurakSummary] = useState(post?.durak_summary || initialDurak || '');
+  const had = useRef({ series: !!post?.series, series_order: post?.series_order != null, bibliography: !!post?.bibliography, durak_summary: !!post?.durak_summary });
+  const [replaceRequest, setReplaceRequest] = useState<{ key: number; html: string } | null>(null);
   const typeInfo = getPostTypeInfo(postType);
   const isBulletin = postType === 'okuma_bulteni';
   const isBook = postType === 'kitap_tahlili';
@@ -80,6 +94,7 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
   latestRef.current = {
     postId, title, subtitle, content, excerpt, coverUrl, category, tags, isPublished, slug, stats,
     postType, sourceName, sourceUrl, sourceSummary, bookAuthor, readingOrder, readingModule,
+    series, seriesOrder, bibliography, durakSummary,
   };
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,6 +242,18 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
       if (s.readingModule.trim() || hadModule) payload.reading_module = s.readingModule.trim() || null;
     }
 
+    const v6 = (key: 'series' | 'series_order' | 'bibliography' | 'durak_summary', value: any) => {
+      if ((value !== null && value !== '') || had.current[key]) {
+        payload[key] = value === '' ? null : value;
+        if (value !== null && value !== '') had.current[key] = true;
+      }
+    };
+    const so = parseInt(String(s.seriesOrder).replace(/\D+/g, ''), 10);
+    v6('series', s.series.trim());
+    v6('series_order', s.series.trim() && Number.isFinite(so) ? so : null);
+    v6('bibliography', s.bibliography.trim());
+    v6('durak_summary', s.postType === 'yazi' ? s.durakSummary.trim() : '');
+
     if (shouldPublish && !s.isPublished) {
       payload.published_at = new Date().toISOString();
     }
@@ -244,7 +271,10 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
     }
 
     if (result.error) {
-      showToast('Hata: ' + result.error.message);
+      const m = result.error.message || '';
+      showToast(/column|schema cache/i.test(m) && /series|bibliography|durak_summary/.test(m)
+        ? 'Dizi / kaynakça / durak alanları için Supabase\'de SUPABASE-MIGRATION-v6.sql dosyasını çalıştırman gerekiyor.'
+        : 'Hata: ' + m);
       return;
     }
 
@@ -334,7 +364,13 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
             onStatsChange={setStats}
             onImageUpload={uploadImage}
             insertRequest={insertRequest}
+            replaceRequest={replaceRequest}
           />
+          <p className="editor-syntax-hint">
+            <span><code>((…))</code> dipnot</span>
+            <span><code>[[eser adı]]</code> ya da <code>[[#12]]</code> esere bağlantı</span>
+            <span><code>#kavram</code> kavram sayfasına bağlanır</span>
+          </p>
           {!(isBulletin && stripHtml(content).length === 0) && (
             <p className="editor-reading-time">~{readingMinutes} dakika okuma süresi</p>
           )}
@@ -384,6 +420,47 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
             <NotesPanel postId={postId} onInsert={(html) => setInsertRequest({ key: Date.now(), html })} />
           )}
 
+          {postId !== null && (
+            <div className="sidebar-section">
+              <label className="form-label">İndir</label>
+              {stripHtml(content).length > 0 ? (
+                <div className="download-row download-row-tight">
+                  <a href={`/yazdir/${postId}`} target="_blank" rel="noopener" className="download-chip">PDF</a>
+                  <a href={`/api/indir?id=${postId}&bicim=docx`} className="download-chip">Word</a>
+                  <a href={`/api/indir?id=${postId}&bicim=md`} className="download-chip">Markdown</a>
+                </div>
+              ) : <p className="form-hint">Metin kaydedilince indirilebilir.</p>}
+              {isBook && (
+                <>
+                  <p className="form-hint" style={{ margin: '10px 0 4px' }}>Bu eserin fişleri</p>
+                  <div className="download-row download-row-tight">
+                    <a href={`/admin/notlar/yazdir?post=${postId}`} target="_blank" rel="noopener" className="download-chip">PDF</a>
+                    <a href={`/api/admin/notlar-indir?post=${postId}&bicim=docx`} className="download-chip">Word</a>
+                    <a href={`/api/admin/notlar-indir?post=${postId}&bicim=md`} className="download-chip">Markdown</a>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {postId !== null && (
+            <RevisionsPanel
+              postId={postId}
+              current={() => ({ title, subtitle, content, excerpt, bibliography, words: stats.words || 0 })}
+              onRestore={(rev) => {
+                if (rev.title) setTitle(rev.title);
+                setSubtitle(rev.subtitle || '');
+                setBibliography(rev.bibliography || '');
+                setReplaceRequest({ key: Date.now(), html: rev.content });
+                markDirty();
+              }}
+            />
+          )}
+
+          {postId !== null && isPublished && newsletter && postType !== 'okuma_bulteni' && (
+            <NewsletterPanel postId={postId} sentAt={post?.newsletter_sent_at || null} />
+          )}
+
           {isBook && (
             <div className="sidebar-section source-fields">
               <label className="form-label">Yazar</label>
@@ -414,6 +491,38 @@ export default function EditorClient({ post, initialType }: { post: any | null; 
               />
             </div>
           )}
+
+          <div className="sidebar-section">
+            <label className="form-label">Dizi (opsiyonel)</label>
+            <input type="text" className="input" list="zh-series" value={series}
+              onChange={(e) => { setSeries(e.target.value); markDirty(); }} placeholder="Örn. Planın Matematiği" />
+            <datalist id="zh-series">{seriesNames.map((n) => <option key={n} value={n} />)}</datalist>
+            {series.trim() && (
+              <>
+                <label className="form-label" style={{ marginTop: 10 }}>Dizideki sırası</label>
+                <input type="text" inputMode="numeric" className="input" value={seriesOrder}
+                  onChange={(e) => { setSeriesOrder(e.target.value); markDirty(); }} placeholder="Örn. 2" />
+              </>
+            )}
+            <p className="form-hint">Aynı dizi adını verdiğin yazılar sırayla birbirine bağlanır.</p>
+          </div>
+
+          {postType === 'yazi' && (
+            <div className="sidebar-section">
+              <label className="form-label">Durak değerlendirmesi (opsiyonel)</label>
+              <input type="text" className="input" list="zh-modules" value={durakSummary}
+                onChange={(e) => { setDurakSummary(e.target.value); markDirty(); }} placeholder="Bu yazı bir durağın değerlendirmesiyse" />
+              <datalist id="zh-modules">{modules.map((m) => <option key={m} value={m} />)}</datalist>
+              <p className="form-hint">Seçersen yazı o durağın sayfasında görünür.</p>
+            </div>
+          )}
+
+          <div className="sidebar-section">
+            <label className="form-label">Kaynakça</label>
+            <textarea className="textarea" value={bibliography} onChange={(e) => { setBibliography(e.target.value); markDirty(); }}
+              placeholder={'Her satıra bir kaynak\nÖrn. Platon, Devlet, çev. S. Eyüboğlu, İş Bankası, 2018.'} style={{ minHeight: 80 }} />
+            <p className="form-hint">Yazının sonunda “Kaynakça” olarak görünür; PDF ve Word'e de geçer.</p>
+          </div>
 
           <div className="sidebar-section">
             <label className="form-label">Kategori</label>
