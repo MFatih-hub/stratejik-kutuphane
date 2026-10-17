@@ -17,7 +17,6 @@ import RelatedPosts from '@/components/related-posts';
 import ViewTracker from '@/components/view-tracker';
 import ShareButtons from '@/components/share-buttons';
 import DownloadMenu from '@/components/download-menu';
-import ListenButton from '@/components/listen-button';
 import SeriesBox from '@/components/series-box';
 import SubscribeForm from '@/components/subscribe-form';
 import { conceptHref } from '@/lib/concepts';
@@ -243,7 +242,6 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
 
       {written && (
         <div className="post-tools">
-          <ListenButton />
           <ReadingSettings />
         </div>
       )}
