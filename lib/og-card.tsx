@@ -8,15 +8,9 @@ export const OG_SIZE = { width: 1200, height: 630 };
 async function fonts() {
   // Yollar sabit yazılmalı: paketleyici yalnızca böyle görünen dosyaları ekler.
   // Her kalınlık tek dosya (latin + latin-ext birleştirildi): Türkçe harfler eksiksiz.
-  const load = (u: URL) => fetch(u).then((r) => r.arrayBuffer());
-  const [w4, w5] = await Promise.all([
-    load(new URL('./fonts/eb-garamond-400.woff', import.meta.url)),
-    load(new URL('./fonts/eb-garamond-500.woff', import.meta.url)),
-  ]);
-  return [
-    { name: 'Garamond', data: w4, weight: 400 as const, style: 'normal' as const },
-    { name: 'Garamond', data: w5, weight: 500 as const, style: 'normal' as const },
-  ];
+  // Tek kalınlık (500): ikinci dosya edge paketini Vercel'in 1 MB sınırına dayatıyordu.
+  const w5 = await fetch(new URL('./fonts/eb-garamond-500.woff', import.meta.url)).then((r) => r.arrayBuffer());
+  return [{ name: 'Garamond', data: w5, weight: 500 as const, style: 'normal' as const }];
 }
 
 export async function ogCard({ kicker, title, sub }: { kicker?: string; title: string; sub?: string }) {
