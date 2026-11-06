@@ -196,13 +196,9 @@ export default function DemClient(props: {
         <div>
           <p className="today-date">{longDate(today)}</p>
           <h1 className="today-title">Dem</h1>
-          <p className="today-sub">
-            {todayCount} fiş bugün
-            {' · '}son 30 günde {read30} gün okudun{streak > 1 ? ` · ${streak} gündür kesintisiz` : ''}
-          </p>
         </div>
         <form action="/admin/notlar" className="today-search">
-          <input name="q" className="input" placeholder="Fişlerinde ara…" />
+          <input name="q" className="input" placeholder="Ara" />
         </form>
       </header>
 
@@ -236,13 +232,12 @@ export default function DemClient(props: {
               <Glint className="today-empty-glint" />
               {suggestion ? (
                 <>
-                  <p className="today-kicker">Sıradaki eser</p>
+                  <p className="today-kicker">Sıradaki</p>
                   <h2 className="today-book-title">
                     {suggestion.reading_order != null && <span className="today-no">#{suggestion.reading_order}</span>} {suggestion.title}
                   </h2>
                   {suggestion.book_author && <p className="today-author">{suggestion.book_author}</p>}
-                  {suggestion.reading_module && <p className="today-module">{suggestion.reading_module}</p>}
-                  <button className="btn btn-primary" disabled={busy} onClick={() => setStatus(suggestion, 'okunuyor')}>Okumaya başla</button>
+                  <button className="btn btn-primary" disabled={busy} onClick={() => setStatus(suggestion, 'okunuyor')}>Başla</button>
                 </>
               ) : (
                 <p className="today-note">Okuma listesindeki her şey ya okundu ya da yolda. Sakin bir gün.</p>
@@ -256,7 +251,7 @@ export default function DemClient(props: {
         <aside className="today-side">
           {recall && (
             <div className="today-card recall">
-              <p className="today-kicker">Bugün hatırla</p>
+              <p className="today-kicker">Hatırla</p>
               <NoteBody text={recall.body} />
               <p className="note-meta">
                 {KIND_LABEL[recall.kind] || 'Not'}
@@ -271,15 +266,8 @@ export default function DemClient(props: {
 
           <div className="today-card">
             <p className="today-kicker">Tempo</p>
-            <p className="tempo-big">{stats.finished}<span> / {stats.total} eser okundu</span></p>
-            <p className="tempo-line">Son 30 günde <strong>{stats.finished30}</strong> eser{pace > 0 ? ` · ayda ~${Math.round(pace * 30)}` : ''}</p>
-            {nextMilestone && (
-              <p className="tempo-line">
-                Sıradaki eşik <strong>{nextMilestone}</strong>
-                {eta(nextMilestone - stats.finished) ? <> · bu tempoyla {eta(nextMilestone - stats.finished)}</> : <> · {nextMilestone - stats.finished} eser kaldı</>}
-              </p>
-            )}
-            {remaining > 0 && eta(remaining) && <p className="tempo-line tempo-far">Listenin sonu: {eta(remaining)}</p>}
+            <p className="tempo-big">{stats.finished}<span> / {stats.total}</span></p>
+            <p className="tempo-line">Son 30 günde {stats.finished30} eser</p>
 
             <div className="days" aria-label="Son 120 günde okuduğun günler">
               <span className="days-line" />
@@ -287,7 +275,6 @@ export default function DemClient(props: {
                 <span key={d.day} className={`day-dot${d.on ? ' is-on' : ''}${d.day === today ? ' is-today' : ''}`} title={`${d.day}${d.on ? ' · okundu' : ''}`} />
               ))}
             </div>
-            <p className="days-cap">son 120 gün</p>
             {!readToday && <button className="btn btn-sm" onClick={markToday}>Bugün okudum</button>}
           </div>
 
@@ -295,32 +282,14 @@ export default function DemClient(props: {
             <div key={d} className="today-card durak-prompt">
               <p className="today-kicker">Durak tamamlandı</p>
               <p className="durak-prompt-name"><Link href={`/durak/${encodeURIComponent(d)}`}>{d}</Link></p>
-              <p className="form-hint">Bu durağın bütün eserlerini bitirdin. Onları bir arada düşünen bir değerlendirme yazmak ister misin?</p>
-              <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(d)}`} className="btn btn-sm btn-primary" style={{ marginTop: 8 }}>Değerlendirmeyi yaz</Link>
+              <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(d)}`} className="btn btn-sm btn-primary" style={{ marginTop: 8 }}>Değerlendirme yaz</Link>
             </div>
           ))}
 
-          {waiting.length > 0 && (
-            <div className="today-card">
-              <p className="today-kicker">Tahlil bekleyenler</p>
-              <ul className="waiting-list">
-                {waiting.map((w: any) => (
-                  <li key={w.id}>
-                    <Link href={`/admin/yazi/${w.id}/duzenle`}>
-                      <span className="today-no">#{w.reading_order}</span> {w.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           <div className="today-links">
-            <Link href="/admin/notlar">Tüm fişler</Link>
-            <Link href="/admin/harita">Zihin haritası</Link>
-            <Link href="/admin/ozet">Okuma özeti</Link>
-            <Link href="/kitap-tahlilleri">Okuma yolculuğu</Link>
-            <Link href="/admin">İçerik</Link>
+            <Link href="/admin/notlar">Fişler</Link>
+            <Link href="/admin/harita">Harita</Link>
+            <Link href="/admin/ozet">Özet</Link>
           </div>
         </aside>
       </div>
@@ -355,21 +324,20 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
     <article className="today-card current">
       <div className="current-head">
         <div>
-          <p className="today-kicker"><Glint still className="kicker-glint" /> Şu an okuyorsun</p>
           <h2 className="today-book-title">
-            {book.reading_order != null && <span className="today-no">#{book.reading_order}</span>} {book.title}
+            <Link href={`/kitap-tahlilleri/${book.slug}`}>
+              {book.reading_order != null && <span className="today-no">#{book.reading_order}</span>} {book.title}
+            </Link>
           </h2>
           {book.book_author && <p className="today-author">{book.book_author}</p>}
-          {book.reading_module && <p className="today-module">{book.reading_module}</p>}
         </div>
-        <label className="page-field">
-          <span>Kaldığın yer</span>
+        <label className="page-field" aria-label="Kaldığın sayfa">
           <input
             className="input"
             value={page}
             onChange={(e) => setPage(e.target.value)}
             onBlur={() => onPage(book, page)}
-            placeholder="s. 42"
+            placeholder="Sayfa"
           />
         </label>
       </div>
@@ -388,13 +356,13 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); submit(); } }}
-          placeholder={kind === 'alinti' ? 'Altını çizdiğin cümle…' : kind === 'soru' ? 'Aklına takılan soru…' : 'Bir düşünce… başka bir esere bağlamak için [[Etika]] ya da [[#247]] yaz'}
+          placeholder={kind === 'alinti' ? 'Alıntı' : kind === 'soru' ? 'Soru' : 'Not'}
           rows={3}
         />
         <div className="note-form-row">
-          <span className="form-hint" style={{ margin: 0 }}>Ctrl + Enter ile kaydet</span>
+          <span />
           <button className="btn btn-primary btn-sm" disabled={saving || !body.trim()} onClick={submit}>
-            {saving ? 'Kaydediliyor…' : 'Fişi kaydet'}
+            {saving ? 'Kaydediliyor' : 'Kaydet'}
           </button>
         </div>
       </div>
@@ -431,10 +399,9 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
       )}
 
       <div className="current-actions">
-        <button className="btn btn-sm" disabled={busy} onClick={onFinish}>Bitirdim</button>
-        <Link href={`/admin/yazi/${book.id}/duzenle`} className="btn btn-sm">Tahlili yaz →</Link>
-        <Link href={`/kitap-tahlilleri/${book.slug}`} className="btn btn-sm">Eser sayfası</Link>
-        <button className="btn btn-sm btn-quiet" disabled={busy} onClick={onBack}>Sıraya geri koy</button>
+        <button className="btn btn-sm btn-primary" disabled={busy} onClick={onFinish}>Bitirdim</button>
+        <Link href={`/admin/yazi/${book.id}/duzenle`} className="btn btn-sm">Tahlil yaz</Link>
+        <button className="btn btn-sm btn-quiet" disabled={busy} onClick={onBack}>Bırak</button>
       </div>
     </article>
   );
@@ -444,8 +411,7 @@ function StartOther({ onStart, hasCurrent }: { onStart: (order: string) => void;
   const [v, setV] = useState('');
   return (
     <form className="start-other" onSubmit={(e) => { e.preventDefault(); if (v.trim()) onStart(v); setV(''); }}>
-      <span>{hasCurrent ? 'Aynı anda başka bir esere başla:' : 'Ya da listeden bir esere başla:'}</span>
-      <input className="input" value={v} onChange={(e) => setV(e.target.value)} placeholder="#sıra" inputMode="numeric" />
+      <input className="input" value={v} onChange={(e) => setV(e.target.value)} placeholder={hasCurrent ? 'Başka bir eser, sıra no' : 'Sıra no'} inputMode="numeric" aria-label="Sıra numarasıyla başla" />
       <button className="btn btn-sm" type="submit">Başla</button>
     </form>
   );

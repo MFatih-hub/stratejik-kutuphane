@@ -62,8 +62,8 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
       </div>
 
       <div className="journey-track-head">
-        <span>Yolculuğun tamamı</span>
-        <span>{doneModules} / {modules.length} durak tamamlandı</span>
+        <span>Duraklar</span>
+        <span>{doneModules} / {modules.length}</span>
       </div>
       <div className="journey-track" role="list" aria-label="Duraklar">
         {modules.map((m, idx) => (
@@ -82,7 +82,7 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
       </div>
 
       <details className="journey-all">
-        <summary>Tüm durakları göster ({modules.length})</summary>
+        <summary>Tüm duraklar</summary>
         <ol className="journey-all-list">
           {modules.map((m, idx) => (
             <li key={m.name} className={idx === activeIdx ? 'is-active' : ''}>
@@ -116,13 +116,13 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
       <div className="journey-head">
         <div className="journey-stat">
           <span className="journey-stat-value">{done}<span className="journey-stat-of"> / {total}</span></span>
-          <span className="journey-stat-label">eser okundu · %{pct(done, total)}{written > 0 && ` · ${written} tahlil`}</span>
+          <span className="journey-stat-label">okundu</span>
         </div>
         {next && (
           <Link href={`/kitap-tahlilleri/${next.slug}`} className="journey-here">
             <Glint still className="journey-here-pin" />
             <span className="journey-here-text">
-              <span className="journey-here-label">Şu an buradayım</span>
+              <span className="journey-here-label">Sıradaki</span>
               <span className="journey-here-title">
                 {next.order != null && <span className="journey-here-no">#{next.order}</span>} {next.title}
               </span>
@@ -132,7 +132,7 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
         )}
         {lastWritten && (
           <Link href={`/kitap-tahlilleri/${lastWritten.slug}`} className="journey-last">
-            <span className="journey-here-label">En son tamamlanan</span>
+            <span className="journey-here-label">Son okunan</span>
             <span className="journey-here-title">
               {lastWritten.order != null && <span className="journey-here-no">#{lastWritten.order}</span>} {lastWritten.title}
             </span>
@@ -176,13 +176,6 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
         <Cells items={items} nextId={nextId} />
       )}
 
-      <div className="journey-legend" aria-hidden="true">
-        <span><i className="journey-cell is-written" /> Okundu</span>
-        <span><i className="journey-cell is-written is-read" /> Tahlilsiz okundu</span>
-        <span><i className="journey-cell is-next" /> Sıradaki</span>
-        <span><i className="journey-cell" /> Sırada bekliyor</span>
-        <span className="journey-legend-hint">Her kare bir eser · üstüne gelince adı görünür</span>
-      </div>
     </section>
   );
 }

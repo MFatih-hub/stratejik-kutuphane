@@ -199,38 +199,16 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
       )}
 
       <header className="post-header">
-        <span className="post-category-large" style={{ background: 'var(--accent-bg)', color: 'var(--accent)' }}>
-          Kitap Tahlili
-        </span>
-        {category && (
-          <Link href={`/kitap-tahlilleri?kategori=${category.path}`} className="post-category-large" style={{ background: `${category.color}15`, color: category.color, marginLeft: 8 }}>
-            {category.name}
-          </Link>
-        )}
         <h1 className="post-title">{post.title}</h1>
         {post.subtitle && <p className="post-subtitle">{post.subtitle}</p>}
-        {(post.book_author || post.reading_order != null) && (
-          <p className="book-detail-meta">
-            {post.book_author && <span>Yazar: <strong>{post.book_author}</strong></span>}
-            {post.book_author && post.reading_order != null && <span className="post-meta-sep"> · </span>}
-            {post.reading_order != null && (
-              <Link href={`/kitap-tahlilleri?sayfa=${Math.max(1, Math.ceil(post.reading_order / 100))}#eser-${post.reading_order}`}>
-                Okuma listesinde #{post.reading_order}
-              </Link>
-            )}
-            {post.reading_module && <><span className="post-meta-sep"> · </span><span>Durak: <Link href={`/durak/${encodeURIComponent(post.reading_module)}`}>{post.reading_module}</Link></span></>}
-          </p>
-        )}
-        <div className="post-byline">
-          <div className="author-avatar">M</div>
-          <div className="author-info">
-            <span className="author-name">{AUTHOR_NAME}</span>
-            <span className="post-byline-meta">
-              <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
-              {written && <>{' · '}{post.reading_minutes} dk okuma</>}
-            </span>
-          </div>
-        </div>
+        {post.book_author && <p className="book-detail-author">{post.book_author}</p>}
+        <p className="book-detail-meta">
+          {post.reading_order != null && (
+            <Link href={`/kitap-tahlilleri?sayfa=${Math.max(1, Math.ceil(post.reading_order / 100))}#eser-${post.reading_order}`}>#{post.reading_order}</Link>
+          )}
+          {post.reading_module && <><span className="post-meta-sep"> · </span><Link href={`/durak/${encodeURIComponent(post.reading_module)}`}>{post.reading_module}</Link></>}
+          {written && <><span className="post-meta-sep"> · </span><time dateTime={post.published_at}>{formatDate(post.published_at)}</time></>}
+        </p>
       </header>
 
       {post.cover_image_url && (

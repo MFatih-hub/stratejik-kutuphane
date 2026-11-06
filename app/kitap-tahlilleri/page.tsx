@@ -136,13 +136,9 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   return (
     <>
       <section className="blog-hero">
-        <div className="hero-eyebrow">
-          <span className="hero-dot"></span>
-          Kitap Tahlilleri
-        </div>
         <h1 className="blog-hero-title">Kitap Tahlilleri</h1>
         <p className="blog-hero-sub">
-          Okuma listesi ve okunan eserler üzerine notlar. Tahlili yazılan eserler bağlantılıdır.
+          Okuma listesi ve tahliller.
         </p>
         {totalCount > 0 && !journey && (
           <div className="book-progress" aria-label="Tahlil ilerlemesi">
@@ -179,26 +175,11 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
             </Link>
           ))}
         </div>
-        <div className="category-bar" style={{ marginBottom: 10 }}>
-          <Link href={buildHref(current, { kategori: '', sayfa: '1' })} className={`category-pill${!kategori ? ' category-pill-active' : ''}`}>
-            Tüm alanlar
-          </Link>
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c.slug}
-              href={buildHref(current, { kategori: c.path, sayfa: '1' })}
-              className={`category-pill${kategori === c.slug ? ' category-pill-active' : ''}`}
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
         <form method="get" action="/kitap-tahlilleri" className="book-search">
           {durum !== 'tumu' && <input type="hidden" name="durum" value={durum} />}
           {current.kategori && <input type="hidden" name="kategori" value={current.kategori} />}
           {modul && <input type="hidden" name="modul" value={modul} />}
-          <input type="search" name="q" defaultValue={q} className="input" placeholder="Eser ya da yazar ara…" />
-          <button type="submit" className="btn btn-sm">Ara</button>
+          <input type="search" name="q" defaultValue={q} className="input" placeholder="Ara" aria-label="Eser ya da yazar ara" />
           {q && <Link href={buildHref(current, { q: '', sayfa: '1' })} className="btn btn-sm">Temizle</Link>}
         </form>
       </section>
@@ -212,9 +193,6 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
         </div>
       ) : (
         <section className="book-list" aria-label="Eserler">
-          <p className="section-title">
-            {count} eser{pageCount > 1 ? ` · sayfa ${pageNum}/${pageCount}` : ''}
-          </p>
           <ol className="book-items">
             {list.map((post: any) => {
               const written = !!post.content;
@@ -227,20 +205,14 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
                   </span>
                   <span className="book-side">
                     {isAdmin && !written && <ReadToggle id={post.id} status={post.reading_status} />}
-                    <span
-                      className="post-category"
-                      style={{ background: `${getCategoryColor(post.category)}15`, color: getCategoryColor(post.category) }}
-                    >
-                      {getCategoryName(post.category)}
-                    </span>
                     {written
-                      ? <span className="book-badge book-badge-done">Tahlil →</span>
+                      ? <span className="book-badge book-badge-done">Tahlil</span>
                       : post.reading_status === 'okunuyor'
                         ? <span className="book-badge book-badge-reading">Okunuyor</span>
                         : isAdmin ? null
                         : post.reading_status === 'okundu'
-                          ? <span className="book-badge">Okundu ✓</span>
-                          : <span className="book-badge">Sırada</span>}
+                          ? <span className="book-badge">Okundu</span>
+                          : null}
                   </span>
                 </>
               );

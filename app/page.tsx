@@ -79,7 +79,7 @@ export default async function HomePage() {
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">
-          Mühendislik, politika, sosyoloji, finans, felsefe ve tarih üzerine denemeler, okuma notları ve kitap tahlilleri.
+          Denemeler, okuma notları ve kitap tahlilleri.
         </p>
         <div className="hero-search">
           <InlineSiteSearch />
@@ -147,10 +147,9 @@ export default async function HomePage() {
         <section className="showcase" aria-label="Bölümler">
           <div className="showcase-panel">
             <div className="showcase-head">
-              <span className="showcase-kicker">Kitap Tahlilleri</span>
-              <Link href="/kitap-tahlilleri?durum=yazilan" className="showcase-more">Tümü →</Link>
+              <h2 className="showcase-title">Son tahliller</h2>
+              <Link href="/kitap-tahlilleri?durum=yazilan" className="showcase-more">Tümü</Link>
             </div>
-            <h2 className="showcase-title">Son tahliller</h2>
             {journey.recent.length > 0 ? (
               <ul className="showcase-list">
                 {journey.recent.map((r: any) => (
@@ -173,22 +172,19 @@ export default async function HomePage() {
           {journey.total > 0 && (
             <div className="showcase-panel showcase-panel-journey">
               <div className="showcase-head">
-                <span className="showcase-kicker">Kitap Tahlilleri</span>
-                <Link href="/kitap-tahlilleri" className="showcase-more">Okuma yolculuğu →</Link>
+                <h2 className="showcase-title">Okuma yolculuğu</h2>
+                <Link href="/kitap-tahlilleri" className="showcase-more">Tümü</Link>
               </div>
-              <h2 className="showcase-title">
-                {journey.done} <span className="showcase-title-of">/ {journey.total} eser</span>
-              </h2>
+              <p className="showcase-count">{journey.done} <span className="showcase-title-of">/ {journey.total}</span></p>
               <div className="journey-bar" style={{ margin: '6px 0 4px' }}>
                 <div className="journey-bar-fill" style={{ width: `${journeyPct}%` }} />
               </div>
-              <p className="showcase-note">%{journeyPct} tamamlandı</p>
 
               {journey.next && (
                 <Link href={`/kitap-tahlilleri/${journey.next.slug}`} className="journey-here showcase-here">
                   <Glint still className="journey-here-pin" />
                   <span className="journey-here-text">
-                    <span className="journey-here-label">Şu an buradayım</span>
+                    <span className="journey-here-label">Sıradaki</span>
                     <span className="journey-here-title">
                       {journey.next.reading_order != null && <span className="journey-here-no">#{journey.next.reading_order}</span>} {journey.next.title}
                     </span>
@@ -204,7 +200,7 @@ export default async function HomePage() {
 
       {rest.length > 0 && (
         <section className="posts-list">
-          <h2 className="section-title">Tüm Yazılar</h2>
+          <h2 className="section-title">Yazılar</h2>
           {rest.map((post) => (
             <article key={post.id} className="post-card">
               <Link href={`/yazi/${post.slug}`} className="post-card-link">

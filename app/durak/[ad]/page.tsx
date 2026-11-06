@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { ad: string } }): 
   return { title: `${name} — Durak`, description: `Okuma yolculuğunda “${name}” durağı: eserler, tahliller ve durak değerlendirmesi.` };
 }
 
-const STATUS: Record<string, string> = { okunuyor: 'Okunuyor', okundu: 'Okundu ✓' };
+const STATUS: Record<string, string> = { okunuyor: 'Okunuyor', okundu: 'Okundu' };
 
 export default async function DurakPage({ params }: { params: { ad: string } }) {
   const name = nameOf(params.ad);
@@ -55,8 +55,7 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
         <div className="hero-eyebrow"><span className="hero-dot"></span>Durak {idx + 1} / {journey.modules.length}</div>
         <h1 className="blog-hero-title">{name}</h1>
         <p className="blog-hero-sub">
-          {mod.firstOrder != null && <>Okuma listesinde #{mod.firstOrder}–{mod.lastOrder} · </>}
-          {mod.total} eser · {mod.done} okundu · {mod.written} tahlil{done && ' · durak tamamlandı'}
+          {mod.total} eser · {mod.done} okundu
         </p>
         <div className="book-progress" aria-label="Durak ilerlemesi">
           <div className="book-progress-track"><div className="book-progress-fill" style={{ width: `${pct}%` }} /></div>
@@ -78,15 +77,11 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
       ) : isAdmin ? (
         <section className="durak-summary">
           <p className="section-title">Durak değerlendirmesi</p>
-          <p className="form-hint" style={{ marginBottom: 10 }}>
-            {done ? 'Bu durağın bütün eserleri tamamlandı.' : `Durak bittiğinde (${mod.total - mod.done} eser kaldı)`} Eserleri bir arada düşünen bir değerlendirme yazabilirsin; burada görünür.
-          </p>
-          <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(name)}`} className="btn btn-sm btn-primary">Değerlendirmeyi yaz</Link>
+                    <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(name)}`} className="btn btn-sm btn-primary">Değerlendirme yaz</Link>
         </section>
       ) : null}
 
       <section className="book-list" aria-label="Bu duraktaki eserler">
-        <p className="section-title">Eserler</p>
         <ol className="book-items">
           {items.map((it) => {
             const inner = (
@@ -99,11 +94,11 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
                 <span className="book-side">
                   {isAdmin && !it.written && <ReadToggle id={it.id} status={it.status} />}
                   {it.written
-                    ? <span className="book-badge book-badge-done">Tahlil →</span>
+                    ? <span className="book-badge book-badge-done">Tahlil</span>
                     : isAdmin && it.status !== 'okunuyor' ? null
                     : it.status && STATUS[it.status]
                       ? <span className={`book-badge${it.status === 'okunuyor' ? ' book-badge-reading' : ''}`}>{STATUS[it.status]}</span>
-                      : <span className="book-badge">Sırada</span>}
+                      : null}
                 </span>
               </>
             );

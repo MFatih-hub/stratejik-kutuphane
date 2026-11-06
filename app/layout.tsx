@@ -186,7 +186,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="site-nav">
               <HeaderSiteSearch />
               <ThemeToggle />
-              <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
               <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
               {user && (
                 <>

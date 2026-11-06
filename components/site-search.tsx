@@ -56,7 +56,7 @@ function filterPosts(posts: SearchPost[], query: string): SearchPost[] {
 }
 
 function ResultsList({ results, onNavigate }: { results: SearchPost[]; onNavigate: () => void }) {
-  if (results.length === 0) return <p className="search-empty">Sonuç bulunamadı.</p>;
+  if (results.length === 0) return <p className="search-empty">Sonuç yok</p>;
   return (
     <ul className="search-results">
       {results.map((p) => (
@@ -102,7 +102,7 @@ export function InlineSiteSearch() {
       <input
         type="search"
         className="input search-inline-input"
-        placeholder="Yazılarda ara"
+        placeholder="Ara"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
@@ -166,20 +166,13 @@ export function HeaderSiteSearch() {
               ref={inputRef}
               type="search"
               className="input search-modal-input"
-              placeholder="Başlık, özet veya etiketlerde ara…"
+              placeholder="Ara"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
             <div className="search-modal-results">
-              {query.trim() === '' ? (
-                <p className="search-empty">Yazmaya başla…</p>
-              ) : (
-                <ResultsList results={results} onNavigate={() => setOpen(false)} />
-              )}
+              {query.trim() !== '' && <ResultsList results={results} onNavigate={() => setOpen(false)} />}
             </div>
-            <button className="btn btn-sm search-modal-close" onClick={() => setOpen(false)}>
-              Kapat (Esc)
-            </button>
           </div>
         </div>
       )}

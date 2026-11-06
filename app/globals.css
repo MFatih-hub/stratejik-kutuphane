@@ -2463,6 +2463,45 @@ a { color: inherit; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
+/* ---------- Ölçek: göz yormayan, dengeli boyutlar ---------- */
+:root .blog-hero { padding: 4rem 0 2.5rem; }
+:root .blog-hero-title { font-size: clamp(32px, 4vw, 48px); letter-spacing: -0.03em; line-height: 1.08; }
+:root .blog-hero-sub { font-size: clamp(17px, 1.5vw, 19px); line-height: 1.45; }
+.hero-eyebrow { font-size: 15px; }
+:root .post-title { font-size: clamp(28px, 3.3vw, 40px); letter-spacing: -0.028em; line-height: 1.12; }
+.book-detail-author { margin: 10px 0 2px; font-size: 19px; font-weight: 500; letter-spacing: -0.015em; color: var(--text-secondary); }
+:root .book-detail-meta { margin: 4px 0 0; font-size: 14px; color: var(--text-tertiary); }
+:root .book-detail-meta a { color: var(--text-tertiary); }
+:root .book-detail-meta a:hover { color: var(--accent); }
+.post-header { margin-bottom: 1.75rem; }
+:root .showcase-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+:root .showcase-title { font-size: 21px; font-weight: 650; letter-spacing: -0.02em; margin: 0; }
+.showcase-count { margin: 4px 0 8px; font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.showcase-count .showcase-title-of { font-size: 17px; font-weight: 500; color: var(--text-tertiary); }
+:root .journey-stat-value { font-size: 30px; }
+:root .today-title { font-family: var(--font-display); font-size: clamp(28px, 3vw, 34px); font-weight: 700; letter-spacing: -0.03em; margin: 0.15rem 0 0; }
+:root .today-book-title { font-family: var(--font-display); font-size: 21px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25; }
+:root .today-book-title a { color: inherit; }
+:root .today-book-title a:hover { color: var(--accent); }
+:root .tempo-big { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+:root .tempo-big span { font-size: 15px; font-weight: 500; }
+:root .today-card { border: 0; border-radius: var(--radius-tile); background: var(--bg-card); box-shadow: var(--tile-shadow); }
+:root .post-content, :root .rte-body { font-size: 18px; line-height: 1.72; }
+:root .search-modal-input { font-size: 17px; height: 46px; }
+:root .search-modal-results { margin-top: 6px; }
+:root .search-modal-results:empty { display: none; }
+.stamp-label { display: none; }
+:root .journey-legend { display: none; }
+@media (max-width: 760px) {
+  :root .blog-hero { padding: 2.75rem 0 2rem; }
+  :root .post-content, :root .rte-body { font-size: 17px; }
+}
+
+:root .input:focus-visible, :root .textarea:focus-visible, :root .select:focus-visible { outline: none; }
+:root .today-empty .today-kicker { text-align: center; justify-content: center; }
+.start-other { display: flex; align-items: center; gap: 8px; }
+.start-other .input { max-width: 220px; }
+
 /* ============== OKUMA LİSTESİ DÜZENLEME (admin) ============== */
 .ld-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 18px; }
 .ld-card { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px;
