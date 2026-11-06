@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { NOTE_KINDS } from '@/lib/reading';
-import { NoteBody } from '../bugun/bugun-client';
+import { NoteBody } from '../dem/dem-client';
 import { Horizon } from '@/components/calm';
 
 export const revalidate = 0;
@@ -64,7 +64,7 @@ export default async function NotesPage({ searchParams }: { searchParams: Params
           <h1 className="admin-title">Fişler</h1>
           <p className="admin-sub">Okurken aldığın notlar, alıntılar ve sorular. Sadece sen görürsün.</p>
         </div>
-        <Link href="/admin/bugun" className="btn btn-sm">← Bugün</Link>
+        <Link href="/admin/dem" className="btn btn-sm">← Dem</Link>
       </div>
 
       <form action="/admin/notlar" className="notes-search">
@@ -85,7 +85,7 @@ export default async function NotesPage({ searchParams }: { searchParams: Params
       ) : notes.length === 0 ? (
         <div className="empty-state">
           <Horizon />
-          <p className="empty-state-text">{q ? 'Bu aramayla eşleşen fiş yok.' : 'Henüz fiş yok. Bugün ekranından ilkini al.'}</p>
+          <p className="empty-state-text">{q ? 'Bu aramayla eşleşen fiş yok.' : 'Henüz fiş yok. Dem’den ilkini al.'}</p>
         </div>
       ) : (
         <>

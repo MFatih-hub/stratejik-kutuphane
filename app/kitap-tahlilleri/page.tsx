@@ -138,7 +138,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
       <section className="blog-hero">
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
-          KİTAP TAHLİLLERİ
+          Kitap Tahlilleri
         </div>
         <h1 className="blog-hero-title">Kitap Tahlilleri</h1>
         <p className="blog-hero-sub">

@@ -63,7 +63,7 @@ export default async function MapPage() {
           <h1 className="admin-title">Zihin haritası</h1>
           <p className="admin-sub">Fişlerinde ve tahlillerinde <code>[[eser]]</code> ile kurduğun bağlar. Eserler ufukta okuma sırasıyla durur.</p>
         </div>
-        <Link href="/admin/bugun" className="btn btn-sm">← Bugün</Link>
+        <Link href="/admin/dem" className="btn btn-sm">← Dem</Link>
       </div>
 
       {list.length === 0 ? (

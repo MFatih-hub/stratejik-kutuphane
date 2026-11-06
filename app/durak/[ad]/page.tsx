@@ -52,7 +52,7 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
       </nav>
 
       <section className="blog-hero durak-hero" style={{ ['--glint-boost' as any]: (pct / 100).toFixed(2) }}>
-        <div className="hero-eyebrow"><span className="hero-dot"></span>DURAK {String(idx + 1).padStart(2, '0')} / {journey.modules.length}</div>
+        <div className="hero-eyebrow"><span className="hero-dot"></span>Durak {idx + 1} / {journey.modules.length}</div>
         <h1 className="blog-hero-title">{name}</h1>
         <p className="blog-hero-sub">
           {mod.firstOrder != null && <>Okuma listesinde #{mod.firstOrder}–{mod.lastOrder} · </>}

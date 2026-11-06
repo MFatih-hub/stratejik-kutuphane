@@ -19,7 +19,6 @@ import ShareButtons from '@/components/share-buttons';
 import DownloadMenu from '@/components/download-menu';
 import SeriesBox from '@/components/series-box';
 import SubscribeForm from '@/components/subscribe-form';
-import { conceptHref } from '@/lib/concepts';
 import { newsletterEnabled } from '@/lib/server-env';
 
 export const revalidate = 60;
@@ -263,13 +262,6 @@ export default async function KitapTahliliPage({ params }: { params: { slug: str
         )}
       </div>
 
-      {post.tags && post.tags.length > 0 && (
-        <div className="post-tags">
-          {post.tags.map((tag: string) => (
-            <Link key={tag} href={conceptHref(tag)} className="post-tag">#{tag}</Link>
-          ))}
-        </div>
-      )}
 
       {written && <SeriesBox supabase={supabase} post={post} isAdmin={isAdmin} />}
 

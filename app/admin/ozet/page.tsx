@@ -134,7 +134,7 @@ export default async function OzetPage({ searchParams }: { searchParams: { yil?:
           {years.map((y) => (
             <Link key={y} href={`/admin/ozet?yil=${y}`} className={`category-pill${y === year ? ' category-pill-active' : ''}`}>{y}</Link>
           ))}
-          <Link href="/admin/bugun" className="btn btn-sm">Bugün</Link>
+          <Link href="/admin/dem" className="btn btn-sm">Dem</Link>
         </div>
       </div>
 

@@ -36,7 +36,7 @@ export default function NotesPanel({ postId, onInsert }: { postId: number; onIns
     <div className="sidebar-section notes-panel">
       <label className="form-label">Okurken aldığın fişler ({notes.length})</label>
       {notes.length === 0 ? (
-        <p className="form-hint">Bu eser için henüz fiş yok. <Link href="/admin/bugun">Bugün</Link> ekranından okurken not alabilirsin.</p>
+        <p className="form-hint">Bu eser için henüz fiş yok. <Link href="/admin/dem">Dem</Link>’de okurken not alabilirsin.</p>
       ) : (
         <>
           <ul className="notes-panel-list">

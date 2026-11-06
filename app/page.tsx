@@ -75,7 +75,7 @@ export default async function HomePage() {
         <SeaHorizon />
         <div className="hero-eyebrow">
           <span className="hero-dot"></span>
-          MUHAMMET FATİH IŞIK · DENEMELER VE ANALİZLER
+          Muhammet Fatih Işık
         </div>
         <h1 className="blog-hero-title">Zihin Haritası</h1>
         <p className="blog-hero-sub">

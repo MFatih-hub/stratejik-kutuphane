@@ -6,10 +6,10 @@ import ThemeToggle from '@/components/theme-toggle';
 import WaterDrop from '@/components/water-drop';
 import { HeaderSiteSearch } from '@/components/site-search';
 import { BrandMark, Glint } from '@/components/calm';
-import { FOOTER_QUOTE } from '@/lib/quotes';
-// Kur'an metni için Uthmani hattını tam destekleyen yazı tipi (siteyle birlikte
-// barındırılır; tarayıcı sadece Arapça ayet gösterildiğinde indirir, ~45 KB).
-import '@fontsource/amiri-quran/arabic-400.css';
+import { quoteOfTheDay } from '@/lib/quotes';
+// Okuma yazısı: Literata (Türkçe, Yunanca ve transliterasyon harfleriyle, siteyle birlikte barındırılır)
+import '@fontsource-variable/literata/opsz.css';
+import '@fontsource-variable/literata/opsz-italic.css';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
@@ -139,7 +139,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     description: 'Teknoloji, jeopolitik, bilim ve düşünce üzerine yazıyor.',
   };
 
-  const quote = FOOTER_QUOTE;
+  const quote = quoteOfTheDay();
 
   return (
     <html lang="tr">
@@ -186,10 +186,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <ThemeToggle />
               <Link href="/"><span className="nav-text">Ana sayfa</span></Link>
               <Link href="/kitap-tahlilleri"><span className="nav-text">Kitap Tahlilleri</span></Link>
-              <Link href="/kavram"><span className="nav-text">Kavramlar</span></Link>
               {user && (
                 <>
-                  <Link href="/admin/bugun"><span className="nav-text">Bugün</span></Link>
+                  <Link href="/admin/dem"><span className="nav-text">Dem</span></Link>
                   <Link href="/admin"><span className="nav-text">Admin</span></Link>
                   <Link href="/admin/cikis"><span className="nav-text">Çıkış</span></Link>
                 </>

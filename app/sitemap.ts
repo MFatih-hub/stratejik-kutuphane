@@ -45,7 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Bölüm indeksleri
   const sectionUrls = [
     { url: `${SITE_URL}/kitap-tahlilleri`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
-    { url: `${SITE_URL}/kavram`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 },
   ];
 
   // Duraklar ve yazı dizileri

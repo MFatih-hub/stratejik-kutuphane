@@ -56,7 +56,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       <section className="blog-hero">
         <div className="hero-eyebrow">
           <span className="hero-dot" style={{ background: category.color }}></span>
-          KATEGORİ
+          Kategori
         </div>
         <h1 className="blog-hero-title" style={{ color: category.color }}>
           {category.name}

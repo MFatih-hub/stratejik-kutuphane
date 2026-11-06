@@ -42,7 +42,7 @@ function longDate(day: string): string {
   return new Date(Date.UTC(y, m - 1, d, 9)).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul' });
 }
 
-export default function BugunClient(props: {
+export default function DemClient(props: {
   schemaReady: boolean; today: string; current: Book[]; suggestion: Book | null; notes: Note[]; waiting: any[];
   days: string[]; stats: { total: number; finished: number; finished30: number; todayNotes: number }; recall: Note | null;
   durakPrompts?: string[];
@@ -195,7 +195,7 @@ export default function BugunClient(props: {
       <header className="today-head">
         <div>
           <p className="today-date">{longDate(today)}</p>
-          <h1 className="today-title">Bugün</h1>
+          <h1 className="today-title">Dem</h1>
           <p className="today-sub">
             {todayCount} fiş bugün
             {' · '}son 30 günde {read30} gün okudun{streak > 1 ? ` · ${streak} gündür kesintisiz` : ''}
@@ -318,7 +318,6 @@ export default function BugunClient(props: {
           <div className="today-links">
             <Link href="/admin/notlar">Tüm fişler</Link>
             <Link href="/admin/harita">Zihin haritası</Link>
-            <Link href="/kavram">Kavramlar</Link>
             <Link href="/admin/ozet">Okuma özeti</Link>
             <Link href="/kitap-tahlilleri">Okuma yolculuğu</Link>
             <Link href="/admin">İçerik</Link>
