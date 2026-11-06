@@ -98,10 +98,11 @@ export function InlineSiteSearch() {
 
   return (
     <div className="site-search-inline" ref={wrapRef}>
+      <span className="search-inline-icon"><SearchIcon /></span>
       <input
         type="search"
         className="input search-inline-input"
-        placeholder="🔍 Yazılarda ara…"
+        placeholder="Yazılarda ara"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
@@ -112,6 +113,15 @@ export function InlineSiteSearch() {
         </div>
       )}
     </div>
+  );
+}
+
+function SearchIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <circle cx="8.6" cy="8.6" r="5.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M13 13l4.4 4.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -147,7 +157,7 @@ export function HeaderSiteSearch() {
   return (
     <>
       <button className="icon-btn" aria-label="Yazılarda ara" title="Ara" onClick={() => setOpen(true)}>
-        🔍
+        <SearchIcon size={17} />
       </button>
       {open && (
         <div className="search-modal-backdrop" onClick={() => setOpen(false)}>

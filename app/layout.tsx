@@ -10,6 +10,8 @@ import { quoteOfTheDay } from '@/lib/quotes';
 // Okuma yazısı: Literata (Türkçe, Yunanca ve transliterasyon harfleriyle, siteyle birlikte barındırılır)
 import '@fontsource-variable/literata/opsz.css';
 import '@fontsource-variable/literata/opsz-italic.css';
+// Arayüz yazısı: Apple cihazlarda SF Pro, diğerlerinde Inter
+import '@fontsource-variable/inter/opsz.css';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
