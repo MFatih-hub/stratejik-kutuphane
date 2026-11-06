@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, getCategoryByPath, getCategoryColor, getCategoryName } from '@/lib/helpers';
 import { fetchJourney } from '@/lib/reading-journey';
 import ReadingJourney from '@/components/reading-journey';
+import ReadToggle from '@/components/read-toggle';
 
 export const revalidate = 60;
 
@@ -54,6 +55,8 @@ function buildHref(base: Params, patch: Partial<Params>): string {
 
 export default async function KitapTahlilleriPage({ searchParams }: { searchParams: Params }) {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = !!user;
 
   const durum: Durum = DURUMLAR.some((d) => d.value === searchParams?.durum) ? (searchParams.durum as Durum) : 'tumu';
   // Adreste yeni kategori adı (felsefe) ya da eski iç değer (dusunce) olabilir
@@ -75,7 +78,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   };
   const applyDurum = (query: any, d: Durum) => {
     if (d === 'yazilan') return query.neq('content', '');
-    if (d === 'bekleyen') return query.eq('content', '');
+    if (d === 'bekleyen') return query.eq('content', '').or('reading_status.is.null,reading_status.in.(sirada,okunuyor)');
     return query;
   };
 
@@ -95,11 +98,12 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   const countQuery = (d: Durum) =>
     applyDurum(applyCommon(supabase.from('posts').select('id', { count: 'exact', head: true })), d);
 
-  let [{ data: rows, count, error }, totalRes, writtenRes, journey] = await Promise.all([
+  let [{ data: rows, count, error }, totalRes, writtenRes, journey, doneRes] = await Promise.all([
     listQuery,
     countQuery('tumu'),
     countQuery('yazilan'),
     showJourney ? fetchJourney(supabase) : Promise.resolve(null),
+    applyCommon(supabase.from('posts').select('id', { count: 'exact', head: true })).or('reading_status.in.(okundu,yazildi),content.neq.'),
   ]);
 
   if (error) {
@@ -124,9 +128,10 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
   const list = rows || [];
   const totalCount = totalRes.count || 0;
   const writtenCount = writtenRes.count || 0;
-  const counts: Record<Durum, number> = { tumu: totalCount, yazilan: writtenCount, bekleyen: Math.max(0, totalCount - writtenCount) };
+  const counts: Record<Durum, number> = { tumu: totalCount, yazilan: writtenCount, bekleyen: Math.max(0, totalCount - (doneRes.error ? writtenCount : (doneRes.count || 0))) };
   const pageCount = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
-  const progressPct = totalCount ? Math.round((writtenCount / totalCount) * 1000) / 10 : 0;
+  const doneCount = doneRes.error ? writtenCount : (doneRes.count || 0);
+  const progressPct = totalCount ? Math.round((doneCount / totalCount) * 1000) / 10 : 0;
 
   return (
     <>
@@ -145,7 +150,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
               <div className="book-progress-fill" style={{ width: `${progressPct}%` }} />
             </div>
             <span className="book-progress-label">
-              {writtenCount} / {totalCount} eserin tahlili yazıldı
+              {doneCount} / {totalCount} eser okundu · {writtenCount} tahlil
             </span>
           </div>
         )}
@@ -221,6 +226,7 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
                     {post.book_author && <span className="book-author">{post.book_author}</span>}
                   </span>
                   <span className="book-side">
+                    {isAdmin && !written && <ReadToggle id={post.id} status={post.reading_status} />}
                     <span
                       className="post-category"
                       style={{ background: `${getCategoryColor(post.category)}15`, color: getCategoryColor(post.category) }}
@@ -231,8 +237,9 @@ export default async function KitapTahlilleriPage({ searchParams }: { searchPara
                       ? <span className="book-badge book-badge-done">Tahlil →</span>
                       : post.reading_status === 'okunuyor'
                         ? <span className="book-badge book-badge-reading">Okunuyor</span>
+                        : isAdmin ? null
                         : post.reading_status === 'okundu'
-                          ? <span className="book-badge">Okundu</span>
+                          ? <span className="book-badge">Okundu ✓</span>
                           : <span className="book-badge">Sırada</span>}
                   </span>
                 </>

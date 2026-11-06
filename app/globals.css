@@ -2256,3 +2256,16 @@ body.print-page { background: var(--bg-secondary); }
 
 /* Arapça (sağdan sola) paragraflar kendiliğinden sağa yaslansın */
 .post-content p, .post-content li, .post-content blockquote p, .note-body { unicode-bidi: plaintext; text-align: start; }
+
+/* "Okudum" düğmesi (yalnızca yönetici) */
+.read-toggle {
+  font: inherit; font-size: 12px; line-height: 1; white-space: nowrap;
+  padding: 6px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border, rgba(127,127,127,.35));
+  background: transparent; color: var(--text-secondary, inherit);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.read-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.read-toggle.is-read { background: var(--accent-bg); color: var(--accent); border-color: transparent; }
+.read-toggle:disabled { opacity: .5; cursor: progress; }
+.journey-cell.is-read { opacity: .7; }

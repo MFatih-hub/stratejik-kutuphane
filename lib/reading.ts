@@ -6,7 +6,7 @@ export type ReadingStatus = 'sirada' | 'okunuyor' | 'okundu' | 'yazildi';
 export const STATUS_LABELS: Record<ReadingStatus, string> = {
   sirada: 'Sırada',
   okunuyor: 'Okunuyor',
-  okundu: 'Okundu · tahlil bekliyor',
+  okundu: 'Okundu',
   yazildi: 'Tahlili yazıldı',
 };
 

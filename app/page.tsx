@@ -33,7 +33,7 @@ export default async function HomePage() {
   ]);
 
   const postList = posts || [];
-  const journeyPct = journey.total ? Math.round((journey.written / journey.total) * 1000) / 10 : 0;
+  const journeyPct = journey.total ? Math.round((journey.done / journey.total) * 1000) / 10 : 0;
   const hasShowcase = journey.total > 0;
   const featured = postList[0];
   const rest = postList.slice(1);
@@ -177,7 +177,7 @@ export default async function HomePage() {
                 <Link href="/kitap-tahlilleri" className="showcase-more">Okuma yolculuğu →</Link>
               </div>
               <h2 className="showcase-title">
-                {journey.written} <span className="showcase-title-of">/ {journey.total} eser</span>
+                {journey.done} <span className="showcase-title-of">/ {journey.total} eser</span>
               </h2>
               <div className="journey-bar" style={{ margin: '6px 0 4px' }}>
                 <div className="journey-bar-fill" style={{ width: `${journeyPct}%` }} />

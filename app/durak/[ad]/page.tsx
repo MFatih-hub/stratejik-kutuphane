@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 import { fetchJourney } from '@/lib/reading-journey';
 import { formatDate } from '@/lib/helpers';
 import { Glint } from '@/components/calm';
+import ReadToggle from '@/components/read-toggle';
 
 export const revalidate = 60;
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: { ad: string } }): 
   return { title: `${name} — Durak`, description: `Okuma yolculuğunda “${name}” durağı: eserler, tahliller ve durak değerlendirmesi.` };
 }
 
-const STATUS: Record<string, string> = { okunuyor: 'Okunuyor', okundu: 'Okundu' };
+const STATUS: Record<string, string> = { okunuyor: 'Okunuyor', okundu: 'Okundu ✓' };
 
 export default async function DurakPage({ params }: { params: { ad: string } }) {
   const name = nameOf(params.ad);
@@ -31,8 +32,8 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
   const items = journey.items.filter((i) => i.module === name);
   const prev = idx > 0 ? journey.modules[idx - 1] : null;
   const next = idx < journey.modules.length - 1 ? journey.modules[idx + 1] : null;
-  const done = mod.total > 0 && mod.written === mod.total;
-  const pct = mod.total ? Math.round((mod.written / mod.total) * 100) : 0;
+  const done = mod.total > 0 && mod.done === mod.total;
+  const pct = mod.total ? Math.round((mod.done / mod.total) * 100) : 0;
 
   let summaries: any[] = [];
   {
@@ -55,7 +56,7 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
         <h1 className="blog-hero-title">{name}</h1>
         <p className="blog-hero-sub">
           {mod.firstOrder != null && <>Okuma listesinde #{mod.firstOrder}–{mod.lastOrder} · </>}
-          {mod.total} eser · {mod.written} tahlil yazıldı{done && ' · durak tamamlandı'}
+          {mod.total} eser · {mod.done} okundu · {mod.written} tahlil{done && ' · durak tamamlandı'}
         </p>
         <div className="book-progress" aria-label="Durak ilerlemesi">
           <div className="book-progress-track"><div className="book-progress-fill" style={{ width: `${pct}%` }} /></div>
@@ -78,7 +79,7 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
         <section className="durak-summary">
           <p className="section-title">Durak değerlendirmesi</p>
           <p className="form-hint" style={{ marginBottom: 10 }}>
-            {done ? 'Bu durağın bütün eserleri tamamlandı.' : `Durak bittiğinde (${mod.total - mod.written} eser kaldı)`} Eserleri bir arada düşünen bir değerlendirme yazabilirsin; burada görünür.
+            {done ? 'Bu durağın bütün eserleri tamamlandı.' : `Durak bittiğinde (${mod.total - mod.done} eser kaldı)`} Eserleri bir arada düşünen bir değerlendirme yazabilirsin; burada görünür.
           </p>
           <Link href={`/admin/yazi/yeni?durak=${encodeURIComponent(name)}`} className="btn btn-sm btn-primary">Değerlendirmeyi yaz</Link>
         </section>
@@ -96,8 +97,10 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
                   {it.author && <span className="book-author">{it.author}</span>}
                 </span>
                 <span className="book-side">
+                  {isAdmin && !it.written && <ReadToggle id={it.id} status={it.status} />}
                   {it.written
                     ? <span className="book-badge book-badge-done">Tahlil →</span>
+                    : isAdmin && it.status !== 'okunuyor' ? null
                     : it.status && STATUS[it.status]
                       ? <span className={`book-badge${it.status === 'okunuyor' ? ' book-badge-reading' : ''}`}>{STATUS[it.status]}</span>
                       : <span className="book-badge">Sırada</span>}
@@ -118,14 +121,14 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
           <Link href={`/durak/${encodeURIComponent(prev.name)}`} className="book-seq-link">
             <span className="book-seq-dir">← Önceki durak</span>
             <span className="book-seq-title">{prev.name}</span>
-            <span className="book-seq-author">{prev.written}/{prev.total}</span>
+            <span className="book-seq-author">{prev.done}/{prev.total}</span>
           </Link>
         ) : <span />}
         {next ? (
           <Link href={`/durak/${encodeURIComponent(next.name)}`} className="book-seq-link book-seq-next">
             <span className="book-seq-dir">Sonraki durak →</span>
             <span className="book-seq-title">{next.name}</span>
-            <span className="book-seq-author">{next.written}/{next.total}</span>
+            <span className="book-seq-author">{next.done}/{next.total}</span>
           </Link>
         ) : <span />}
       </nav>

@@ -3,7 +3,7 @@
 
 const STEPS: { n: number; label: string }[] = [
   { n: 1, label: 'İlk adım' },
-  { n: 10, label: 'On tahlil' },
+  { n: 10, label: 'On eser' },
   { n: 50, label: 'Elli' },
   { n: 100, label: 'Yüzler kulübü' },
   { n: 250, label: 'Çeyrek bin' },
@@ -28,7 +28,7 @@ export default function Milestones({ written, total }: { written: number; total:
             key={s.n}
             className={`stamp${got ? ' is-got' : ''}${isNext ? ' is-next' : ''}`}
             style={{ ['--tilt' as any]: `${((i * 37) % 11) - 5}deg` }}
-            title={got ? `${s.label}: kazanıldı` : `${s.label}: ${s.n - written} tahlil kaldı`}
+            title={got ? `${s.label}: kazanıldı` : `${s.label}: ${s.n - written} eser kaldı`}
           >
             <span className="stamp-n">{s.n >= 1000 ? `${s.n / 1000}K`.replace('.', ',') : s.n}</span>
             <span className="stamp-label">{s.label}</span>

@@ -17,6 +17,8 @@ export type JourneyItem = {
   order: number | null;
   module: string | null;
   written: boolean;
+  /** Okundu sayılır: tahlili yazıldı ya da "Okudum" ile işaretlendi */
+  done: boolean;
   updatedAt: string | null;
   status: string | null;
 };
@@ -25,6 +27,7 @@ export type JourneyModule = {
   name: string;
   total: number;
   written: number;
+  done: number;
   firstOrder: number | null;
   lastOrder: number | null;
 };
@@ -33,6 +36,7 @@ export type Journey = {
   items: JourneyItem[];
   total: number;
   written: number;
+  done: number;
   next: JourneyItem | null;
   lastWritten: JourneyItem | null;
   modules: JourneyModule[];
@@ -80,6 +84,7 @@ export async function fetchJourney(supabase: any): Promise<Journey> {
   );
   const writtenIds = new Set<number>(writtenRes.rows.map((r: any) => r.id));
 
+  const isDone = (w: boolean, st: string | null) => w || st === 'okundu' || st === 'yazildi';
   const items: JourneyItem[] = rows.map((r: any) => ({
     id: r.id,
     slug: r.slug,
@@ -90,22 +95,25 @@ export async function fetchJourney(supabase: any): Promise<Journey> {
     written: writtenIds.has(r.id),
     updatedAt: r.updated_at ?? null,
     status: r.reading_status ?? null,
+    done: isDone(writtenIds.has(r.id), r.reading_status ?? null),
   }));
 
   const written = items.filter((i) => i.written).length;
+  const done = items.filter((i) => i.done).length;
   // "Şu an buradayım": okunmakta olan eser; yoksa tahlili yazılmamış ilk eser
   const next = items.find((i) => i.status === 'okunuyor')
-    || items.find((i) => !i.written && i.status !== 'okundu' && i.order !== null)
-    || items.find((i) => !i.written) || null;
+    || items.find((i) => !i.done && i.order !== null)
+    || items.find((i) => !i.done) || null;
 
   // Modüller listede ilk görüldükleri sırayla
   const modMap = new Map<string, JourneyModule>();
   for (const it of items) {
     if (!it.module) continue;
     let m = modMap.get(it.module);
-    if (!m) { m = { name: it.module, total: 0, written: 0, firstOrder: it.order, lastOrder: it.order }; modMap.set(it.module, m); }
+    if (!m) { m = { name: it.module, total: 0, written: 0, done: 0, firstOrder: it.order, lastOrder: it.order }; modMap.set(it.module, m); }
     m.total++;
     if (it.written) m.written++;
+    if (it.done) m.done++;
     if (it.order !== null) {
       if (m.firstOrder === null || it.order < m.firstOrder) m.firstOrder = it.order;
       if (m.lastOrder === null || it.order > m.lastOrder) m.lastOrder = it.order;
@@ -116,7 +124,7 @@ export async function fetchJourney(supabase: any): Promise<Journey> {
   const lastWritten = items.filter((i) => i.written)
     .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0] || null;
 
-  return { items, total: items.length, written, next, lastWritten, modules: Array.from(modMap.values()) };
+  return { items, total: items.length, written, done, next, lastWritten, modules: Array.from(modMap.values()) };
 }
 
 /** Ana sayfa için hafif özet: sayılar, sıradaki eser, son yazılan tahliller. */
@@ -124,7 +132,10 @@ export async function fetchJourneySummary(supabase: any) {
   const base = () => supabase.from('posts').select('id', { count: 'exact', head: true })
     .eq('is_published', true).eq('post_type', 'kitap_tahlili');
 
-  const [totalRes, writtenRes] = await Promise.all([base(), base().neq('content', '')]);
+  const [totalRes, writtenRes, doneRes] = await Promise.all([
+    base(), base().neq('content', ''),
+    base().or('reading_status.in.(okundu,yazildi),content.neq.'),
+  ]);
 
   let nextRes: any = await supabase.from('posts')
     .select('slug, title, book_author, reading_order')
@@ -133,6 +144,7 @@ export async function fetchJourneySummary(supabase: any) {
   if (nextRes.error || !(nextRes.data || []).length) nextRes = await supabase.from('posts')
     .select('slug, title, book_author, reading_order')
     .eq('is_published', true).eq('post_type', 'kitap_tahlili').eq('content', '')
+    .or('reading_status.is.null,reading_status.eq.sirada,reading_status.eq.okunuyor')
     .order('reading_order', { ascending: true, nullsFirst: false }).limit(1);
   if (nextRes.error) nextRes = { data: [] };
 
@@ -150,6 +162,7 @@ export async function fetchJourneySummary(supabase: any) {
   return {
     total: totalRes.count || 0,
     written: writtenRes.count || 0,
+    done: doneRes.error ? (writtenRes.count || 0) : (doneRes.count || 0),
     next: (nextRes.data || [])[0] || null,
     recent: recentRes.data || [],
   };

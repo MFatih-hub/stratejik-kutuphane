@@ -14,7 +14,7 @@ function pct(a: number, b: number) {
 
 function label(it: JourneyItem) {
   const t = it.title.length > 70 ? `${it.title.slice(0, 68)}…` : it.title;
-  return `${it.order != null ? `#${it.order} ` : ''}${t}${it.author ? ` — ${it.author}` : ''}${it.written ? ' ✓' : ''}`;
+  return `${it.order != null ? `#${it.order} ` : ''}${t}${it.author ? ` — ${it.author}` : ''}${it.written ? ' ✓ tahlil' : it.done ? ' ✓ okundu' : ''}`;
 }
 
 function Cells({ items, nextId }: { items: JourneyItem[]; nextId: number | null }) {
@@ -22,7 +22,7 @@ function Cells({ items, nextId }: { items: JourneyItem[]; nextId: number | null 
     <div className="journey-grid" role="list">
       {items.map((it) => {
         const isNext = it.id === nextId;
-        const cls = `journey-cell${it.written ? ' is-written' : ''}${isNext ? ' is-next' : ''}`;
+        const cls = `journey-cell${it.done ? ' is-written' : ''}${it.done && !it.written ? ' is-read' : ''}${isNext ? ' is-next' : ''}`;
         return it.written || isNext ? (
           <Link key={it.id} href={`/kitap-tahlilleri/${it.slug}`} className={cls} title={label(it)} role="listitem" aria-label={label(it)} />
         ) : (
@@ -44,7 +44,7 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
   const activeIdx = Math.max(0, modules.findIndex((m) => m.name === next?.module));
   const active = modules[activeIdx];
   const activeItems = items.filter((i) => i.module === active.name);
-  const doneModules = modules.filter((m) => m.total > 0 && m.written === m.total).length;
+  const doneModules = modules.filter((m) => m.total > 0 && m.done === m.total).length;
 
   return (
     <div className="journey-compact">
@@ -54,10 +54,10 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
             <span className="journey-module-idx">Durak {activeIdx + 1} / {modules.length}</span> {active.name}
           </Link>
           <span className="journey-module-meta">
-            {active.firstOrder != null && `#${active.firstOrder}–${active.lastOrder} · `}{active.written}/{active.total}
+            {active.firstOrder != null && `#${active.firstOrder}–${active.lastOrder} · `}{active.done}/{active.total}
           </span>
         </div>
-        <div className="journey-bar"><div className="journey-bar-fill" style={{ width: `${pct(active.written, active.total)}%` }} /></div>
+        <div className="journey-bar"><div className="journey-bar-fill" style={{ width: `${pct(active.done, active.total)}%` }} /></div>
         <Cells items={activeItems} nextId={nextId} />
       </div>
 
@@ -71,12 +71,12 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
             key={m.name}
             href={moduleHref(m.name)}
             role="listitem"
-            className={`journey-seg${idx === activeIdx ? ' is-active' : ''}${m.written === m.total && m.total > 0 ? ' is-done' : ''}`}
+            className={`journey-seg${idx === activeIdx ? ' is-active' : ''}${m.done === m.total && m.total > 0 ? ' is-done' : ''}`}
             style={{ flexGrow: m.total }}
-            title={`${String(idx + 1).padStart(2, '0')} · ${m.name} · ${m.written}/${m.total}`}
-            aria-label={`${m.name}: ${m.written}/${m.total}`}
+            title={`${String(idx + 1).padStart(2, '0')} · ${m.name} · ${m.done}/${m.total}`}
+            aria-label={`${m.name}: ${m.done}/${m.total}`}
           >
-            <span className="journey-seg-fill" style={{ height: `${pct(m.written, m.total)}%` }} />
+            <span className="journey-seg-fill" style={{ height: `${pct(m.done, m.total)}%` }} />
           </Link>
         ))}
       </div>
@@ -89,8 +89,8 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
               <Link href={moduleHref(m.name)} className="journey-all-item">
                 <span className="journey-module-idx">{String(idx + 1).padStart(2, '0')}</span>
                 <span className="journey-all-name">{m.name}</span>
-                <span className="journey-module-meta">{m.firstOrder != null && `#${m.firstOrder} · `}{m.written}/{m.total}</span>
-                <span className="journey-bar journey-all-bar"><span className="journey-bar-fill" style={{ width: `${pct(m.written, m.total)}%`, display: 'block' }} /></span>
+                <span className="journey-module-meta">{m.firstOrder != null && `#${m.firstOrder} · `}{m.done}/{m.total}</span>
+                <span className="journey-bar journey-all-bar"><span className="journey-bar-fill" style={{ width: `${pct(m.done, m.total)}%`, display: 'block' }} /></span>
               </Link>
             </li>
           ))}
@@ -101,7 +101,7 @@ function CompactModules({ journey, moduleHref }: { journey: Journey; moduleHref:
 }
 
 export default function ReadingJourney({ journey, moduleHref }: { journey: Journey; moduleHref: (name: string) => string }) {
-  const { items, total, written, next, lastWritten, modules } = journey;
+  const { items, total, written, done, next, lastWritten, modules } = journey;
   if (total === 0) return null;
   const nextId = next?.id ?? null;
 
@@ -110,13 +110,13 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
       className="journey"
       aria-label="Okuma yolculuğu"
       // Işıltı, tahlil sayısıyla birlikte çok yavaş güçlenir
-      style={{ ['--glint-boost' as any]: Math.min(1, Math.sqrt(written / Math.max(1, total))).toFixed(3) }}
+      style={{ ['--glint-boost' as any]: Math.min(1, Math.sqrt(done / Math.max(1, total))).toFixed(3) }}
     >
-      <DurakFlare completed={modules.filter((m) => m.total > 0 && m.written === m.total).map((m) => m.name)} />
+      <DurakFlare completed={modules.filter((m) => m.total > 0 && m.done === m.total).map((m) => m.name)} />
       <div className="journey-head">
         <div className="journey-stat">
-          <span className="journey-stat-value">{written}<span className="journey-stat-of"> / {total}</span></span>
-          <span className="journey-stat-label">eserin tahlili yazıldı · %{pct(written, total)}</span>
+          <span className="journey-stat-value">{done}<span className="journey-stat-of"> / {total}</span></span>
+          <span className="journey-stat-label">eser okundu · %{pct(done, total)}{written > 0 && ` · ${written} tahlil`}</span>
         </div>
         {next && (
           <Link href={`/kitap-tahlilleri/${next.slug}`} className="journey-here">
@@ -141,7 +141,7 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
         )}
       </div>
 
-      <Milestones written={written} total={total} />
+      <Milestones written={done} total={total} />
 
       {modules.length > COMPACT_AFTER ? (
         <CompactModules journey={journey} moduleHref={moduleHref} />
@@ -157,10 +157,10 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
                     <span className="journey-module-idx">{String(idx + 1).padStart(2, '0')}</span> {m.name}
                   </Link>
                   <span className="journey-module-meta">
-                    {m.firstOrder != null && `#${m.firstOrder}–${m.lastOrder} · `}{m.written}/{m.total}
+                    {m.firstOrder != null && `#${m.firstOrder}–${m.lastOrder} · `}{m.done}/{m.total}
                   </span>
                 </div>
-                <div className="journey-bar"><div className="journey-bar-fill" style={{ width: `${pct(m.written, m.total)}%` }} /></div>
+                <div className="journey-bar"><div className="journey-bar-fill" style={{ width: `${pct(m.done, m.total)}%` }} /></div>
                 <Cells items={modItems} nextId={nextId} />
               </div>
             );
@@ -177,7 +177,8 @@ export default function ReadingJourney({ journey, moduleHref }: { journey: Journ
       )}
 
       <div className="journey-legend" aria-hidden="true">
-        <span><i className="journey-cell is-written" /> Tahlili yazıldı</span>
+        <span><i className="journey-cell is-written" /> Okundu</span>
+        <span><i className="journey-cell is-written is-read" /> Tahlilsiz okundu</span>
         <span><i className="journey-cell is-next" /> Sıradaki</span>
         <span><i className="journey-cell" /> Sırada bekliyor</span>
         <span className="journey-legend-hint">Her kare bir eser · üstüne gelince adı görünür</span>
