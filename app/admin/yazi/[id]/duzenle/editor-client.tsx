@@ -60,7 +60,9 @@ export default function EditorClient({
   const [slug, setSlug] = useState(post?.slug || '');
   const [autoSlug, setAutoSlug] = useState(!post?.slug);
 
-  const [postType, setPostType] = useState<string>(post?.post_type || initialType || 'yazi');
+  // Kaldırılmış bir türdeki (ör. eski "okuma_bulteni") kayıt yazı olarak açılır; kaydedilince yazıya dönüşür.
+  const knownType = (t?: string | null) => (t && POST_TYPES.some((x) => x.value === t) ? t : null);
+  const [postType, setPostType] = useState<string>(knownType(post?.post_type) || knownType(initialType) || 'yazi');
   const [sourceName, setSourceName] = useState(post?.source_name || '');
   const [sourceUrl, setSourceUrl] = useState(post?.source_url || '');
   const [sourceSummary, setSourceSummary] = useState(post?.source_summary || '');

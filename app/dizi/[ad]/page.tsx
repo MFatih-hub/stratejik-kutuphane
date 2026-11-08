@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostUrl } from '@/lib/helpers';
 import { getSeries, listSeriesNames } from '@/lib/public-data';
+import { Masthead } from '@/components/cards';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -28,10 +29,7 @@ export default async function DiziPage({ params }: { params: { ad: string } }) {
 
   return (
     <>
-      <header className="hero">
-        <p className="eyebrow">Yazı dizisi</p>
-        <h1 className="hero-title hero-title-md">{name}</h1>
-      </header>
+      <Masthead small eyebrow="Yazı dizisi" title={name} lede={`${items.length} bölüm`} />
       <section className="section section-tight">
         <div className="group">
           {items.map((p, i) => (

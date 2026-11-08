@@ -15,9 +15,11 @@ export default function AboneDurum({ enabled }: { enabled: boolean }) {
   const [durum, setDurum] = useState('');
   useEffect(() => setDurum(new URLSearchParams(window.location.search).get('durum') || ''), []);
   return (
-    <>
-      <h1 className="hero-title hero-title-md">{TITLES[durum] || 'E-posta aboneliği'}</h1>
-      {enabled && durum !== 'onaylandi' && <SubscribeForm />}
-    </>
+    <header className="masthead masthead-sm">
+      <div className="masthead-main">
+        <h1 className="masthead-title">{TITLES[durum] || 'E-posta aboneliği'}</h1>
+        {enabled && durum !== 'onaylandi' && <SubscribeForm />}
+      </div>
+    </header>
   );
 }

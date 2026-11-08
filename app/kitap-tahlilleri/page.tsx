@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { bookHref, durakHref, getReadingList } from '@/lib/public-data';
 import BookRow from '@/components/book-row';
-import PostList from '@/components/post-list';
+import { CardGrid, Masthead, ShelfTitle, durakTone } from '@/components/cards';
 import { Chevron } from '@/components/icons';
 import { OG_IMAGE, SITE_URL } from '@/lib/site';
 
@@ -29,56 +29,69 @@ export const metadata: Metadata = {
 export default async function KitapTahlilleriPage() {
   const list = await getReadingList();
   const nf = new Intl.NumberFormat('tr-TR');
+  const duraks = new Map(list.duraks.map((d) => [d.name, d.index]));
+  const current = list.current[0] || null;
+  const reading = list.current.some((b) => b.status === 'okunuyor');
+  const currentHref = current
+    ? current.module
+      ? `${durakHref(current.module)}${current.order != null ? `#eser-${current.order}` : ''}`
+      : bookHref(current.slug)
+    : null;
 
   return (
     <>
-      <header className="hero">
-        <h1 className="hero-title">Kitap Tahlilleri</h1>
-        {list.total > 0 && (
-          <p className="hero-sub">{nf.format(list.total)} eserlik okuma listesi · {nf.format(list.done)} okundu</p>
-        )}
-      </header>
+      <Masthead
+        title="Kitap Tahlilleri"
+        lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi.` : null}
+        links={
+          current && currentHref ? (
+            <Link href={currentHref}>{reading ? 'Şu an' : 'Sıradaki'}: {current.title} <Chevron /></Link>
+          ) : null
+        }
+      />
 
       {list.written.length > 0 && (
-        <section className="section" aria-labelledby="tahliller">
-          <h2 className="section-title" id="tahliller">Tahliller</h2>
-          <PostList items={list.written.map((b) => ({ key: b.id, href: bookHref(b.slug), title: b.title, text: b.author, date: b.writtenAt }))} />
-        </section>
-      )}
-
-      {list.current.length > 0 && (
-        <section className="section" aria-labelledby="simdi">
-          <div className="section-head">
-            <h2 className="section-title" id="simdi">{list.current.some((b) => b.status === 'okunuyor') ? 'Şu an' : 'Sıradaki'}</h2>
-            {list.current[0].module && (
-              <Link href={durakHref(list.current[0].module)} className="more">{list.current[0].module} <Chevron /></Link>
-            )}
-          </div>
-          <div className="group">
-            {list.current.map((b) => <BookRow key={b.id} book={b} />)}
-          </div>
+        <section className="shelf" aria-labelledby="tahliller">
+          <ShelfTitle id="tahliller" main="Tahliller." sub="Okuduğum eserler üzerine." />
+          <CardGrid
+            items={list.written.map((b) => ({
+              key: b.id,
+              href: bookHref(b.slug),
+              eyebrow: b.module,
+              title: b.title,
+              desc: b.author,
+              date: b.writtenAt,
+              tone: durakTone(b.module ? duraks.get(b.module) : null),
+            }))}
+          />
         </section>
       )}
 
       {list.duraks.length > 0 && (
-        <section className="section" aria-labelledby="duraklar">
-          <h2 className="section-title" id="duraklar">Duraklar</h2>
-          <div className="group">
-            {list.duraks.map((d) => (
-              <Link key={d.name} href={durakHref(d.name)} className="row row-num-start">
-                <span className="row-num">{d.index}</span>
-                <span className="row-main">
-                  <span className="row-title">{d.name}</span>
-                </span>
-                <span className="row-end row-count">{`${d.done}/${d.total}`}</span>
-              </Link>
-            ))}
+        <section className="shelf" aria-labelledby="duraklar">
+          <ShelfTitle
+            id="duraklar"
+            main="Duraklar."
+            sub={`${nf.format(list.duraks.length)} durak, ${nf.format(list.done)} eser okundu.`}
+          />
+          <div className="directory">
+            <ol className="dir-list">
+              {list.duraks.map((d) => (
+                <li key={d.name}>
+                  <Link href={durakHref(d.name)} className={d.done > 0 ? 'dir-item is-started' : 'dir-item'}>
+                    <span className="dir-num">{d.index}</span>
+                    <span className="dir-name">{d.name}</span>
+                    <span className="dir-count">{`${d.done}/${d.total}`}</span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       )}
 
       {list.total > 0 && list.duraks.length === 0 && (
-        <section className="section">
+        <section className="shelf">
           <div className="group">
             {list.books.map((b) => <BookRow key={b.id} book={b} />)}
           </div>

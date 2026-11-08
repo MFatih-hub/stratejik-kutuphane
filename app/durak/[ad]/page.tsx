@@ -5,6 +5,7 @@ import { durakHref, findDurak, getDurakSummaries, getReadingList } from '@/lib/p
 import BookRow from '@/components/book-row';
 import { SeqNav } from '@/components/article';
 import { AdminLink } from '@/components/admin-bits';
+import { Masthead } from '@/components/cards';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -34,11 +35,12 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
 
   return (
     <>
-      <header className="hero">
-        <p className="eyebrow"><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link> · Durak {durak.index}</p>
-        <h1 className="hero-title hero-title-md">{name}</h1>
-        <p className="hero-sub">{durak.total} eser · {durak.done} okundu</p>
-      </header>
+      <Masthead
+        small
+        eyebrow={<><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link> · {durak.index}. durak</>}
+        title={name}
+        lede={`${durak.total} eser · ${durak.done} okundu`}
+      />
 
       {summaries.length > 0 && (
         <section className="section section-tight" aria-label="Durak değerlendirmesi">

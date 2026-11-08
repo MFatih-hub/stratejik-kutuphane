@@ -5,11 +5,9 @@ import ThemeToggle from '@/components/theme-toggle';
 import SiteSearch from '@/components/site-search';
 import { NavAdminLinks } from '@/components/admin-bits';
 import { THEME_SCRIPT } from '@/lib/theme';
+import { listYazilar } from '@/lib/public-data';
 import { AUTHOR_NAME, OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/site';
-// Okuma yazısı: Literata (Türkçe, Yunanca ve transliterasyon harfleriyle, siteyle birlikte barındırılır)
-import '@fontsource-variable/literata/opsz.css';
-import '@fontsource-variable/literata/opsz-italic.css';
-// Arayüz yazısı: Apple cihazlarda SF Pro, diğerlerinde Inter
+// Yazı tipi: Apple cihazlarda sistemin SF Pro'su, diğerlerinde siteyle birlikte barındırılan Inter
 import '@fontsource-variable/inter/opsz.css';
 import './globals.css';
 
@@ -92,7 +90,9 @@ const jsonLd = [
   },
 ];
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // "Yazılar" bağlantısı yalnızca yayında yazı varsa görünür (veri, sayfalarla birlikte önbellekten gelir)
+  const hasPosts = await listYazilar().then((p) => p.length > 0, () => false);
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
@@ -110,23 +110,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
 
         <header className="nav">
-          <div className="nav-inner">
+          <nav className="nav-inner" aria-label="Site">
             <Link href="/" className="nav-brand">Zihin Haritası</Link>
-            <nav className="nav-links" aria-label="Site">
-              <Link href="/kitap-tahlilleri" className="nav-link">Kitap Tahlilleri</Link>
-              <NavAdminLinks />
-              <SiteSearch />
-              <ThemeToggle />
-            </nav>
-          </div>
+            {hasPosts && <Link href="/yazilar" className="nav-link">Yazılar</Link>}
+            <Link href="/kitap-tahlilleri" className="nav-link">Kitap Tahlilleri</Link>
+            <NavAdminLinks />
+            <SiteSearch />
+            <ThemeToggle />
+          </nav>
         </header>
 
         <main className="main">{children}</main>
 
         <footer className="foot">
           <div className="foot-inner">
-            <span>© {new Date().getFullYear()} {AUTHOR_NAME}</span>
-            <Link href="/feed.xml">RSS</Link>
+            <div className="foot-row">
+              <span>© {new Date().getFullYear()} {AUTHOR_NAME}</span>
+              <Link href="/feed.xml">RSS</Link>
+            </div>
           </div>
         </footer>
       </body>

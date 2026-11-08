@@ -53,14 +53,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
   const count = (fn: (x: any) => any) => fn(supabase.from('posts').select('id', { count: 'exact', head: true }));
   const [kitapAll, yaziAll, okunuyor, okundu, yazildi] = await Promise.all([
     count((x) => x.eq('post_type', 'kitap_tahlili')),
-    count((x) => x.eq('post_type', 'yazi')),
+    count((x) => x.neq('post_type', 'kitap_tahlili')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okunuyor')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okundu')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'yazildi')),
   ]);
   const statusReady = !okunuyor.error;
 
-  let list = supabase.from('posts').select('*', { count: 'exact' }).eq('post_type', tur);
+  // "Yazılar": kitap tahlili olmayan her kayıt (kaldırılmış eski türler de burada görünür)
+  let list = supabase.from('posts').select('*', { count: 'exact' });
+  list = tur === 'kitap_tahlili' ? list.eq('post_type', 'kitap_tahlili') : list.neq('post_type', 'kitap_tahlili');
   if (q) {
     const num = /^#?(\d{1,5})$/.exec(q);
     list = num && tur === 'kitap_tahlili'

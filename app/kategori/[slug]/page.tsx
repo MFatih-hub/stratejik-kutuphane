@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { CATEGORIES, getCategoryByPath, formatDate } from '@/lib/helpers';
+import { CATEGORIES, getCategoryByPath } from '@/lib/helpers';
 import { listYazilar } from '@/lib/public-data';
+import { CardGrid, Masthead, categoryTone } from '@/components/cards';
 import { OG_IMAGE, SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-static';
@@ -35,27 +36,20 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   return (
     <>
-      <header className="hero">
-        <p className="eyebrow"><Link href="/">Yazılar</Link></p>
-        <h1 className="hero-title">{category.name}</h1>
-      </header>
-
+      <Masthead small eyebrow={<Link href="/yazilar">Yazılar</Link>} title={category.name} />
       {posts.length === 0 ? (
         <p className="quiet">Bu başlıkta henüz yazı yok.</p>
       ) : (
-        <section className="section section-tight">
-          <ul className="posts">
-            {posts.map((p) => (
-              <li key={p.id}>
-                <Link href={`/yazi/${p.slug}`} className="post">
-                  <span className="post-title">{p.title}</span>
-                  {(p.subtitle || p.excerpt) && <span className="post-text">{p.subtitle || p.excerpt}</span>}
-                  <time className="post-date" dateTime={p.published_at || undefined}>{formatDate(p.published_at)}</time>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <CardGrid
+          items={posts.map((p) => ({
+            key: p.id,
+            href: `/yazi/${p.slug}`,
+            title: p.title,
+            desc: p.subtitle || p.excerpt,
+            date: p.published_at,
+            tone: categoryTone(category.slug),
+          }))}
+        />
       )}
     </>
   );
