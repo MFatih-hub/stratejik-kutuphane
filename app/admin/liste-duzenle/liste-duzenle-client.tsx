@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
+import { refreshSite } from '@/lib/admin-client';
 import { slugify } from '@/lib/helpers';
 
 type Rename = [number, number, string, string | null, string];          // id, eski sıra, yeni başlık, yeni yazar, eski başlık
@@ -273,6 +274,7 @@ export default function ListeDuzenleClient({ plan }: { plan: Plan }) {
 
       setProgress(null);
       setDone(true);
+      refreshSite();
     } catch (e: any) {
       say('HATA: ' + (e?.message || String(e)) + ' — Kaldığı yerden devam etmek için tekrar "Uygula"ya basabilirsin.');
       setProgress(null);

@@ -1,7 +1,7 @@
 import { WIKILINK_RE, wikiHref } from '@/lib/reading';
-import { HASHTAG_RE, conceptHref } from '@/lib/concepts';
+import { HASHTAG_RE } from '@/lib/concepts';
 
-/** Fiş metni: [[eser]] ve #kavram bağlantıları tıklanır. */
+/** Fiş metni: [[eser]] bağlantıları tıklanır, #kavramlar vurgulanır. */
 export default function NoteBody({ text }: { text: string }) {
   type Hit = { i: number; len: number; node: (k: number) => React.ReactNode };
   const hits: Hit[] = [];
@@ -14,7 +14,7 @@ export default function NoteBody({ text }: { text: string }) {
     const i = (m.index ?? 0) + pre.length;
     const word = m[2];
     if (hits.some((h) => i >= h.i && i < h.i + h.len)) continue;
-    hits.push({ i, len: word.length + 1, node: (k) => <a key={k} href={conceptHref(word)} className="concept-link">#{word}</a> });
+    hits.push({ i, len: word.length + 1, node: (k) => <span key={k} className="concept-tag">#{word}</span> });
   }
   hits.sort((a, b) => a.i - b.i);
   const parts: React.ReactNode[] = [];

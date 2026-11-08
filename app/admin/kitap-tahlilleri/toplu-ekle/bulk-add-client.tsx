@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
+import { refreshSite } from '@/lib/admin-client';
 import { CATEGORIES, resolveCategorySlug, slugify } from '@/lib/helpers';
 import { parseBookInput, bookKey } from '@/lib/book-import';
 
@@ -279,6 +280,7 @@ export default function BookBulkAddClient() {
     }
 
     setRunning(false);
+    if (okCount + updCount > 0) refreshSite();
     const parts = [`${okCount} eser eklendi`];
     if (updCount > 0) parts.push(`${updCount} eser güncellendi`);
     if (failCount > 0) parts.push(`${failCount} başarısız ("Kontrol edilecekler" sekmesine bak)`);

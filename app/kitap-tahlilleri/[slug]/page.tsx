@@ -1,286 +1,148 @@
 import Link from 'next/link';
-import { Horizon } from '@/components/calm';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import Script from 'next/script';
-import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, formatDate, hasRealContent } from '@/lib/helpers';
-import { extractWikiLinks } from '@/lib/reading';
-import { resolveLinkText } from '@/lib/wiki-server';
-import ReadingSettings from '@/components/reading-settings';
-import { extractHeadings } from '@/lib/content';
-import PostContent from '@/components/post-content';
-import ReadingProgress from '@/components/reading-progress';
-import TableOfContents from '@/components/table-of-contents';
-import RelatedPosts from '@/components/related-posts';
-import ViewTracker from '@/components/view-tracker';
-import ShareButtons from '@/components/share-buttons';
-import DownloadMenu from '@/components/download-menu';
-import SeriesBox from '@/components/series-box';
-import SubscribeForm from '@/components/subscribe-form';
+import { formatDate, getPostUrl, hasRealContent } from '@/lib/helpers';
+import { bookHref, durakHref, getBacklinks, getPublished, getReadingList, wikiResolver } from '@/lib/public-data';
 import { newsletterEnabled } from '@/lib/server-env';
+import Article, { SeqNav } from '@/components/article';
+import { BookState } from '@/components/admin-bits';
+import { AUTHOR_NAME, SITE_URL, ogImages } from '@/lib/site';
 
-export const revalidate = 60;
+export const dynamic = 'force-static';
+// Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
+export const revalidate = 86400;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
-const AUTHOR_NAME = 'Muhammet Fatih Işık';
+
+// Tahlili yazılanlar derlemede üretilir; okuma listesindeki diğer eserlerin
+// sade sayfası ilk ziyarette üretilip önbelleğe alınır.
+export async function generateStaticParams() {
+  const list = await getReadingList();
+  return list.written.map((b) => ({ slug: b.slug }));
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const supabase = createClient();
-  const { data: post } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('slug', params.slug)
-    .eq('is_published', true)
-    .eq('post_type', 'kitap_tahlili')
-    .single();
-
-  if (!post) {
-    return {
-      title: 'Tahlil bulunamadı',
-      robots: { index: false, follow: false },
-    };
-  }
-
+  const post = await getPublished('kitap_tahlili', params.slug);
+  if (!post) return { title: 'Bulunamadı', robots: { index: false, follow: false } };
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/kitap-tahlilleri/${post.slug}/opengraph-image`;
   const written = hasRealContent(post.content);
   const description = post.excerpt || post.subtitle
     || (post.book_author ? `${post.book_author} — ${post.title} üzerine tahlil` : `${post.title} — ${AUTHOR_NAME}`);
-
   return {
     title: post.title,
     description,
-    keywords: [...(post.tags || []), post.category, 'kitap tahlili'],
-    authors: [{ name: AUTHOR_NAME, url: SITE_URL }],
     alternates: { canonical: url },
-    // Tahlil notu henüz yazılmamış eserler arama motorlarında boş sayfa olarak görünmesin
+    // Tahlili yazılmamış eserler arama motorlarında boş sayfa olarak görünmesin
     ...(written ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
-      type: 'article',
-      url,
-      title: post.title,
-      description,
-      siteName: 'Zihin Haritası',
-      locale: 'tr_TR',
-      publishedTime: post.published_at,
-      modifiedTime: post.updated_at,
-      authors: [AUTHOR_NAME],
-      section: 'Kitap Tahlilleri',
-      tags: post.tags,
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: post.title }],
+      type: 'article', url, title: post.title, description, siteName: 'Zihin Haritası', locale: 'tr_TR',
+      publishedTime: post.published_at, modifiedTime: post.updated_at, authors: [AUTHOR_NAME],
+      images: ogImages(post.cover_image_url),
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description,
-      images: [imageUrl],
-    },
+    twitter: { card: 'summary_large_image', title: post.title, description, images: ogImages(post.cover_image_url).map((i) => i.url) },
   };
 }
 
-export default async function KitapTahliliPage({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const isAdmin = !!user;
-
-  let query = supabase.from('posts').select('*').eq('slug', params.slug).eq('post_type', 'kitap_tahlili');
-  if (!isAdmin) query = query.eq('is_published', true);
-  const { data: post } = await query.single();
-
+export default async function TahlilPage({ params }: { params: { slug: string } }) {
+  const post = await getPublished('kitap_tahlili', params.slug);
   if (!post) notFound();
 
-  let relatedPosts: any[] = [];
-  if (post.is_published) {
-    const { data: recent } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('is_published', true)
-      .eq('post_type', 'kitap_tahlili')
-      .neq('content', '')
-      .neq('id', post.id)
-      .order('published_at', { ascending: false })
-      .limit(3);
-    relatedPosts = recent || [];
+  const list = await getReadingList();
+  const i = list.books.findIndex((b) => b.id === post.id);
+  const book = list.books[i] || null;
+  const prev = i > 0 ? list.books[i - 1] : null;
+  const next = i >= 0 && i < list.books.length - 1 ? list.books[i + 1] : null;
+  const seq = (
+    <SeqNav
+      label="Okuma listesinde gezin"
+      prev={prev && { href: bookHref(prev.slug), title: prev.title, note: prev.order != null ? `#${prev.order}` : null }}
+      next={next && { href: bookHref(next.slug), title: next.title, note: next.order != null ? `#${next.order}` : null }}
+    />
+  );
+  const durak = post.reading_module ? (
+    <Link href={`${durakHref(post.reading_module)}${post.reading_order != null ? `#eser-${post.reading_order}` : ''}`}>
+      {post.reading_module}
+    </Link>
+  ) : null;
+
+  if (!hasRealContent(post.content)) {
+    return (
+      <article className="article">
+        <header className="article-head">
+          <p className="eyebrow">
+            <Link href="/kitap-tahlilleri">Okuma listesi</Link>
+            {post.reading_order != null && <> · #{post.reading_order}</>}
+            {durak && <> · {durak}</>}
+          </p>
+          <h1 className="article-title">{post.title}</h1>
+          {post.book_author && <p className="article-byline">{post.book_author}</p>}
+          {book && (
+            <div className="article-state">
+              <BookState id={book.id} status={book.status} done={book.done} labeled />
+            </div>
+          )}
+        </header>
+        {seq}
+      </article>
+    );
   }
 
-  // Okuma listesinde önceki / sonraki eser (yayındakiler arasında, sıraya göre)
-  let prevItem: any = null;
-  let nextItem: any = null;
-  if (post.reading_order != null) {
-    const sel = 'slug, title, book_author, reading_order';
-    const base = () => supabase.from('posts').select(sel).eq('is_published', true).eq('post_type', 'kitap_tahlili');
-    const [p, n] = await Promise.all([
-      base().lt('reading_order', post.reading_order).order('reading_order', { ascending: false }).limit(1),
-      base().gt('reading_order', post.reading_order).order('reading_order', { ascending: true }).limit(1),
-    ]);
-    prevItem = (p.data || [])[0] || null;
-    nextItem = (n.data || [])[0] || null;
-  }
-
-  // Bu esere [[...]] ile değinen yayındaki tahliller
-  const backlinks: any[] = [];
-  {
-    const { data: sources } = await supabase.from('posts')
-      .select('id, slug, title, book_author, reading_order, content')
-      .eq('is_published', true).eq('post_type', 'kitap_tahlili')
-      .neq('id', post.id).ilike('content', '%[[%').limit(300);
-    const cache = new Map<string, number | null>();
-    for (const src of sources || []) {
-      const raws = extractWikiLinks((src.content || '').replace(/<[^>]+>/g, ' '));
-      for (const raw of raws) {
-        const key = raw.toLowerCase();
-        if (!cache.has(key)) cache.set(key, (await resolveLinkText(supabase, raw))?.id ?? null);
-        if (cache.get(key) === post.id) { backlinks.push(src); break; }
-      }
-      if (cache.size > 120) break; // aşırı yükten kaçın
-    }
-  }
-
-  const category = CATEGORIES.find((c) => c.slug === post.category);
   const url = `${SITE_URL}/kitap-tahlilleri/${post.slug}`;
-  const imageUrl = post.cover_image_url || `${SITE_URL}/kitap-tahlilleri/${post.slug}/opengraph-image`;
-  const written = hasRealContent(post.content);
-  const headings = written ? extractHeadings(post.content, post.content_format) : [];
-
-  const articleSchema = {
+  const backlinks = await getBacklinks(post, list.books);
+  const schema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
-    description: post.excerpt || post.subtitle,
-    image: imageUrl,
+    description: post.excerpt || post.subtitle || undefined,
     author: { '@type': 'Person', name: AUTHOR_NAME, url: SITE_URL },
-    publisher: { '@type': 'Person', name: AUTHOR_NAME, url: SITE_URL },
     datePublished: post.published_at,
     dateModified: post.updated_at,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    mainEntityOfPage: url,
     url,
     inLanguage: 'tr-TR',
-    wordCount: (post.content || '').split(/\s+/).filter(Boolean).length,
     ...(post.book_author ? { about: { '@type': 'Book', name: post.title, author: { '@type': 'Person', name: post.book_author } } } : {}),
-    keywords: (post.tags || []).join(', '),
     articleSection: 'Kitap Tahlilleri',
   };
 
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Ana sayfa', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: 'Kitap Tahlilleri', item: `${SITE_URL}/kitap-tahlilleri` },
-      { '@type': 'ListItem', position: 3, name: post.title, item: url },
-    ],
-  };
-
   return (
-    <article className="post-detail">
-      {post.is_published && !isAdmin && <ViewTracker slug={post.slug} />}
-      {post.is_published && written && <ReadingProgress targetId="post-article-body" />}
-
-      <Script id="schema-article" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <Script id="schema-breadcrumb" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/">Ana sayfa</Link>
-        <span className="breadcrumb-sep">›</span>
-        <Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link>
-        <span className="breadcrumb-sep">›</span>
-        <span>{post.title}</span>
-      </nav>
-
-      {isAdmin && (
-        <div className="admin-bar">
-          <span>
-            {post.is_published ? '✓ Yayında' : '⚠ Taslak'} · {post.view_count || 0} görüntülenme
-          </span>
-          <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm">Düzenle</Link>
-        </div>
-      )}
-
-      <header className="post-header">
-        <h1 className="post-title">{post.title}</h1>
-        {post.subtitle && <p className="post-subtitle">{post.subtitle}</p>}
-        {post.book_author && <p className="book-detail-author">{post.book_author}</p>}
-        <p className="book-detail-meta">
-          {post.reading_order != null && (
-            <Link href={`/kitap-tahlilleri?sayfa=${Math.max(1, Math.ceil(post.reading_order / 100))}#eser-${post.reading_order}`}>#{post.reading_order}</Link>
-          )}
-          {post.reading_module && <><span className="post-meta-sep"> · </span><Link href={`/durak/${encodeURIComponent(post.reading_module)}`}>{post.reading_module}</Link></>}
-          {written && <><span className="post-meta-sep"> · </span><time dateTime={post.published_at}>{formatDate(post.published_at)}</time></>}
-        </p>
-      </header>
-
-      {post.cover_image_url && (
-        <div className="post-cover">
-          <Image src={post.cover_image_url} alt={post.title} fill sizes="(max-width: 768px) 100vw, 720px" style={{ objectFit: 'cover' }} priority />
-        </div>
-      )}
-
-      {written && (
-        <div className="post-tools">
-          <ReadingSettings />
-        </div>
-      )}
-      {headings.length >= 3 && <TableOfContents headings={headings} />}
-
-      <div id="post-article-body">
-        {written ? (
-          <PostContent content={post.content} format={post.content_format} bibliography={post.bibliography} wiki />
-        ) : (
-          <div className="empty-state" style={{ padding: '2.5rem 1rem' }}>
-            <Horizon />
-            <p className="empty-state-text">Bu eser okuma listesinde; tahlil notu henüz yazılmadı.</p>
-            {isAdmin && (
-              <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-primary" style={{ marginTop: 14 }}>
-                Tahlil notunu yaz
-              </Link>
-            )}
-          </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <Article
+        post={post}
+        track
+        shareUrl={url}
+        subscribe={newsletterEnabled()}
+        byline={post.book_author}
+        resolveWiki={wikiResolver(list.books)}
+        eyebrow={
+          <>
+            <Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link>
+            {' · '}
+            <time dateTime={post.written_at || post.published_at}>{formatDate(post.written_at || post.published_at)}</time>
+          </>
+        }
+      >
+        {backlinks.length > 0 && (
+          <section className="section" aria-labelledby="degenler">
+            <h2 className="section-title section-title-sm" id="degenler">Bu esere değinenler</h2>
+            <div className="group">
+              {backlinks.map((b) => (
+                <Link key={b.id} href={getPostUrl(b)} className="row">
+                  <span className="row-main">
+                    <span className="row-title">{b.title}</span>
+                    {b.book_author && <span className="row-sub">{b.book_author}</span>}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
-      </div>
-
-
-      {written && <SeriesBox supabase={supabase} post={post} isAdmin={isAdmin} />}
-
-      {backlinks.length > 0 && (
-        <section className="backlinks">
-          <h3 className="post-footer-title">Bu esere değinen tahliller</h3>
-          <ul>
-            {backlinks.map((b) => (
-              <li key={b.id}><Link href={`/kitap-tahlilleri/${b.slug}`}><span className="today-no">#{b.reading_order}</span> {b.title}</Link>{b.book_author && <span className="book-author"> · {b.book_author}</span>}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {(prevItem || nextItem) && (
-        <nav className="book-seq" aria-label="Okuma listesinde gezin">
-          {prevItem ? (
-            <Link href={`/kitap-tahlilleri/${prevItem.slug}`} className="book-seq-link">
-              <span className="book-seq-dir">← Önceki · #{prevItem.reading_order}</span>
-              <span className="book-seq-title">{prevItem.title}</span>
-              {prevItem.book_author && <span className="book-seq-author">{prevItem.book_author}</span>}
-            </Link>
-          ) : <span />}
-          {nextItem ? (
-            <Link href={`/kitap-tahlilleri/${nextItem.slug}`} className="book-seq-link book-seq-next">
-              <span className="book-seq-dir">Sonraki · #{nextItem.reading_order} →</span>
-              <span className="book-seq-title">{nextItem.title}</span>
-              {nextItem.book_author && <span className="book-seq-author">{nextItem.book_author}</span>}
-            </Link>
-          ) : <span />}
-        </nav>
-      )}
-
-      <footer className="post-footer">
-        <h3 className="post-footer-title">Bu tahlili paylaş</h3>
-        <ShareButtons url={url} title={post.title} />
-        {written && <DownloadMenu id={post.id} />}
-        {written && post.is_published && newsletterEnabled() && <SubscribeForm />}
-      </footer>
-
-      <RelatedPosts posts={relatedPosts} basePath="/kitap-tahlilleri" title="Diğer kitap tahlilleri" />
-    </article>
+        {(durak || post.reading_order != null) && (
+          <p className="article-place">
+            Okuma listesinde{post.reading_order != null && <> #{post.reading_order}</>}{durak && <> · {durak}</>}
+          </p>
+        )}
+        {seq}
+      </Article>
+    </>
   );
 }

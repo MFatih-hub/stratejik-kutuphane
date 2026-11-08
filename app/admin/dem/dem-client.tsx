@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-browser';
 import { NOTE_KINDS, istanbulDay, markReadingDay } from '@/lib/reading';
+import { refreshSite } from '@/lib/admin-client';
 import NoteBody from '@/components/note-body';
-import { Glint } from '@/components/calm';
 
 type Book = {
   id: number; slug: string; title: string; book_author: string | null; reading_order: number | null;
@@ -99,6 +99,7 @@ export default function DemClient(props: {
     setBusy(false);
     if (error) { say('Hata: ' + error.message); return; }
     await markReadingDay(supabase);
+    refreshSite();
     say(status === 'okunuyor' ? 'Yolculuk başladı' : status === 'okundu' ? 'Bitti — tahlil seni bekliyor' : 'Sıraya geri kondu');
     router.refresh();
   }
@@ -229,7 +230,6 @@ export default function DemClient(props: {
 
           {current.length === 0 && schemaReady && (
             <div className="today-card today-empty">
-              <Glint className="today-empty-glint" />
               {suggestion ? (
                 <>
                   <p className="today-kicker">Sıradaki</p>

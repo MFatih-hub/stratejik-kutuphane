@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-guard';
 import { hasRealContent } from '@/lib/helpers';
 import { attachmentHeader, postToDocx, postToMarkdown } from '@/lib/export';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-/** Bir yazıyı ya da tahlili Word (.docx) veya Markdown (.md) olarak indirir. */
+/** Bir yazıyı ya da tahlili Word (.docx) veya Markdown (.md) olarak indirir — yalnızca yönetici. */
 export async function GET(req: Request) {
+  const { supabase, user } = await requireAdmin();
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli' }, { status: 401 });
   const u = new URL(req.url);
   const id = Number(u.searchParams.get('id'));
   const bicim = u.searchParams.get('bicim') === 'md' ? 'md' : 'docx';
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
 
-  // Taslaklar yalnızca giriş yapmış yöneticiye görünür (RLS)
-  const supabase = createClient();
-  const { data: post } = await supabase.from('posts').select('*').eq('id', id).single();
+  const { data: post } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
   if (!post || !hasRealContent(post.content)) {
     return NextResponse.json({ error: 'Bu yazı bulunamadı ya da henüz yazılmadı.' }, { status: 404 });
   }

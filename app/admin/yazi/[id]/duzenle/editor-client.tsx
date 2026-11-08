@@ -8,6 +8,7 @@ import { marked } from 'marked';
 import { createClient } from '@/lib/supabase-browser';
 import { CATEGORIES, POST_TYPES, getPostTypeInfo, slugify, stripHtml, generateExcerptFromHtml } from '@/lib/helpers';
 import { SANITIZE_CONFIG } from '@/lib/content';
+import { refreshSite } from '@/lib/admin-client';
 import type { RichTextEditorStats } from '@/components/rich-text-editor';
 import NotesPanel from './notes-panel';
 import RevisionsPanel from './revisions-panel';
@@ -280,6 +281,8 @@ export default function EditorClient({
 
     isDirtyRef.current = false;
     setLastSavedAt(new Date());
+    // Yayındaki (ya da yayından kaldırılan) içerik değiştiyse statik sayfalar yenilensin
+    if (shouldPublish || s.isPublished) refreshSite();
     setIsPublished(shouldPublish);
     if (finalSlug !== s.slug) setSlug(finalSlug);
 
@@ -292,7 +295,7 @@ export default function EditorClient({
     }
 
     if (!silent) {
-      showToast(shouldPublish ? 'Yayınlandı ✓' : 'Taslak kaydedildi ✓');
+      showToast(shouldPublish ? 'Yayınlandı' : 'Taslak kaydedildi');
     }
   }
 
@@ -305,6 +308,7 @@ export default function EditorClient({
       return;
     }
     showToast('Silindi');
+    refreshSite();
     setTimeout(() => router.push('/admin'), 800);
   }
 
@@ -322,7 +326,7 @@ export default function EditorClient({
         </div>
         <div className="editor-header-right">
           {!isNew && (
-            <Link href={`${typeInfo.basePath}/${slug}`} target="_blank" className="btn btn-sm">
+            <Link href={`/admin/onizle/${postId}`} target="_blank" className="btn btn-sm">
               Önizle
             </Link>
           )}
@@ -425,7 +429,7 @@ export default function EditorClient({
               <label className="form-label">İndir</label>
               {stripHtml(content).length > 0 ? (
                 <div className="download-row download-row-tight">
-                  <a href={`/yazdir/${postId}`} target="_blank" rel="noopener" className="download-chip">PDF</a>
+                  <a href={`/admin/yazdir/${postId}`} target="_blank" rel="noopener" className="download-chip">PDF</a>
                   <a href={`/api/indir?id=${postId}&bicim=docx`} className="download-chip">Word</a>
                   <a href={`/api/indir?id=${postId}&bicim=md`} className="download-chip">Markdown</a>
                 </div>

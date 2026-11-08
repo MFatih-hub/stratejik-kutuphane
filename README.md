@@ -72,37 +72,34 @@ Görüntülenme sayacı artık güvenli şekilde çalışıyor: eski sürümde s
 
 ## 🔍 Arama
 
-Header'daki 🔍 ikonu (her sayfadan erişilebilir) ve ana sayfadaki arama kutusu, başlık/özet/etiketlerde anlık arama yapar. Türkçe karakterler (İ/I, ı/i) doğru şekilde eşleşir.
+Üst şeritteki büyüteç (ya da Ctrl/⌘+K): yazılar ve okuma listesindeki bütün eserler içinde arar. Arama dizini statik bir dosyadır (`/ara.json`, saatte bir yenilenir) ve arama tamamen tarayıcıda yapılır; sunucuya ya da veritabanına istek gitmez. Türkçe karakterler (İ/I, ı/i, şapkalı harfler) doğru eşleşir.
 
-## 📖 Günlük Kullanım: Bugün, Fişler, Harita
+## 📖 Günlük Kullanım: Dem, Fişler, Harita
 
 Site artık okuma sürecini de taşır (önce `SUPABASE-MIGRATION-v5.sql` çalıştırılmalı):
 
-- **`/admin/bugun` — Bugün:** okuduğun eser(ler), kaldığın sayfa, hızlı fiş kutusu (Not / Alıntı / Soru, sayfa numarası, Ctrl+Enter), o esere ait fişler (düzenle/sil), "Bitirdim", "Tahlili yaz". Yanda: *Bugün hatırla* (her gün bir haftadan eski bir fiş), *Tempo* (son 30 gün, sıradaki eşik ve listenin sonu için tahmini tarih, son 120 günün okuma noktaları) ve *Tahlil bekleyenler*.
+- **`/admin/dem` — Dem:** okuduğun eser(ler), kaldığın sayfa, hızlı fiş kutusu (Not / Alıntı / Soru, sayfa numarası, Ctrl+Enter), o esere ait fişler (düzenle/sil), "Bitirdim", "Tahlili yaz". Yanda: *Bugün hatırla* (her gün bir haftadan eski bir fiş), *Tempo* (son 30 gün, sıradaki eşik ve listenin sonu için tahmini tarih, son 120 günün okuma noktaları) ve *Tahlil bekleyenler*.
 - **Okuma durumu** (`posts.reading_status`): sırada → okunuyor → okundu (tahlil bekliyor) → yazıldı. Tahlil içeriği dolunca veritabanı tetikleyicisi durumu kendiliğinden "yazıldı" yapar.
 - **Fişler** (`notes` tablosu, sadece admin görür): `/admin/notlar` tam metin arama + türe göre filtre.
 - **Çevrimdışı:** bağlantı yokken alınan fiş tarayıcıda saklanır, bağlantı gelince gönderilir.
-- **Editör:** kitap tahlilinde sağ panelde o eserin fişleri — "Metne ekle" ile imlecin olduğu yere eklenir. "Yazma modu" (Esc ile çıkış) her şeyi karartır; sadece metin, ufuk ve ışıltı kalır.
-- **`[[bağlantılar]]`:** fişte ya da tahlilde `[[#247]]`, `[[Etika]]`, `[[Spinoza, Etika]]` → `/eser?ad=…` esere yönlendirir. Tahlil sayfasında "Bu esere değinen tahliller" listelenir. `/admin/harita`: bütün bağlar ufuk çizgisi üzerinde yaylar olarak.
-- **Telefon:** site ana ekrana eklenebilir (manifest + ikon); açılınca doğrudan Bugün gelir.
+- **Editör:** kitap tahlilinde sağ panelde o eserin fişleri — "Metne ekle" ile imlecin olduğu yere eklenir. "Yazma modu" (Esc ile çıkış) her şeyi karartır; yalnızca metin kalır.
+- **`[[bağlantılar]]`:** fişte ya da tahlilde `[[#247]]`, `[[Etika]]`, `[[Spinoza, Etika]]` → sayfa üretilirken doğrudan eserin sayfasına bağlanır (`[[#247]]` gibi sayılı bağlantıda eserin adı yazılır). Tahlil sayfasında "Bu esere değinenler" listelenir. `/admin/harita`: bütün bağlar ufuk çizgisi üzerinde yaylar olarak.
+- **Telefon:** site ana ekrana eklenebilir (manifest + ikon); açılınca doğrudan Dem gelir.
 - **Admin listesi** sayfalı (50'şer), duruma göre filtre ve `#sıra` / başlık / yazar araması.
-- **Dokunuşlar:** ışıltı tahlil sayısıyla çok yavaş güçlenir; bir durak bitince bir kerelik parlar. Tema düğmesi varsayılan *Otomatik*: İstanbul'da gün batımından sonra Gece Denizi. Uzun metinlerde yazı boyu / satır aralığı ayarı.
+- **Tema düğmesi** varsayılan *Otomatik*: İstanbul'da gün batımından sonra Gece Denizi.
 
 ## 📦 Yazmak, saklamak, paylaşmak (v6)
 
 `SUPABASE-MIGRATION-v6.sql` çalıştırıldıktan sonra:
 
-- **İndir:** her yazı ve tahlilin altında *PDF · Word · Markdown*. PDF, tarayıcının yazdırma penceresinden kaydedilir (`/yazdir/[id]`, A4, sayfa numaralı); Word gerçek `.docx`'tir (başlık stilleri, gerçek dipnotlar, gömülü görseller, Arapça sağdan sola); Markdown başında bilgi bloğuyla (Obsidian'a uygun).
+- **İndir (yalnızca yönetici):** editörde *PDF · Word · Markdown*. PDF, tarayıcının yazdırma penceresinden kaydedilir (`/admin/yazdir/[id]`, A4, sayfa numaralı); Word gerçek `.docx`'tir (başlık stilleri, gerçek dipnotlar, gömülü görseller, Arapça sağdan sola); Markdown başında bilgi bloğuyla (Obsidian'a uygun). Okurlar yazıyı tarayıcıdan yazdırınca yalnızca metin çıkar.
 - **Kitap notlarını indir:** editörde bir eserin bütün fişleri sayfa sırasıyla PDF / Word / Markdown.
 - **Tam yedek:** Admin → *Tam yedek indir* → tek ZIP (yazılar ve notlar Markdown, bütün tablolar JSON). **Haftalık otomatik yedek:** her pazartesi 06:00'da (İstanbul) aynı ZIP e-postana gelir (`vercel.json` cron → `/api/cron/yedek`). GitHub deposu herkese açık olduğu için yedek bilerek oraya konmuyor.
 - **Sürüm geçmişi:** veritabanı yazının eski hâllerini kendiliğinden saklar (en fazla 10 dakikada bir; bir bölüm silindiğinde hemen; yazı başına son 200). Editör → *Sürüm geçmişi* → önizle → *Bu sürüme dön*.
-- **Dipnot:** metinde `((dipnot metni))` (editörde x¹ düğmesi) → numaralı dipnot. **Kaynakça:** editörde her satıra bir kaynak. Üç ve daha fazla ara başlıklı yazılarda içindekiler.
-- **Kavramlar:** fişte ya da yazıda `#adalet`, `#zaman-algısı` → `/kavram/adalet`. Etiketler de kavram sayılır. Kavram sayfasında ona değinen yazılar, tahliller ve (yalnızca sana) fişler, eserlere göre; *birlikte anılan kavramlar*. `/kavram`: hepsi.
-- **Yazı dizileri:** editörde *Dizi* + *sıra* → yazıların altında dizi kutusu, `/dizi/[ad]` sayfası.
-- **Duraklar:** `/durak/[ad]` — duraktaki eserler, ilerleme, önceki/sonraki durak. Bir yazıyı *Durak değerlendirmesi* olarak işaretlersen o durağın sayfasında görünür; bir durağın bütün eserleri bitince Bugün ekranı değerlendirmeyi yazmayı önerir.
-- **Paylaşım görseli:** her yazı ve tahlil için gece denizi temalı görsel (WhatsApp, X önizlemesi).
-- **Dinle:** cihazın Türkçe sesiyle sesli okuma (Türkçe ses yoksa düğme görünmez); okunan paragraf belirginleşir.
-- **Okuma özeti:** `/admin/ozet` — yıl takvimi, ay ay okuma günü ve sayfa, bitirilen kitaplar, yazılan tahliller, fişler, en uzun seri. Sayfa sayısı, Bugün ekranında "kaldığın yer" ilerledikçe kendiliğinden kaydedilir.
+- **Dipnot:** metinde `((dipnot metni))` (editörde x¹ düğmesi) → numaralı dipnot. **Kaynakça:** editörde her satıra bir kaynak.
+- **Yazı dizileri:** editörde *Dizi* + *sıra* → yazının altında dizideki yeri ve önceki/sonraki bölüm, `/dizi/[ad]` sayfası.
+- **Duraklar:** `/durak/[ad]` — duraktaki eserler, önceki/sonraki durak. Bir yazıyı *Durak değerlendirmesi* olarak işaretlersen o durağın sayfasında görünür; bir durağın bütün eserleri bitince Dem değerlendirmeyi yazmayı önerir.
+- **Okuma özeti:** `/admin/ozet` — yıl takvimi, ay ay okuma günü ve sayfa, bitirilen kitaplar, yazılan tahliller, fişler, en uzun seri. Sayfa sayısı, Dem ekranında "kaldığın yer" ilerledikçe kendiliğinden kaydedilir.
 - **E-posta aboneliği:** onaylı abonelik (çift onay), her e-postada tek tıkla ayrılma. Editörde yayındaki yazı için *Önce bana deneme* ve *Gönder*. `/admin/aboneler`: liste, CSV.
 
 ### E-posta ve haftalık yedek için bir kerelik kurulum
@@ -119,17 +116,24 @@ Site artık okuma sürecini de taşır (önce `SUPABASE-MIGRATION-v5.sql` çalı
 
 **Okuma Bülteni bölümü kaldırıldı** (sayfalar, API, toplu ekleme). Veritabanındaki eski bülten kayıtları silinmedi; eski adresler ana sayfaya yönlenir.
 
-## 🌊 Görsel Dil: Durgun Deniz
+## 🍎 Görünüm
 
-Sakin, metalik ve yormayan bir görünüm: hiçlik içinde tek bir küçük ışıltı.
+Apple'ın web dilinden: sistem yazısı (Apple cihazlarda SF Pro, diğerlerinde Inter), okuma metninde Literata; ölçülü boyutlar (en büyük başlık 48 px, yazı başlığı 40 px, okuma metni 18 px / telefonda 17 px), ince ayraçlar, iOS ayarlarındaki gibi gruplu listeler. Süs, geçiş ve hareket yok; yardımcı yazılar, rozetler, günün sözü yok.
 
-- **Temalar** (`app/globals.css` sonundaki "DURGUN DENİZ" katmanı): açık = *Sis*, koyu = *Gece Denizi*, mavi = *Metalik Deniz*. Tüm renkler CSS değişkenleri (`--metal-*`, `--glint-*`, `--sea-*`).
-- **Arka plan:** üstte açık gök, ortada sönük bir ufuk parıltısı, altta deniz tonu (sabit, hareketsiz).
-- **Işıltı** (`components/calm.tsx` → `Glint`): sitedeki tek hareket, 7 saniyede bir yavaşça nefes alır; okuma yolculuğunda "sıradaki eser" odur. `prefers-reduced-motion` açıksa durur.
-- **Logo ve sekme ikonu:** metalik disk + ufuk çizgisi + minik ışık. Ana sayfa hero'sunda durgun deniz çizimi (`SeaHorizon`).
-- **Rozetler** (`components/milestones.tsx`): ince bir çizgi üstünde yıldızlar — kazanılanlar ışıldar.
-- **Durgun su ve damla** (`components/water-drop.tsx`): sol alt köşede kenardan taşan su yüzeyine birkaç saniyede bir damla düşer, halkalar açılır. Arkada "tane tane" damla sesi (`public/rain-worklet.js`, AudioWorklet): ses örnek örnek, fiziksel ölçülere göre üretilir — çarpma + perdesine göre çok kısa sönen kabarcık (van den Doel modeli), rezonanssız yaprak/taş vuruşları, uzaktaki minik damlaların dokusu, tizleri zamanla sönen oda yankısı. Sıklık, tür karışımı ve şiddet periyotsuz sürüklenir; hiçbir şey döngüye girmez. Ses dosyası yoktur (kısık); sekme arkadayken susar; tarayıcı kuralı gereği sayfayla ilk tıklama/tuşta başlar, başlıktaki damla düğmesiyle kapatılır (tercih hatırlanır).
-- **Sayfa altı:** her gün değişen kısa bir söz (`lib/quotes.ts`). **404:** "Burada yalnızca durgun su var".
+- **Görünümler:** *Otomatik* (İstanbul'da gün batımından sonra koyu), *Sis*, *Gece Denizi*, *Metalik Deniz*. Renkler `app/globals.css` başındaki değişkenlerde; seçim tarayıcıda hatırlanır, sayfa açılırken yanıp sönmez.
+- **Sekme ve uygulama ikonu:** siyah zemin üzerinde "Z" (`app/icon.svg`, `app/apple-icon.png`, `public/icon-*.png`). **Paylaşım görseli:** `public/og.png`; kapak görseli olan yazıda kapak kullanılır.
+- **Yönetim paneli** kendi stillerini yalnızca `/admin` altında yükler (`app/admin/admin.css`).
+
+## 💸 Maliyet ve önbellek
+
+Herkese açık bütün sayfalar **statik** üretilir ve Vercel'in CDN'inden sunulur: ziyaretçi başına sunucu fonksiyonu çalışmaz, veritabanına gidilmez. Sayfa milyonlarca kez açılsa da yalnızca CDN'den dosya gider.
+
+- **Ne zaman yenilenir:** Yönetim panelinde bir şey kaydedildiğinde (yazı, tahlil, "Okudum", toplu ekleme, listeyi düzenleme) site kendiliğinden yenilenir (`/api/admin/yenile`). Supabase'de doğrudan bir değişiklik yaptıysan Admin → *Siteyi yenile*; yapmazsan sayfalar en geç bir gün içinde kendiliğinden yenilenir. RSS, site haritası ve arama dizini saatte bir.
+- **Taslaklar ve son hâl:** herkese açık sayfa statik olduğu için taslakları editördeki *Önizle* (`/admin/onizle/[id]`) gösterir.
+- **Sunucuda çalışan her şey yönetim tarafındadır** (`/admin`, `/api/admin/*`, Word/Markdown indirme, yazdırma). `middleware.ts` yalnızca bu adreslerde çalışır; oturum çerezi olmayan istekleri (botlar dahil) veritabanına gitmeden geri çevirir.
+- **Görsel dönüştürme kapalı** (`images.unoptimized`): Vercel'in görsel servisi hiç kullanılmaz.
+- **Abonelik formu** (açıksa): gizli alan + süre denetimi + saatte en fazla 30 onay e-postası.
+- **Kalan tek güvence ayarı Vercel'de:** Pro plandaysan *Settings → Billing → Spend Management*'ı aç ve "Pause production deployment"ı işaretle; Hobby planda aşımda fatura çıkmaz, site durur. Saldırı olursa *Firewall → Attack Challenge Mode* ve *Bot Protection*.
 
 ## 🎨 Kategoriler
 
@@ -183,53 +187,33 @@ http://localhost:3000
 
 ```
 app/
-  page.tsx                          # Ana sayfa (sadece "yazi" türü + arama kutusu)
-  yazi/[slug]/page.tsx              # Yazı detay (okuma çubuğu, içindekiler, ilgili yazılar)
-  kategori/[slug]/page.tsx          # Kategori sayfası (sadece "yazi" türü)
-  kitap-tahlilleri/
-    page.tsx                        # Kitap Tahlilleri listesi
-    [slug]/page.tsx                 # Kitap Tahlili detay
-  api/
-  giris/page.tsx                    # Admin giriş
-  admin/
-    page.tsx                        # İçerik yönetim paneli (tür sekmeleriyle)
-    analiz/
-      page.tsx                      # Okuyucu analitiği (sunucu tarafı veri)
-      analytics-client.tsx          # Canlı akış + grafikler
-    cikis/page.tsx                  # Çıkış
-    kitap-tahlilleri/
-      toplu-ekle/
-        page.tsx                    # Kitap tahlili toplu ekleme (auth guard)
-        bulk-add-client.tsx         # Excel'den yapıştır → önizle → 100'erli partilerle ekle
-    yazi/
-      yeni/page.tsx                 # Yeni yazı/tahlil/link (?tur= ile ön-seçili)
-      [id]/duzenle/
-        page.tsx                    # Düzenle (tüm türler tek editörü paylaşır)
-        editor-client.tsx           # Editör mantığı: tür seçici, otomatik kaydetme, yayınlama
+  layout.tsx                        # Üst şerit, alt bilgi, tema betiği (statik)
+  page.tsx                          # Ana sayfa: yazılar + son tahliller
+  yazi/[slug]/page.tsx              # Yazı
+  kategori/[slug]/page.tsx          # Kategori
+  kitap-tahlilleri/page.tsx         # Okuma listesi: tahliller, şu an, duraklar
+  kitap-tahlilleri/[slug]/page.tsx  # Tahlil (ya da listedeki eserin sade sayfası)
+  durak/[ad]/page.tsx               # Durak: eserler, "Okudum" (yönetici)
+  dizi/[ad]/page.tsx                # Yazı dizisi
+  ara.json/route.ts                 # Arama dizini (statik)
+  feed.xml/route.ts, sitemap.ts     # RSS, site haritası (statik)
+  giris/page.tsx                    # Giriş
+  admin/                            # Yönetim paneli (dinamik; kendi stili admin.css)
+    onizle/[id]/page.tsx            # Taslak / son hâl önizlemesi
+    yazdir/[id]/page.tsx            # PDF için yazdırma sayfası
+  api/admin/yenile/route.ts         # Statik sayfaları yeniler
 components/
-  rich-text-editor.tsx              # Word/Notion tarzı WYSIWYG editör (Tiptap)
-  post-content.tsx                  # Yazı içeriğini render eder (html + eski markdown)
-  table-of-contents.tsx             # İçindekiler (uzun yazılarda)
-  reading-progress.tsx              # Okuma ilerleme çubuğu
-  related-posts.tsx                 # "Bunları da okuyabilirsin"
-  site-search.tsx                   # Arama kutusu + modal
-  view-tracker.tsx                  # Görüntülenme kaydı (görünmez bileşen)
-  theme-toggle.tsx                  # 3 tema (light/dark/blue)
-  share-buttons.tsx                 # Sosyal paylaşım
+  article.tsx                       # Yazı/tahlil gövdesi, önceki/sonraki
+  post-content.tsx                  # İçerik (html + eski markdown), dipnot, kaynakça
+  book-row.tsx, post-list.tsx       # Listeler
+  admin-bits.tsx                    # Yalnızca yöneticiye görünen parçalar (tarayıcıda)
+  site-search.tsx, theme-toggle.tsx # Arama, görünüm
+  rich-text-editor.tsx              # Editör (Tiptap)
 lib/
-  helpers.ts                        # Kategoriler ve yardımcılar
-  book-import.ts                    # Excel/etiketli metinden eser listesi ayrıştırıcı
-  content.ts                        # Başlık çıkarma, HTML temizleme (sanitize)
-  visitor.ts                        # Anonim ziyaretçi kimliği (çerez)
-  supabase-browser.ts               # Client-side Supabase
-  supabase-server.ts                # Server-side Supabase
-SUPABASE-SETUP.sql                  # İlk kurulum (sıfırdan)
-SUPABASE-MIGRATION-v2.sql           # content_format, page_views, record_post_view()
-SUPABASE-MIGRATION-v3.sql           # post_type + Okuma Bülteni kaynak alanları
-SUPABASE-MIGRATION-v4.sql           # book_author + reading_order (Kitap Tahlilleri)
-SEO-CHECKLIST.md                    # Yazı öncesi/sonrası SEO kontrol listesi
+  public-data.ts                    # Herkese açık sayfaların bütün verisi
+  supabase-public.ts                # Çerezsiz Supabase istemcisi (statik sayfalar için)
+  admin-client.ts                   # Yönetici algılama, siteyi yenile
+  render-post.ts, content.ts        # İçerik işleme, temizleme
+  helpers.ts, site.ts, theme.ts     # Kategoriler, sabitler, görünüm
+SUPABASE-*.sql                      # Kurulum ve göçler
 ```
-
----
-
-© Muhammet Fatih Işık

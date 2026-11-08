@@ -4,7 +4,6 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { fetchJourney } from '@/lib/reading-journey';
 import { extractWikiLinks, resolveWikiTarget } from '@/lib/reading';
-import { Horizon, Glint } from '@/components/calm';
 
 export const revalidate = 0;
 export const metadata: Metadata = { title: 'Zihin haritası', robots: { index: false, follow: false } };
@@ -68,7 +67,6 @@ export default async function MapPage() {
 
       {list.length === 0 ? (
         <div className="empty-state">
-          <Horizon width={220} />
           <p className="empty-state-text">Henüz bağ yok. Bir fişte ya da tahlilde <code>[[Etika]]</code>, <code>[[Spinoza, Etika]]</code> veya <code>[[#247]]</code> yazdığında burada bir yay belirir.</p>
         </div>
       ) : (
@@ -107,7 +105,7 @@ export default async function MapPage() {
               ))}
             </svg>
           </div>
-          <p className="map-legend"><Glint still /> {nodes.length} eser · {list.length} bağ{unresolved.size > 0 ? ` · ${unresolved.size} bağlantı bir esere eşleşmedi` : ''}</p>
+          <p className="map-legend">{nodes.length} eser · {list.length} bağ{unresolved.size > 0 ? ` · ${unresolved.size} bağlantı bir esere eşleşmedi` : ''}</p>
 
           <div className="map-cols">
             <section>

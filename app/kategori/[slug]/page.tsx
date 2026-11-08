@@ -1,110 +1,60 @@
 import Link from 'next/link';
-import { Horizon } from '@/components/calm';
-import Image from 'next/image';
-import { notFound, permanentRedirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, getCategoryByPath, formatDate } from '@/lib/helpers';
+import { listYazilar } from '@/lib/public-data';
+import { OG_IMAGE, SITE_URL } from '@/lib/site';
 
-export const revalidate = 60;
+export const dynamic = 'force-static';
+// Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
+export const revalidate = 86400;
+// Yalnızca altı kategori var; başka adresler doğrudan 404.
+export const dynamicParams = false;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export function generateStaticParams() {
+  return CATEGORIES.map((c) => ({ slug: c.path }));
+}
+
+export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const category = getCategoryByPath(params.slug);
-  if (!category) return { title: 'Kategori bulunamadı' };
-
+  if (!category) return { title: 'Bulunamadı' };
   const url = `${SITE_URL}/kategori/${category.path}`;
   return {
     title: category.name,
-    description: `${category.name} kategorisindeki tüm yazılar. ${category.description}`,
+    description: `${category.name} üzerine yazılar.`,
     alternates: { canonical: url },
-    openGraph: {
-      type: 'website',
-      url,
-      title: `${category.name} — Zihin Haritası`,
-      description: category.description,
-      siteName: 'Zihin Haritası',
-      locale: 'tr_TR',
-    },
+    openGraph: { type: 'website', url, title: `${category.name} — Zihin Haritası`, siteName: 'Zihin Haritası', locale: 'tr_TR', images: [OG_IMAGE] },
   };
-}
-
-// Tüm kategori sayfalarını önceden build et (SEO için)
-export async function generateStaticParams() {
-  return CATEGORIES.map((c) => ({ slug: c.path }));
 }
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const category = getCategoryByPath(params.slug);
   if (!category) notFound();
-  if (params.slug !== category.path) permanentRedirect(`/kategori/${category.path}`);
-
-  const supabase = createClient();
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('is_published', true)
-    .eq('post_type', 'yazi')
-    .eq('category', category.slug)
-    .order('published_at', { ascending: false });
-
-  const postList = posts || [];
+  const posts = (await listYazilar()).filter((p) => p.category === category.slug);
 
   return (
     <>
-      <section className="blog-hero">
-        <div className="hero-eyebrow">
-          <span className="hero-dot" style={{ background: category.color }}></span>
-          Kategori
-        </div>
-        <h1 className="blog-hero-title" style={{ color: category.color }}>
-          {category.name}
-        </h1>
-        <p className="blog-hero-sub">{category.description}</p>
-      </section>
+      <header className="hero">
+        <p className="eyebrow"><Link href="/">Yazılar</Link></p>
+        <h1 className="hero-title">{category.name}</h1>
+      </header>
 
-      <section className="category-bar">
-        <Link href="/" className="category-pill">← Tüm yazılar</Link>
-        {CATEGORIES.filter((c) => c.slug !== category.slug).map((c) => (
-          <Link key={c.slug} href={`/kategori/${c.path}`} className="category-pill">
-            {c.name}
-          </Link>
-        ))}
-      </section>
-
-      {postList.length === 0 ? (
-        <div className="empty-state">
-          <Horizon />
-          <p className="empty-state-text">
-            Bu kategoride henüz yazı yok.
-          </p>
-        </div>
+      {posts.length === 0 ? (
+        <p className="quiet">Bu başlıkta henüz yazı yok.</p>
       ) : (
-        <section className="posts-list">
-          <h2 className="section-title">{postList.length} yazı</h2>
-          {postList.map((post) => (
-            <article key={post.id} className="post-card">
-              <Link href={`/yazi/${post.slug}`} className="post-card-link">
-                <div className="post-card-body">
-                  <div className="post-meta">
-                    <time className="post-date" dateTime={post.published_at}>
-                      {formatDate(post.published_at)}
-                    </time>
-                    <span className="post-meta-sep">·</span>
-                    <span className="post-reading">{post.reading_minutes} dk</span>
-                  </div>
-                  <h3 className="post-card-title">{post.title}</h3>
-                  {post.excerpt && <p className="post-card-excerpt">{post.excerpt}</p>}
-                </div>
-                {post.cover_image_url && (
-                  <div className="post-card-image">
-                    <Image src={post.cover_image_url} alt={post.title} fill sizes="160px" style={{ objectFit: 'cover' }} />
-                  </div>
-                )}
-              </Link>
-            </article>
-          ))}
+        <section className="section section-tight">
+          <ul className="posts">
+            {posts.map((p) => (
+              <li key={p.id}>
+                <Link href={`/yazi/${p.slug}`} className="post">
+                  <span className="post-title">{p.title}</span>
+                  {(p.subtitle || p.excerpt) && <span className="post-text">{p.subtitle || p.excerpt}</span>}
+                  <time className="post-date" dateTime={p.published_at || undefined}>{formatDate(p.published_at)}</time>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </>

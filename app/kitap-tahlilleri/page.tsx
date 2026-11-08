@@ -1,16 +1,15 @@
 import Link from 'next/link';
-import { Horizon } from '@/components/calm';
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, getCategoryByPath, getCategoryColor, getCategoryName } from '@/lib/helpers';
-import { fetchJourney } from '@/lib/reading-journey';
-import ReadingJourney from '@/components/reading-journey';
-import ReadToggle from '@/components/read-toggle';
+import { bookHref, durakHref, getReadingList } from '@/lib/public-data';
+import BookRow from '@/components/book-row';
+import PostList from '@/components/post-list';
+import { Chevron } from '@/components/icons';
+import { OG_IMAGE, SITE_URL } from '@/lib/site';
 
-export const revalidate = 60;
+export const dynamic = 'force-static';
+// Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
+export const revalidate = 86400;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zihinharitasi.org';
-const PAGE_SIZE = 100;
 
 export const metadata: Metadata = {
   title: 'Kitap Tahlilleri',
@@ -23,222 +22,66 @@ export const metadata: Metadata = {
     description: 'Okuma listesi ve okunan eserler üzerine tahliller.',
     siteName: 'Zihin Haritası',
     locale: 'tr_TR',
+    images: [OG_IMAGE],
   },
 };
 
-type Durum = 'tumu' | 'yazilan' | 'bekleyen';
-const DURUMLAR: { value: Durum; label: string }[] = [
-  { value: 'tumu', label: 'Tüm liste' },
-  { value: 'yazilan', label: 'Tahlili yazılanlar' },
-  { value: 'bekleyen', label: 'Sırada bekleyenler' },
-];
-
-type Params = { sayfa?: string; durum?: string; kategori?: string; modul?: string; q?: string };
-
-/** PostgREST `or()` filtresini bozabilecek karakterleri temizler. */
-function cleanQuery(q?: string): string {
-  return (q || '').replace(/[,()*%\\:"]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
-}
-
-function buildHref(base: Params, patch: Partial<Params>): string {
-  const merged: Record<string, string | undefined> = { ...base, ...patch };
-  const sp = new URLSearchParams();
-  Object.entries(merged).forEach(([k, v]) => {
-    if (!v) return;
-    if (k === 'durum' && v === 'tumu') return;
-    if (k === 'sayfa' && v === '1') return;
-    sp.set(k, v);
-  });
-  const s = sp.toString();
-  return `/kitap-tahlilleri${s ? `?${s}` : ''}`;
-}
-
-export default async function KitapTahlilleriPage({ searchParams }: { searchParams: Params }) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const isAdmin = !!user;
-
-  const durum: Durum = DURUMLAR.some((d) => d.value === searchParams?.durum) ? (searchParams.durum as Durum) : 'tumu';
-  // Adreste yeni kategori adı (felsefe) ya da eski iç değer (dusunce) olabilir
-  const kategoriCat = getCategoryByPath(searchParams?.kategori);
-  const kategori = kategoriCat?.slug || '';
-  const modul = (searchParams?.modul || '').trim().slice(0, 120);
-  const q = cleanQuery(searchParams?.q);
-  const pageNum = Math.max(1, parseInt(searchParams?.sayfa || '1', 10) || 1);
-  const current: Params = { durum, kategori: kategoriCat?.path || '', modul, q, sayfa: String(pageNum) };
-  const showJourney = !q && !kategori && !modul && durum === 'tumu' && pageNum === 1;
-
-  // Ortak filtreler (durum hariç) — sekme sayaçları için de kullanılır
-  const applyCommon = (query: any) => {
-    let qq = query.eq('is_published', true).eq('post_type', 'kitap_tahlili');
-    if (kategori) qq = qq.eq('category', kategori);
-    if (modul) qq = qq.eq('reading_module', modul);
-    if (q) qq = qq.or(`title.ilike.%${q}%,book_author.ilike.%${q}%`);
-    return qq;
-  };
-  const applyDurum = (query: any, d: Durum) => {
-    if (d === 'yazilan') return query.neq('content', '');
-    if (d === 'bekleyen') return query.eq('content', '').or('reading_status.is.null,reading_status.in.(sirada,okunuyor)');
-    return query;
-  };
-
-  const from = (pageNum - 1) * PAGE_SIZE;
-  const listQuery = applyDurum(
-    applyCommon(
-      supabase
-        .from('posts')
-        .select('id, slug, title, book_author, reading_order, category, content, published_at, reading_status', { count: 'exact' })
-    ),
-    durum
-  )
-    .order('reading_order', { ascending: true, nullsFirst: false })
-    .order('published_at', { ascending: false })
-    .range(from, from + PAGE_SIZE - 1);
-
-  const countQuery = (d: Durum) =>
-    applyDurum(applyCommon(supabase.from('posts').select('id', { count: 'exact', head: true })), d);
-
-  let [{ data: rows, count, error }, totalRes, writtenRes, journey, doneRes] = await Promise.all([
-    listQuery,
-    countQuery('tumu'),
-    countQuery('yazilan'),
-    showJourney ? fetchJourney(supabase) : Promise.resolve(null),
-    applyCommon(supabase.from('posts').select('id', { count: 'exact', head: true })).or('reading_status.in.(okundu,yazildi),content.neq.'),
-  ]);
-
-  if (error) {
-    console.error('[kitap-tahlilleri] Supabase hatası:', error.message);
-    // Migration v4 (book_author / reading_order) henüz çalıştırılmadıysa sayfa
-    // boş kalmasın: yeni alanlar olmadan, yayın tarihine göre listele.
-    let fallback = supabase
-      .from('posts')
-      .select('id, slug, title, category, content, published_at', { count: 'exact' })
-      .eq('is_published', true)
-      .eq('post_type', 'kitap_tahlili');
-    if (kategori) fallback = fallback.eq('category', kategori);
-    if (modul) fallback = fallback.eq('id', -1); // durak alanı yoksa durak filtresi boş döner
-    if (q) fallback = fallback.ilike('title', `%${q}%`);
-    if (durum === 'yazilan') fallback = fallback.neq('content', '');
-    if (durum === 'bekleyen') fallback = fallback.eq('content', '');
-    const fb = await fallback.order('published_at', { ascending: false }).range(from, from + PAGE_SIZE - 1);
-    rows = fb.data as any;
-    count = fb.count;
-  }
-
-  const list = rows || [];
-  const totalCount = totalRes.count || 0;
-  const writtenCount = writtenRes.count || 0;
-  const counts: Record<Durum, number> = { tumu: totalCount, yazilan: writtenCount, bekleyen: Math.max(0, totalCount - (doneRes.error ? writtenCount : (doneRes.count || 0))) };
-  const pageCount = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
-  const doneCount = doneRes.error ? writtenCount : (doneRes.count || 0);
-  const progressPct = totalCount ? Math.round((doneCount / totalCount) * 1000) / 10 : 0;
+export default async function KitapTahlilleriPage() {
+  const list = await getReadingList();
+  const nf = new Intl.NumberFormat('tr-TR');
 
   return (
     <>
-      <section className="blog-hero">
-        <h1 className="blog-hero-title">Kitap Tahlilleri</h1>
-        <p className="blog-hero-sub">
-          Okuma listesi ve tahliller.
-        </p>
-        {totalCount > 0 && !journey && (
-          <div className="book-progress" aria-label="Tahlil ilerlemesi">
-            <div className="book-progress-track">
-              <div className="book-progress-fill" style={{ width: `${progressPct}%` }} />
-            </div>
-            <span className="book-progress-label">
-              {doneCount} / {totalCount} eser okundu · {writtenCount} tahlil
-            </span>
-          </div>
+      <header className="hero">
+        <h1 className="hero-title">Kitap Tahlilleri</h1>
+        {list.total > 0 && (
+          <p className="hero-sub">{nf.format(list.total)} eserlik okuma listesi · {nf.format(list.done)} okundu</p>
         )}
-      </section>
+      </header>
 
-      {journey && (
-        <ReadingJourney journey={journey} moduleHref={(name) => `/durak/${encodeURIComponent(name)}`} />
+      {list.written.length > 0 && (
+        <section className="section" aria-labelledby="tahliller">
+          <h2 className="section-title" id="tahliller">Tahliller</h2>
+          <PostList items={list.written.map((b) => ({ key: b.id, href: bookHref(b.slug), title: b.title, text: b.author, date: b.writtenAt }))} />
+        </section>
       )}
 
-      {modul && (
-        <div className="book-module-banner">
-          Durak: <strong>{modul}</strong>
-          <Link href={buildHref(current, { modul: '', sayfa: '1' })} className="btn btn-sm">× Tüm liste</Link>
-        </div>
+      {list.current.length > 0 && (
+        <section className="section" aria-labelledby="simdi">
+          <div className="section-head">
+            <h2 className="section-title" id="simdi">Şu an</h2>
+            {list.current[0].module && (
+              <Link href={durakHref(list.current[0].module)} className="more">{list.current[0].module} <Chevron /></Link>
+            )}
+          </div>
+          <div className="group">
+            {list.current.map((b) => <BookRow key={b.id} book={b} />)}
+          </div>
+        </section>
       )}
 
-      <section className="book-filters" aria-label="Filtreler">
-        <div className="category-bar" style={{ marginBottom: 10 }}>
-          {DURUMLAR.map((d) => (
-            <Link
-              key={d.value}
-              href={buildHref(current, { durum: d.value, sayfa: '1' })}
-              className={`category-pill${durum === d.value ? ' category-pill-active' : ''}`}
-            >
-              {d.label} <span className="book-pill-count">{counts[d.value]}</span>
-            </Link>
-          ))}
-        </div>
-        <form method="get" action="/kitap-tahlilleri" className="book-search">
-          {durum !== 'tumu' && <input type="hidden" name="durum" value={durum} />}
-          {current.kategori && <input type="hidden" name="kategori" value={current.kategori} />}
-          {modul && <input type="hidden" name="modul" value={modul} />}
-          <input type="search" name="q" defaultValue={q} className="input" placeholder="Ara" aria-label="Eser ya da yazar ara" />
-          {q && <Link href={buildHref(current, { q: '', sayfa: '1' })} className="btn btn-sm">Temizle</Link>}
-        </form>
-      </section>
+      {list.duraks.length > 0 && (
+        <section className="section" aria-labelledby="duraklar">
+          <h2 className="section-title" id="duraklar">Duraklar</h2>
+          <div className="group">
+            {list.duraks.map((d) => (
+              <Link key={d.name} href={durakHref(d.name)} className="row row-num-start">
+                <span className="row-num">{d.index}</span>
+                <span className="row-main">
+                  <span className="row-title">{d.name}</span>
+                </span>
+                <span className="row-end row-count">{`${d.done}/${d.total}`}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {list.length === 0 ? (
-        <div className="empty-state">
-          <Horizon />
-          <p className="empty-state-text">
-            {totalCount === 0 && !q && !kategori ? 'Henüz kitap tahlili yok. Yakında ilki gelecek.' : 'Bu filtreyle eşleşen eser yok.'}
-          </p>
-        </div>
-      ) : (
-        <section className="book-list" aria-label="Eserler">
-          <ol className="book-items">
-            {list.map((post: any) => {
-              const written = !!post.content;
-              const inner = (
-                <>
-                  <span className="book-no">{post.reading_order ?? '—'}</span>
-                  <span className="book-main">
-                    <span className="book-title">{post.title}</span>
-                    {post.book_author && <span className="book-author">{post.book_author}</span>}
-                  </span>
-                  <span className="book-side">
-                    {isAdmin && !written && <ReadToggle id={post.id} status={post.reading_status} />}
-                    {written
-                      ? <span className="book-badge book-badge-done">Tahlil</span>
-                      : post.reading_status === 'okunuyor'
-                        ? <span className="book-badge book-badge-reading">Okunuyor</span>
-                        : isAdmin ? null
-                        : post.reading_status === 'okundu'
-                          ? <span className="book-badge">Okundu</span>
-                          : null}
-                  </span>
-                </>
-              );
-              return (
-                <li key={post.id} id={post.reading_order != null ? `eser-${post.reading_order}` : undefined} className={`book-item${written ? ' book-item-written' : ''}`}>
-                  {written ? (
-                    <Link href={`/kitap-tahlilleri/${post.slug}`} className="book-item-inner">{inner}</Link>
-                  ) : (
-                    <div className="book-item-inner">{inner}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-
-          {pageCount > 1 && (
-            <nav className="pager" aria-label="Sayfalar">
-              {pageNum > 1 ? (
-                <Link href={buildHref(current, { sayfa: String(pageNum - 1) })} className="btn btn-sm">← Önceki</Link>
-              ) : <span className="btn btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>← Önceki</span>}
-              <span>Sayfa {pageNum} / {pageCount}</span>
-              {pageNum < pageCount ? (
-                <Link href={buildHref(current, { sayfa: String(pageNum + 1) })} className="btn btn-sm">Sonraki →</Link>
-              ) : <span className="btn btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>Sonraki →</span>}
-            </nav>
-          )}
+      {list.total > 0 && list.duraks.length === 0 && (
+        <section className="section">
+          <div className="group">
+            {list.books.map((b) => <BookRow key={b.id} book={b} />)}
+          </div>
         </section>
       )}
     </>

@@ -354,12 +354,6 @@ export default function RichTextEditor({
           </button>
         )}
       </div>
-      {fullscreen && (
-        <div className="rte-sea" aria-hidden="true">
-          <span className="rte-sea-line" />
-          <span className="glint rte-sea-glint" />
-        </div>
-      )}
     </div>
   );
 }

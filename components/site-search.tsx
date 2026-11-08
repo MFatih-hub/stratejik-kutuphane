@@ -1,180 +1,144 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase-browser';
-import { turkishLower, getCategoryName, formatDate, getPostUrl, getPostTypeInfo } from '@/lib/helpers';
+import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
+import { CloseIcon, SearchIcon } from './icons';
+import { turkishLower } from '@/lib/helpers';
 
-interface SearchPost {
-  id: number;
-  slug: string;
-  title: string;
-  excerpt: string | null;
-  tags: string[] | null;
-  category: string;
-  published_at: string | null;
-  post_type: string | null;
+// Arama dizini statik bir dosyadır (/ara.json, CDN'den gelir): arama
+// veritabanına ya da sunucuya hiç gitmez. İlk açılışta bir kez indirilir.
+type Entry = { t: string; s?: string | null; u: string };
+type Indexed = Entry & { nt: string; ns: string };
+
+let loaded: Promise<Indexed[]> | null = null;
+
+function norm(s: string) {
+  return turkishLower(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
-// Basit tarayıcı-içi önbellek: aynı sayfa yüklemesi boyunca tekrar sorgu atmasın.
-let cachedPosts: SearchPost[] | null = null;
-
-async function loadPosts(): Promise<SearchPost[]> {
-  if (cachedPosts) return cachedPosts;
-  const supabase = createClient();
-  // PostgREST tek istekte en fazla 1000 satır döndürür → sayfa sayfa çek.
-  // Tahlil notu henüz yazılmamış kitap kayıtları aramada çıkmaz
-  // (onlar Kitap Tahlilleri sayfasının kendi aramasında bulunur).
-  const all: SearchPost[] = [];
-  for (let page = 0; page < 20; page++) {
-    const from = page * 1000;
-    const { data, error } = await supabase
-      .from('posts')
-      .select('id, slug, title, excerpt, tags, category, published_at, post_type')
-      .eq('is_published', true)
-      .neq('post_type', 'okuma_bulteni')
-      .or('post_type.neq.kitap_tahlili,content.neq.""')
-      .order('published_at', { ascending: false })
-      .order('id', { ascending: false })
-      .range(from, from + 999);
-    if (error || !data || data.length === 0) break;
-    all.push(...(data as SearchPost[]));
-    if (data.length < 1000) break;
+function load(): Promise<Indexed[]> {
+  if (!loaded) {
+    loaded = fetch('/ara.json')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Entry[]) => rows.map((e) => ({ ...e, nt: norm(e.t), ns: norm(e.s || '') })))
+      .catch(() => { loaded = null; return []; });
   }
-  cachedPosts = all;
-  return cachedPosts;
+  return loaded;
 }
 
-function filterPosts(posts: SearchPost[], query: string): SearchPost[] {
-  const q = turkishLower(query.trim());
-  if (!q) return [];
-  return posts
-    .filter((p) =>
-      turkishLower([p.title, p.excerpt || '', getCategoryName(p.category), ...(p.tags || [])].join(' ')).includes(q)
-    )
-    .slice(0, 8);
+function find(index: Indexed[], query: string): Indexed[] {
+  const words = norm(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const scored: { e: Indexed; score: number }[] = [];
+  for (const e of index) {
+    const hay = `${e.nt} ${e.ns}`;
+    if (!words.every((w) => hay.includes(w))) continue;
+    const q = words.join(' ');
+    const score = e.nt.startsWith(q) ? 0 : e.nt.includes(q) ? 1 : words.every((w) => e.nt.includes(w)) ? 2 : 3;
+    scored.push({ e, score });
+  }
+  return scored.sort((a, b) => a.score - b.score).slice(0, 12).map((x) => x.e);
 }
 
-function ResultsList({ results, onNavigate }: { results: SearchPost[]; onNavigate: () => void }) {
-  if (results.length === 0) return <p className="search-empty">Sonuç yok</p>;
-  return (
-    <ul className="search-results">
-      {results.map((p) => (
-        <li key={p.id}>
-          <Link href={getPostUrl({ slug: p.slug, post_type: p.post_type })} onClick={onNavigate} className="search-result-item">
-            <span className="search-result-category">
-              {getCategoryName(p.category)}
-              {p.post_type && p.post_type !== 'yazi' ? ` · ${getPostTypeInfo(p.post_type).label}` : ''}
-            </span>
-            <span className="search-result-title">{p.title}</span>
-            {p.published_at && <span className="search-result-date">{formatDate(p.published_at)}</span>}
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** Ana sayfa hero'sunda gösterilen, odaklanınca açılan basit arama kutusu. */
-export function InlineSiteSearch() {
-  const [posts, setPosts] = useState<SearchPost[]>([]);
-  const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    loadPosts().then(setPosts);
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setFocused(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const results = useMemo(() => filterPosts(posts, query), [posts, query]);
-
-  return (
-    <div className="site-search-inline" ref={wrapRef}>
-      <span className="search-inline-icon"><SearchIcon /></span>
-      <input
-        type="search"
-        className="input search-inline-input"
-        placeholder="Ara"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => setFocused(true)}
-      />
-      {focused && query.trim() && (
-        <div className="search-dropdown">
-          <ResultsList results={results} onNavigate={() => setFocused(false)} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SearchIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle cx="8.6" cy="8.6" r="5.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M13 13l4.4 4.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/** Site başlığında her sayfadan erişilebilen arama ikonu + modal. */
-export function HeaderSiteSearch() {
+export default function SiteSearch() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [posts, setPosts] = useState<SearchPost[]>([]);
   const [query, setQuery] = useState('');
+  const [index, setIndex] = useState<Indexed[] | null>(null);
+  const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) loadPosts().then(setPosts);
-  }, [open]);
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen(true); }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
-    const focusTimer = setTimeout(() => inputRef.current?.focus(), 10);
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', handleKey);
-    const prevOverflow = document.body.style.overflow;
+    load().then(setIndex);
+    inputRef.current?.focus();
+    const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      clearTimeout(focusTimer);
-      document.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = prevOverflow;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [open]);
 
-  const results = useMemo(() => filterPosts(posts, query), [posts, query]);
+  const results = useMemo(() => find(index || [], query), [index, query]);
+  useEffect(() => setActive(0), [query]);
+
+  function close() {
+    setOpen(false);
+    setQuery('');
+  }
+
+  function go(url: string) {
+    close();
+    router.push(url);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, results.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+    else if (e.key === 'Enter' && results[active]) { e.preventDefault(); go(results[active].u); }
+  }
 
   return (
     <>
-      <button className="icon-btn" aria-label="Yazılarda ara" title="Ara" onClick={() => setOpen(true)}>
-        <SearchIcon size={17} />
+      <button type="button" className="nav-icon" aria-label="Ara" title="Ara" onClick={() => setOpen(true)}>
+        <SearchIcon />
       </button>
-      {open && (
-        <div className="search-modal-backdrop" onClick={() => setOpen(false)}>
-          <div className="search-modal" onClick={(e) => e.stopPropagation()}>
-            <input
-              ref={inputRef}
-              type="search"
-              className="input search-modal-input"
-              placeholder="Ara"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="search-modal-results">
-              {query.trim() !== '' && <ResultsList results={results} onNavigate={() => setOpen(false)} />}
+      {/* Üst şeritteki bulanıklık, içindeki sabit konumlu öğeleri şeride hapseder:
+          arama paneli bu yüzden doğrudan <body>'ye çizilir. */}
+      {open && createPortal(
+        <div className="search" role="dialog" aria-modal="true" aria-label="Ara">
+          <div className="search-scrim" onClick={close} />
+          <div className="search-sheet">
+            <div className="search-field">
+              <SearchIcon />
+              <input
+                ref={inputRef}
+                type="search"
+                className="search-input"
+                placeholder="Ara"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={onKeyDown}
+                autoComplete="off"
+                spellCheck={false}
+                aria-label="Ara"
+              />
+              <button type="button" className="nav-icon" aria-label="Kapat" onClick={close}>
+                <CloseIcon />
+              </button>
             </div>
+            {query.trim() !== '' && index && (
+              results.length ? (
+                <ul className="search-results">
+                  {results.map((r, i) => (
+                    <li key={r.u}>
+                      <a
+                        href={r.u}
+                        className={`search-hit${i === active ? ' is-active' : ''}`}
+                        onClick={(e) => { e.preventDefault(); go(r.u); }}
+                        onMouseEnter={() => setActive(i)}
+                      >
+                        <span className="search-hit-title">{r.t}</span>
+                        {r.s && <span className="search-hit-sub">{r.s}</span>}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="search-empty">Sonuç yok</p>
+              )
+            )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

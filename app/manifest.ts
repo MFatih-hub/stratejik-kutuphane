@@ -1,23 +1,22 @@
 import type { MetadataRoute } from 'next';
 
-// Telefonun ana ekranına eklenince uygulama gibi açılır ve doğrudan
-// Dem ekranından (okuduğun eser, kaldığın sayfa, hızlı fiş) başlar.
+// Telefonun ana ekranına eklenince uygulama gibi açılır ve doğrudan Dem'den başlar.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Zihin Haritası',
     short_name: 'Zihin',
-    description: 'Okuma yolculuğu, fişler ve kitap tahlilleri',
+    description: 'Okuma listesi, fişler ve kitap tahlilleri',
     start_url: '/admin/dem',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#0a0c0f',
-    theme_color: '#0a0c0f',
+    background_color: '#000000',
+    theme_color: '#000000',
     lang: 'tr',
     icons: [
-      { src: '/app-icon?s=192', sizes: '192x192', type: 'image/png' },
-      { src: '/app-icon?s=512', sizes: '512x512', type: 'image/png' },
-      { src: '/app-icon?s=512', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     shortcuts: [
       { name: 'Hızlı fiş', short_name: 'Fiş', url: '/admin/dem' },

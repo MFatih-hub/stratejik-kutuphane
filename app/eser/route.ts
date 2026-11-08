@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
-import { resolveLinkText } from '@/lib/wiki-server';
+import { getReadingList, wikiResolver } from '@/lib/public-data';
 
-// [[...]] bağlantılarının gittiği adres: /eser?ad=Etika  →  ilgili eserin sayfası.
-// Bulunamazsa Kitap Tahlilleri listesinde o kelimeyle arama yapılır.
+// Eski [[...]] bağlantılarının adresi: /eser?ad=Etika → ilgili eserin sayfası.
+// Sayfalardaki bağlantılar artık doğrudan esere gider; bu adres yalnızca dışa
+// aktarılmış belgelerdeki ve e-postalardaki eski bağlantılar için duruyor.
+// Okuma listesi önbellekten gelir; yönlendirme CDN'de bir gün saklanır.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const ad = (url.searchParams.get('ad') || '').trim().slice(0, 160);
-  const back = (path: string) => NextResponse.redirect(new URL(path, url.origin));
-  if (!ad) return back('/kitap-tahlilleri');
-
-  const supabase = createClient();
-  const hit = await resolveLinkText(supabase, ad);
-  if (hit) return back(`/kitap-tahlilleri/${hit.slug}`);
-  return back(`/kitap-tahlilleri?q=${encodeURIComponent(ad.replace(/^#/, ''))}`);
+  let target = '/kitap-tahlilleri';
+  if (ad) {
+    const list = await getReadingList();
+    target = wikiResolver(list.books)(ad)?.href || target;
+  }
+  const res = NextResponse.redirect(new URL(target, url.origin), 307);
+  res.headers.set('Cache-Control', 'public, s-maxage=86400');
+  return res;
 }

@@ -4,7 +4,6 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { NOTE_KINDS } from '@/lib/reading';
 import { NoteBody } from '../dem/dem-client';
-import { Horizon } from '@/components/calm';
 
 export const revalidate = 0;
 export const metadata: Metadata = { title: 'Fişler', robots: { index: false, follow: false } };
@@ -84,7 +83,6 @@ export default async function NotesPage({ searchParams }: { searchParams: Params
         <div className="today-banner">Fişler için Supabase'de <code>SUPABASE-MIGRATION-v5.sql</code> dosyasını çalıştır.</div>
       ) : notes.length === 0 ? (
         <div className="empty-state">
-          <Horizon />
           <p className="empty-state-text">{q ? 'Bu aramayla eşleşen fiş yok.' : 'Henüz fiş yok. Dem’den ilkini al.'}</p>
         </div>
       ) : (

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORIES, formatDate, timeAgo, hasRealContent } from '@/lib/helpers';
 import { STATUS_LABELS, type ReadingStatus } from '@/lib/reading';
+import RefreshButton from './refresh-button';
 
 export const revalidate = 0;
 
@@ -97,6 +98,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
           <Link href="/admin/aboneler" className="btn btn-sm">Aboneler</Link>
           <Link href="/admin/liste-duzenle" className="btn btn-sm">Listeyi düzenle</Link>
           <a href="/api/admin/yedek" className="btn btn-sm" title="Bütün yazılar, notlar ve veriler tek bir ZIP dosyasında">Tam yedek indir</a>
+          <RefreshButton />
+          <Link href="/admin/cikis" className="btn btn-sm">Çıkış</Link>
         </div>
       </div>
 
@@ -165,7 +168,6 @@ function PostRow({ post }: { post: any }) {
   const isBook = post.post_type === 'kitap_tahlili';
   const written = isBook && hasRealContent(post.content);
   const status: ReadingStatus | null = post.reading_status || (written ? 'yazildi' : null);
-  const base = isBook ? '/kitap-tahlilleri' : '/yazi';
   return (
     <div className="admin-post-row">
       <div className="admin-post-info">
@@ -187,7 +189,7 @@ function PostRow({ post }: { post: any }) {
         {isBook && post.book_author && <p className="admin-post-subtitle">{post.book_author}</p>}
       </div>
       <div className="admin-post-actions">
-        <Link href={`${base}/${post.slug}`} className="btn btn-sm">Önizle</Link>
+        <Link href={`/admin/onizle/${post.id}`} className="btn btn-sm">Önizle</Link>
         <Link href={`/admin/yazi/${post.id}/duzenle`} className="btn btn-sm btn-primary">
           {isBook && !written ? 'Tahlil yaz' : 'Düzenle'}
         </Link>

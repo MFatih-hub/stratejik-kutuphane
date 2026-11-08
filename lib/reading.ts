@@ -93,14 +93,26 @@ export function wikiHref(text: string): string {
   return `/eser?ad=${encodeURIComponent(text)}`;
 }
 
-/** HTML içindeki [[...]] ifadelerini bağlantıya çevirir (etiketlerin içine dokunmaz). */
-export function linkifyWikiHtml(html: string): string {
+/**
+ * HTML içindeki [[...]] ifadelerini bağlantıya çevirir (etiketlerin içine dokunmaz).
+ * `resolve` verilirse bağlantı doğrudan eserin sayfasına gider; eser
+ * bulunamazsa metin düz kalır. Verilmezse /eser?ad=... kullanılır.
+ */
+export function linkifyWikiHtml(
+  html: string,
+  resolve?: (label: string) => string | { href: string; text?: string } | null,
+): string {
   if (!html || !html.includes('[[')) return html;
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return html
     .split(/(<[^>]+>)/g)
     .map((part) => (part.startsWith('<') ? part : part.replace(WIKILINK_RE, (_m, t) => {
       const label = String(t).trim();
-      return `<a href="${wikiHref(label)}" class="wikilink">${label}</a>`;
+      const hit = resolve ? resolve(label) : wikiHref(label);
+      if (!hit) return label;
+      const href = typeof hit === 'string' ? hit : hit.href;
+      const text = typeof hit === 'string' || !hit.text ? label : esc(hit.text);
+      return `<a href="${href}" class="wikilink">${text}</a>`;
     })))
     .join('');
 }

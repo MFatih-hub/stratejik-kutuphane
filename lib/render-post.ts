@@ -59,15 +59,15 @@ export function parseBibliography(text?: string | null): string[] {
 
 export function renderPost(
   post: { content?: string | null; content_format?: string | null; bibliography?: string | null },
-  opts: { wiki?: boolean; hashtags?: boolean } = {}
+  opts: { wiki?: boolean; hashtags?: boolean; resolveWiki?: (label: string) => string | { href: string; text?: string } | null } = {}
 ): RenderedPost {
   let html = contentToHtml(post.content, post.content_format);
   html = injectHeadingIds(html);
   html = sanitizeHtml(html, SANITIZE_HTML_OPTIONS);
   const fn = extractFootnotes(html);
   html = fn.html;
-  if (opts.wiki) html = linkifyWikiHtml(html);
-  if (opts.hashtags !== false) html = linkifyHashtagsHtml(html);
+  if (opts.wiki) html = linkifyWikiHtml(html, opts.resolveWiki);
+  if (opts.hashtags === true) html = linkifyHashtagsHtml(html);
   return {
     html,
     footnotes: fn.notes,

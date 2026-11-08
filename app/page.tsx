@@ -1,241 +1,50 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Metadata } from 'next';
-import Script from 'next/script';
-import { createClient } from '@/lib/supabase-server';
-import { CATEGORIES, formatDate, getCategoryName, getCategoryColor } from '@/lib/helpers';
-import { InlineSiteSearch } from '@/components/site-search';
-import { fetchJourneySummary } from '@/lib/reading-journey';
-import { SeaHorizon, Glint, Horizon } from '@/components/calm';
-import SubscribeForm from '@/components/subscribe-form';
-import { newsletterEnabled } from '@/lib/server-env';
+import { bookHref, getReadingList, listYazilar } from '@/lib/public-data';
+import PostList from '@/components/post-list';
+import { Chevron } from '@/components/icons';
+import { SITE_URL } from '@/lib/site';
 
-export const revalidate = 60;
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://stratejik-kutuphane.vercel.app';
+export const dynamic = 'force-static';
+// Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: 'Zihin Haritası — Muhammet Fatih Işık',
-  description: 'Muhammet Fatih Işık\'ın mühendislik, politika, sosyoloji, finans, felsefe ve tarih üzerine denemeleri, okuma bülteni ve kitap tahlilleri.',
+  title: { absolute: 'Zihin Haritası — Muhammet Fatih Işık' },
+  description: 'Muhammet Fatih Işık\'ın mühendislik, politika, sosyoloji, finans, felsefe ve tarih üzerine denemeleri ve kitap tahlilleri.',
   alternates: { canonical: SITE_URL },
 };
 
 export default async function HomePage() {
-  const supabase = createClient();
-  const [{ data: posts }, journey] = await Promise.all([
-    supabase
-      .from('posts')
-      .select('*')
-      .eq('is_published', true)
-      .eq('post_type', 'yazi')
-      .order('published_at', { ascending: false }),
-    fetchJourneySummary(supabase),
-  ]);
-
-  const postList = posts || [];
-  const journeyPct = journey.total ? Math.round((journey.done / journey.total) * 1000) / 10 : 0;
-  const hasShowcase = journey.total > 0;
-  const featured = postList[0];
-  const rest = postList.slice(1);
-
-  // Blog schema (Google için)
-  const blogSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Blog',
-    name: 'Zihin Haritası',
-    description: 'denemeler ve analizler.',
-    url: SITE_URL,
-    inLanguage: 'tr-TR',
-    author: {
-      '@type': 'Person',
-      name: 'Muhammet Fatih Işık',
-      url: SITE_URL,
-    },
-    blogPost: postList.slice(0, 10).map((p) => ({
-      '@type': 'BlogPosting',
-      headline: p.title,
-      url: `${SITE_URL}/yazi/${p.slug}`,
-      datePublished: p.published_at,
-      author: { '@type': 'Person', name: 'Muhammet Fatih Işık' },
-    })),
-  };
+  const [posts, list] = await Promise.all([listYazilar(), getReadingList()]);
 
   return (
     <>
-      <Script
-        id="schema-blog"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
-      />
+      <header className="hero">
+        <h1 className="hero-title">Zihin Haritası</h1>
+        <p className="hero-sub">Muhammet Fatih Işık</p>
+      </header>
 
-      <section
-        className="blog-hero blog-hero-sea"
-        style={{ ['--glint-boost' as any]: Math.min(1, Math.sqrt(journey.written / Math.max(1, journey.total))).toFixed(3) }}
-      >
-        <SeaHorizon />
-        <div className="hero-eyebrow">
-          <span className="hero-dot"></span>
-          Muhammet Fatih Işık
-        </div>
-        <h1 className="blog-hero-title">Zihin Haritası</h1>
-        <p className="blog-hero-sub">
-          Denemeler, okuma notları ve kitap tahlilleri.
-        </p>
-        <div className="hero-search">
-          <InlineSiteSearch />
-        </div>
-      </section>
-
-      <section className="category-bar" aria-label="Kategoriler">
-        {CATEGORIES.map((c) => (
-          <Link key={c.slug} href={`/kategori/${c.path}`} className="category-pill">
-            {c.name}
-          </Link>
-        ))}
-      </section>
-
-      {postList.length === 0 && !hasShowcase && (
-        <div className="empty-state">
-          <Horizon />
-          <p className="empty-state-text">
-            Henüz yazı yok. Yakında ilki gelecek.
-          </p>
-        </div>
+      {posts.length > 0 && (
+        <section className="section" aria-labelledby="yazilar">
+          <h2 className="section-title" id="yazilar">Yazılar</h2>
+          <PostList
+            items={posts.map((p) => ({ key: p.id, href: `/yazi/${p.slug}`, title: p.title, text: p.subtitle || p.excerpt, date: p.published_at }))}
+          />
+        </section>
       )}
 
-      {featured && (
-        <article className="featured-post">
-          <Link href={`/yazi/${featured.slug}`} className="featured-link">
-            {featured.cover_image_url && (
-              <div className="featured-image">
-                <Image
-                  src={featured.cover_image_url}
-                  alt={featured.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 1150px"
-                  style={{ objectFit: 'cover' }}
-                  priority
-                />
-              </div>
-            )}
-            <div className="featured-body">
-              <div className="post-meta">
-                <span className="post-category" style={{
-                  background: `${getCategoryColor(featured.category)}15`,
-                  color: getCategoryColor(featured.category)
-                }}>
-                  {getCategoryName(featured.category)}
-                </span>
-                <span className="post-meta-sep">·</span>
-                <time className="post-date" dateTime={featured.published_at}>
-                  {formatDate(featured.published_at)}
-                </time>
-                <span className="post-meta-sep">·</span>
-                <span className="post-reading">{featured.reading_minutes} dk okuma</span>
-              </div>
-              <h2 className="featured-title">{featured.title}</h2>
-              {featured.subtitle && <p className="featured-subtitle">{featured.subtitle}</p>}
-              {featured.excerpt && <p className="featured-excerpt">{featured.excerpt}</p>}
-              <span className="featured-read-more">Okumaya devam et →</span>
-            </div>
-          </Link>
-        </article>
-      )}
-
-
-      {hasShowcase && (
-        <section className="showcase" aria-label="Bölümler">
-          <div className="showcase-panel">
-            <div className="showcase-head">
-              <h2 className="showcase-title">Son tahliller</h2>
-              <Link href="/kitap-tahlilleri?durum=yazilan" className="showcase-more">Tümü</Link>
-            </div>
-            {journey.recent.length > 0 ? (
-              <ul className="showcase-list">
-                {journey.recent.map((r: any) => (
-                  <li key={r.slug}>
-                    <Link href={`/kitap-tahlilleri/${r.slug}`} className="showcase-item">
-                      <span className="showcase-item-title">{r.title}</span>
-                      <span className="showcase-item-meta">
-                        {r.reading_order != null && <>#{r.reading_order} · </>}
-                        {r.book_author || ''}{r.book_author ? ' · ' : ''}{formatDate(r.updated_at)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="showcase-note" style={{ fontStyle: 'italic' }}>İlk tahlil, sakin bir sabah yazılacak.</p>
-            )}
+      {list.total > 0 && (
+        <section className="section" aria-labelledby="tahliller">
+          <div className="section-head">
+            <h2 className="section-title" id="tahliller">Kitap Tahlilleri</h2>
+            <Link href="/kitap-tahlilleri" className="more">Okuma listesi <Chevron /></Link>
           </div>
-
-          {journey.total > 0 && (
-            <div className="showcase-panel showcase-panel-journey">
-              <div className="showcase-head">
-                <h2 className="showcase-title">Okuma yolculuğu</h2>
-                <Link href="/kitap-tahlilleri" className="showcase-more">Tümü</Link>
-              </div>
-              <p className="showcase-count">{journey.done} <span className="showcase-title-of">/ {journey.total}</span></p>
-              <div className="journey-bar" style={{ margin: '6px 0 4px' }}>
-                <div className="journey-bar-fill" style={{ width: `${journeyPct}%` }} />
-              </div>
-
-              {journey.next && (
-                <Link href={`/kitap-tahlilleri/${journey.next.slug}`} className="journey-here showcase-here">
-                  <Glint still className="journey-here-pin" />
-                  <span className="journey-here-text">
-                    <span className="journey-here-label">Sıradaki</span>
-                    <span className="journey-here-title">
-                      {journey.next.reading_order != null && <span className="journey-here-no">#{journey.next.reading_order}</span>} {journey.next.title}
-                    </span>
-                    {journey.next.book_author && <span className="journey-here-author">{journey.next.book_author}</span>}
-                  </span>
-                </Link>
-              )}
-
-            </div>
+          {list.written.length > 0 && (
+            <PostList
+              items={list.written.slice(0, 5).map((b) => ({ key: b.id, href: bookHref(b.slug), title: b.title, text: b.author, date: b.writtenAt }))}
+            />
           )}
-        </section>
-      )}
-
-      {rest.length > 0 && (
-        <section className="posts-list">
-          <h2 className="section-title">Yazılar</h2>
-          {rest.map((post) => (
-            <article key={post.id} className="post-card">
-              <Link href={`/yazi/${post.slug}`} className="post-card-link">
-                <div className="post-card-body">
-                  <div className="post-meta">
-                    <span className="post-category" style={{
-                      background: `${getCategoryColor(post.category)}15`,
-                      color: getCategoryColor(post.category)
-                    }}>
-                      {getCategoryName(post.category)}
-                    </span>
-                    <span className="post-meta-sep">·</span>
-                    <time className="post-date" dateTime={post.published_at}>
-                      {formatDate(post.published_at)}
-                    </time>
-                    <span className="post-meta-sep">·</span>
-                    <span className="post-reading">{post.reading_minutes} dk</span>
-                  </div>
-                  <h3 className="post-card-title">{post.title}</h3>
-                  {post.excerpt && <p className="post-card-excerpt">{post.excerpt}</p>}
-                </div>
-                {post.cover_image_url && (
-                  <div className="post-card-image">
-                    <Image src={post.cover_image_url} alt={post.title} fill sizes="160px" style={{ objectFit: 'cover' }} />
-                  </div>
-                )}
-              </Link>
-            </article>
-          ))}
-        </section>
-      )}
-
-      {newsletterEnabled() && (
-        <section className="home-subscribe">
-          <SubscribeForm />
         </section>
       )}
     </>

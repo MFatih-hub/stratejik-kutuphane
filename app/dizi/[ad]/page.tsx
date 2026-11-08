@@ -1,52 +1,50 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
-import { formatDate, getPostUrl } from '@/lib/helpers';
+import { getPostUrl } from '@/lib/helpers';
+import { getSeries, listSeriesNames } from '@/lib/public-data';
 
-export const revalidate = 60;
+export const dynamic = 'force-static';
+// Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
+export const revalidate = 86400;
 
 function nameOf(ad: string) {
   try { return decodeURIComponent(ad); } catch { return ad; }
 }
 
+export async function generateStaticParams() {
+  return (await listSeriesNames()).filter((ad) => !/[\/?#%\\]/.test(ad)).map((ad) => ({ ad }));
+}
+
 export async function generateMetadata({ params }: { params: { ad: string } }): Promise<Metadata> {
   const name = nameOf(params.ad);
-  return { title: `${name} — Yazı dizisi`, description: `“${name}” yazı dizisinin bütün bölümleri, sırasıyla.` };
+  return { title: name, description: `“${name}” yazı dizisinin bölümleri.` };
 }
 
 export default async function DiziPage({ params }: { params: { ad: string } }) {
   const name = nameOf(params.ad);
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  let q = supabase.from('posts').select('id, slug, title, subtitle, excerpt, post_type, series_order, published_at, is_published, reading_minutes').eq('series', name);
-  if (!user) q = q.eq('is_published', true);
-  const { data, error } = await q.order('series_order', { ascending: true, nullsFirst: false }).order('published_at', { ascending: true });
-  if (error || !data || data.length === 0) notFound();
-  const minutes = data.reduce((s: number, p: any) => s + (p.reading_minutes || 0), 0);
+  const items = await getSeries(name);
+  if (items.length === 0) notFound();
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/">Ana sayfa</Link><span className="breadcrumb-sep">›</span><span>{name}</span>
-      </nav>
-      <section className="blog-hero">
-        <div className="hero-eyebrow"><span className="hero-dot"></span>YAZI DİZİSİ</div>
-        <h1 className="blog-hero-title">{name}</h1>
-        <p className="blog-hero-sub">{data.length} bölüm · toplam ~{minutes} dk okuma</p>
+      <header className="hero">
+        <p className="eyebrow">Yazı dizisi</p>
+        <h1 className="hero-title hero-title-md">{name}</h1>
+      </header>
+      <section className="section section-tight">
+        <div className="group">
+          {items.map((p, i) => (
+            <Link key={p.id} href={getPostUrl(p)} className="row row-num-start">
+              <span className="row-num">{i + 1}</span>
+              <span className="row-main">
+                <span className="row-title">{p.title}</span>
+                {(p.subtitle || p.excerpt) && <span className="row-sub row-sub-clamp">{p.subtitle || p.excerpt}</span>}
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
-      <ol className="series-page-list">
-        {data.map((p: any, i: number) => (
-          <li key={p.id}>
-            <span className="series-page-no">{String(i + 1).padStart(2, '0')}</span>
-            <div>
-              <Link href={getPostUrl(p)} className="series-page-title">{p.title}{!p.is_published && ' (taslak)'}</Link>
-              {(p.subtitle || p.excerpt) && <p className="series-page-excerpt">{p.subtitle || p.excerpt}</p>}
-              <span className="series-page-meta">{formatDate(p.published_at)}{p.reading_minutes ? ` · ${p.reading_minutes} dk` : ''}</span>
-            </div>
-          </li>
-        ))}
-      </ol>
     </>
   );
 }

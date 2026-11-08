@@ -32,8 +32,8 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">Admin Girişi</h1>
-        <p className="login-sub">Yazı yönetimi için</p>
+        <h1 className="login-title">Giriş</h1>
+        <p className="login-sub">Zihin Haritası yönetimi</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -60,13 +60,13 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>
+            <p style={{ color: 'var(--danger)', fontSize: 15, marginBottom: 14 }}>
               {error}
             </p>
           )}
 
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+            {loading ? 'Giriş yapılıyor…' : 'Giriş yap'}
           </button>
         </form>
       </div>
