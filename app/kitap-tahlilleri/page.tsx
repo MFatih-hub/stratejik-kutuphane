@@ -49,7 +49,7 @@ export default async function KitapTahlilleriPage() {
       {list.current.length > 0 && (
         <section className="section" aria-labelledby="simdi">
           <div className="section-head">
-            <h2 className="section-title" id="simdi">Şu an</h2>
+            <h2 className="section-title" id="simdi">{list.current.some((b) => b.status === 'okunuyor') ? 'Şu an' : 'Sıradaki'}</h2>
             {list.current[0].module && (
               <Link href={durakHref(list.current[0].module)} className="more">{list.current[0].module} <Chevron /></Link>
             )}
