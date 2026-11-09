@@ -7,6 +7,7 @@ import { SeqNav } from '@/components/article';
 import { AdminLink } from '@/components/admin-bits';
 import { Masthead, ShelfHead } from '@/components/cards';
 import WatchList, { watchItems, watchSummary } from '@/components/watch-list';
+import { isCore } from '@/lib/core';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -41,7 +42,7 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
           small
           eyebrow={<><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link> · {durak.index}. durak</>}
           title={name}
-          lede={`${durak.total} eser · ${durak.done} okundu`}
+          lede={`${durak.total} eser · ${durak.done} okundu · ★\u00a0${books.filter((b) => isCore(b.order)).length}\u00a0çekirdek`}
         />
       </div>
 

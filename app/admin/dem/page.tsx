@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase-server';
 import { istanbulDay } from '@/lib/reading';
 import DemClient from './dem-client';
 import { fetchJourney } from '@/lib/reading-journey';
+import { videosFor } from '@/lib/watch';
+import { isCore } from '@/lib/core';
 
 export const revalidate = 0;
 export const metadata: Metadata = { title: 'Dem', robots: { index: false, follow: false } };
@@ -100,11 +102,25 @@ export default async function BugunPage() {
   // Okunması biten ama henüz değerlendirmesi yazılmamış duraklar; şu anki durakta kalan eser sayısı
   let durakPrompts: string[] = [];
   let durakLeft: { name: string; left: number } | null = null;
+  let core: { total: number; done: number; next: { id: number; order: number; title: string; author: string | null }[] } | null = null;
   try {
     const [journey, sums] = await Promise.all([
       fetchJourney(supabase),
       supabase.from('posts').select('durak_summary').not('durak_summary', 'is', null),
     ]);
+    // Çekirdek yol: ★ eserlerden okunanlar ve sıradaki üçü
+    const coreItems = journey.items.filter((i) => isCore(i.order)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const coreNext = coreItems.filter((i) => !i.done && i.status !== 'okunuyor');
+    core = {
+      total: coreItems.length,
+      done: coreItems.filter((i) => i.done).length,
+      next: coreNext.slice(0, 3).map((i) => ({ id: i.id, order: i.order as number, title: i.title, author: i.author })),
+    };
+    // Okunan eser yoksa "Sıradaki" önerisi çekirdek yoldan gelir
+    if (suggestion && coreNext[0] && coreNext[0].id !== suggestion.id) {
+      const { data } = await supabase.from('posts').select(BOOK_FIELDS).eq('id', coreNext[0].id).maybeSingle();
+      if (data) suggestion = data;
+    }
     const here = (current[0] || suggestion)?.reading_module || null;
     if (here) {
       const left = journey.items.filter((i) => i.module === here && !i.done).length;
@@ -140,6 +156,8 @@ export default async function BugunPage() {
       time={time}
       pace={{ finished90: finished90.count || 0 }}
       durakLeft={durakLeft}
+      core={core}
+      videos={Object.fromEntries(current.map((c: any) => [c.id, videosFor(c.reading_order)]))}
     />
   );
 }

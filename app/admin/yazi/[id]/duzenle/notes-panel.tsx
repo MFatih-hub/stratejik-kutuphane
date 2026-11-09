@@ -19,6 +19,32 @@ export function noteToHtml(n: { kind: string; body: string; page: string | null 
   return `<p>${esc(n.body)}${page}</p>`;
 }
 
+/** Sayfa numarasına göre sıralama anahtarı ("12", "s. 40-41" → 12, 40); sayfasızlar sona. */
+function pageKey(n: { page: string | null }) {
+  const m = /\d+/.exec(n.page || '');
+  return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+/**
+ * Fişlerden tahlil taslağı: notlar "Ana fikirler", alıntılar "Öne çıkan
+ * alıntılar", sorular "Açık sorular" altında, her biri sayfa sırasıyla.
+ * Giriş ve değerlendirme başlıkları yazman için boş bırakılır.
+ */
+export function draftFromNotes(notes: { kind: string; body: string; page: string | null; created_at?: string }[]): string {
+  const sorted = [...notes].sort((a, b) => pageKey(a) - pageKey(b) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+  const of = (k: string) => sorted.filter((n) => (n.kind || 'not') === k);
+  const ideas = of('not');
+  const quotes = of('alinti');
+  const questions = of('soru');
+  const page = (n: { page: string | null }) => (n.page ? ` <em>(s. ${esc(n.page)})</em>` : '');
+  let html = '<h2>Eser ve bağlamı</h2><p></p>';
+  if (ideas.length) html += '<h2>Ana fikirler</h2>' + ideas.map((n) => `<p>${esc(n.body)}${page(n)}</p>`).join('');
+  if (quotes.length) html += '<h2>Öne çıkan alıntılar</h2>' + quotes.map((n) => `<blockquote><p>${esc(n.body)}${page(n)}</p></blockquote>`).join('');
+  if (questions.length) html += '<h2>Açık sorular</h2><ul>' + questions.map((n) => `<li><p>${esc(n.body)}${page(n)}</p></li>`).join('') + '</ul>';
+  html += '<h2>Değerlendirme</h2><p></p>';
+  return html;
+}
+
 export default function NotesPanel({ postId, onInsert }: { postId: number; onInsert: (html: string) => void }) {
   const supabase = createClient();
   const [notes, setNotes] = useState<any[] | null>(null);
@@ -50,9 +76,15 @@ export default function NotesPanel({ postId, onInsert }: { postId: number; onIns
               </li>
             ))}
           </ul>
-          <button type="button" className="btn btn-sm" onClick={() => { onInsert(notes.map(noteToHtml).join('')); setUsed(new Set(notes.map((n) => n.id))); }}>
-            Hepsini sırayla ekle
-          </button>
+          <div className="notes-panel-actions">
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => { onInsert(draftFromNotes(notes)); setUsed(new Set(notes.map((n) => n.id))); }}>
+              Fişlerden taslak kur
+            </button>
+            <button type="button" className="btn btn-sm" onClick={() => { onInsert(notes.map(noteToHtml).join('')); setUsed(new Set(notes.map((n) => n.id))); }}>
+              Hepsini sırayla ekle
+            </button>
+          </div>
+          <p className="form-hint">Taslak: notlar “Ana fikirler”, alıntılar “Öne çıkan alıntılar”, sorular “Açık sorular” başlığı altında, sayfa sırasıyla; giriş ve değerlendirme sana kalır.</p>
         </>
       )}
     </div>

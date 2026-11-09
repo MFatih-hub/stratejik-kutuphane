@@ -983,3 +983,33 @@ body.print-page { background: var(--bg-secondary); }
 .admin-shell .link-btn { padding: 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--link); cursor: pointer; }
 .admin-shell .link-btn:hover { text-decoration: underline; }
 
+
+/* Dem: şu anki eserin videoları */
+.admin-shell .dem-watch { margin-top: 16px; }
+.admin-shell .dem-watch-title { margin: 0 0 4px; font-size: 13px; font-weight: 500; color: var(--text-tertiary); }
+.admin-shell .dem-watch-list { margin: 0; padding: 0; list-style: none; }
+.admin-shell .dem-watch-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--sep); }
+.admin-shell .dem-watch-list li:first-child { border-top: 0; }
+.admin-shell .dem-watch-list a { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; color: inherit; text-decoration: none; }
+.admin-shell .dem-watch-list a:hover .dem-watch-name { color: var(--link); }
+.admin-shell .dem-watch-name { font-size: 14px; line-height: 1.35; }
+.admin-shell .dem-watch-sub { font-size: 12px; color: var(--text-tertiary); }
+
+/* Dem: çekirdek yol */
+.admin-shell .core-next { margin: 10px 0 0; padding: 0; list-style: none; }
+.admin-shell .core-next li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--sep); font-size: 14px; line-height: 1.35; }
+.admin-shell .core-next-main { flex: 1 1 auto; min-width: 0; }
+.admin-shell .core-next-author { display: block; font-size: 12px; color: var(--text-tertiary); }
+
+/* Bu hafta (pazar özeti) */
+.admin-shell .hafta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+.admin-shell .hafta-list { margin: 0; padding: 0; list-style: none; }
+.admin-shell .hafta-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--sep); font-size: 14px; line-height: 1.4; }
+.admin-shell .hafta-list li:first-child { border-top: 0; }
+.admin-shell .hafta-list li > span:last-child:not(:first-child) { flex: none; color: var(--text-tertiary); }
+.admin-shell .hafta-recall { margin: 0 0 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+.admin-shell .hafta-mail { margin-top: 24px; font-size: 13px; color: var(--text-tertiary); }
+
+.admin-shell .hafta .today-head { display: block; }
+
+.admin-shell .notes-panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

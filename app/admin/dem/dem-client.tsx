@@ -7,6 +7,10 @@ import { createClient } from '@/lib/supabase-browser';
 import { NOTE_KINDS, istanbulDay, markReadingDay } from '@/lib/reading';
 import { refreshSite } from '@/lib/admin-client';
 import NoteBody from '@/components/note-body';
+import { WatchTick } from '@/components/watch-tick';
+import { LANG_LABEL, durLabel, videoHref } from '@/lib/watch-links';
+
+type Video = { id: string; title: string; channel: string; dur: string; lang: string };
 
 type Book = {
   id: number; slug: string; title: string; book_author: string | null; reading_order: number | null;
@@ -82,6 +86,8 @@ export default function DemClient(props: {
   time?: TimeStats;
   pace?: { finished90: number };
   durakLeft?: { name: string; left: number } | null;
+  videos?: Record<number, Video[]>;
+  core?: { total: number; done: number; next: { id: number; order: number; title: string; author: string | null }[] } | null;
 }) {
   const { schemaReady, today, current, suggestion, waiting, days, stats, recall } = props;
   const time: TimeStats = props.time || { ready: false, week: 0, today: 0, avg4: 0, goal: null };
@@ -260,6 +266,8 @@ export default function DemClient(props: {
   const durakLeft = props.durakLeft || null;
   const remaining = Math.max(0, stats.total - stats.finished);
   const listYear = pace > 0 ? new Date(Date.now() + (remaining / pace) * 86400_000).getFullYear() : null;
+  const core = props.core || null;
+  const coreYear = core && pace > 0 ? new Date(Date.now() + (Math.max(0, core.total - core.done) / pace) * 86400_000).getFullYear() : null;
   const eta = (count: number) => {
     if (pace <= 0) return null;
     const d = new Date(Date.now() + (count / pace) * 86400_000);
@@ -328,6 +336,7 @@ export default function DemClient(props: {
               onPage={savePage}
               onFinish={() => setStatus(book, 'okundu')}
               onBack={() => setStatus(book, null)}
+              videos={props.videos?.[book.id] || []}
               timing={time.ready ? {
                 running: session?.postId === book.id ? Math.max(0, Math.floor((nowMs - session.startedAt) / 1000)) : null,
                 otherRunning: !!session && session.postId !== book.id,
@@ -405,6 +414,29 @@ export default function DemClient(props: {
             </div>
           )}
 
+          {core && core.total > 0 && (
+            <div className="today-card">
+              <p className="today-kicker">Çekirdek yol</p>
+              <p className="tempo-big">{core.done}<span> / {core.total}</span></p>
+              <p className="tempo-line">
+                Her duraktan seçilmiş ★ eserler{coreYear && <> · bu hızla ~{coreYear}</>}
+              </p>
+              {core.next.length > 0 && (
+                <ul className="core-next">
+                  {core.next.map((b) => (
+                    <li key={b.id}>
+                      <span className="core-next-main">
+                        <span className="today-no">#{b.order}</span> {b.title}
+                        {b.author && <span className="core-next-author">{b.author}</span>}
+                      </span>
+                      <button className="btn btn-sm" disabled={busy} onClick={() => startByOrder(String(b.order))}>Başla</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           <div className="today-card">
             <p className="today-kicker">Tempo</p>
             <p className="tempo-big">{stats.finished}<span> / {stats.total}</span></p>
@@ -436,6 +468,7 @@ export default function DemClient(props: {
           <div className="today-links">
             <Link href="/admin/notlar">Fişler</Link>
             <Link href="/admin/harita">Harita</Link>
+            <Link href="/admin/hafta">Bu hafta</Link>
             <Link href="/admin/ozet">Özet</Link>
           </div>
         </aside>
@@ -454,12 +487,13 @@ type Timing = {
   onSave: (minutes: number, page: string) => Promise<boolean>;
 };
 
-function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPage, onFinish, onBack, timing }: {
+function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPage, onFinish, onBack, timing, videos }: {
   book: Book; today: string; notes: Note[]; busy: boolean;
   onAdd: (postId: number, kind: string, body: string, page: string) => Promise<boolean>;
   onDelete: (id: number) => void; onUpdate: (id: number, body: string) => Promise<boolean>;
   onPage: (book: Book, page: string) => void; onFinish: () => void; onBack: () => void;
   timing: Timing | null;
+  videos: Video[];
 }) {
   const [kind, setKind] = useState('not');
   const [body, setBody] = useState('');
@@ -539,6 +573,23 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
               <button className="btn btn-sm btn-primary" onClick={stop}>Durdur</button>
             </>
           )}
+        </div>
+      )}
+
+      {videos.length > 0 && (
+        <div className="dem-watch">
+          <p className="dem-watch-title">İzle</p>
+          <ul className="dem-watch-list">
+            {videos.map((v) => (
+              <li key={v.id}>
+                <a href={videoHref(v.id)} target="_blank" rel="noopener noreferrer">
+                  <span className="dem-watch-name">{v.title}</span>
+                  <span className="dem-watch-sub">{v.channel} · {durLabel(v.dur)} · {LANG_LABEL[v.lang] || v.lang}</span>
+                </a>
+                <WatchTick id={v.id} />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

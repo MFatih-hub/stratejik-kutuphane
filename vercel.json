@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/yedek", "schedule": "0 3 * * 1" }
+    {
+      "path": "/api/cron/yedek",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/hafta",
+      "schedule": "0 17 * * 0"
+    }
   ]
 }

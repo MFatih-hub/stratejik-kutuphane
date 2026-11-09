@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Book } from '@/lib/public-data';
 import { bookHref } from '@/lib/public-data';
 import { BookState } from './admin-bits';
+import { isCore } from '@/lib/core';
 
 /** Okuma listesinde bir satır: sıra no, eser, yazar; tahlili varsa sayfasına gider. */
 export default function BookRow({ book }: { book: Book }) {
@@ -9,7 +10,10 @@ export default function BookRow({ book }: { book: Book }) {
     <>
       <span className="row-num">{book.order ?? ''}</span>
       <span className="row-main">
-        <span className="row-title">{book.title}</span>
+        <span className="row-title">
+          {isCore(book.order) && <span className="core-star" title="Çekirdek yol" aria-label="Çekirdek yol">★ </span>}
+          {book.title}
+        </span>
         {book.author && <span className="row-sub">{book.author}</span>}
       </span>
       <span className="row-end">

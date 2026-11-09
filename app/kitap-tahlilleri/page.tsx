@@ -5,6 +5,7 @@ import BookRow from '@/components/book-row';
 import { CardGrid, Masthead, ShelfHead, durakTone } from '@/components/cards';
 import { Chevron } from '@/components/icons';
 import { OG_IMAGE, SITE_URL } from '@/lib/site';
+import { CORE_TOTAL } from '@/lib/core';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -43,7 +44,7 @@ export default async function KitapTahlilleriPage() {
       <div className="zone zone-top band">
         <Masthead
           title="Kitap Tahlilleri"
-          lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi.` : null}
+          lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi; ★ ${nf.format(CORE_TOTAL)} eserlik çekirdek yol.` : null}
           links={
             current && currentHref ? (
               <Link href={currentHref}>{reading ? 'Şu an' : 'Sıradaki'}: {current.title} <Chevron /></Link>

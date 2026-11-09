@@ -705,6 +705,7 @@ a.row::after {
 }
 .row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .row-title { font-size: 15px; line-height: 1.33337; letter-spacing: -0.016em; }
+.core-star { color: var(--brand); }
 .row-sub { font-size: 13px; line-height: 1.38463; letter-spacing: -0.008em; color: var(--text-2); }
 .row-sub-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .row-end {
