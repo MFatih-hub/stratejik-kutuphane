@@ -110,7 +110,7 @@ export function WatchTick({ id }: { id: string }) {
   );
 }
 
-/** Yöneticiye: izlenmeyenleri sırayla açan düğme ve "3/16 izlendi". */
+/** Yöneticiye: izlenmeyenleri sırayla açan düğme ve "3/16 video izlendi". */
 export function AdminPlay({ ids }: { ids: string[] }) {
   const watched = useWatched();
   const left = watched ? ids.filter((id) => !watched[id]) : ids;
@@ -120,7 +120,7 @@ export function AdminPlay({ ids }: { ids: string[] }) {
       <a className="btn btn-primary" href={playlistHref(left.length ? left : ids)} target="_blank" rel="noopener noreferrer">
         {done > 0 && left.length > 0 ? 'Kalanı sırayla izle' : 'YouTube’da sırayla izle'}
       </a>
-      {watched && <span className="watch-count">{left.length === 0 ? 'Hepsi izlendi' : `${done}/${ids.length} izlendi`}</span>}
+      {watched && <span className="watch-count">{left.length === 0 ? 'Hepsi izlendi' : `${done}/${ids.length} video izlendi`}</span>}
     </>
   );
 }
