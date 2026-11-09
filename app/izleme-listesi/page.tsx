@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { durakHref, getReadingList } from '@/lib/public-data';
 import { Masthead, ShelfHead } from '@/components/cards';
 import { Chevron } from '@/components/icons';
-import WatchList, { watchItems } from '@/components/watch-list';
+import WatchList, { watchItems, watchSummary } from '@/components/watch-list';
+import { totalLabel } from '@/lib/watch';
 import { SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-static';
@@ -19,17 +20,36 @@ export const metadata: Metadata = {
 export default async function IzlemeListesiPage() {
   const list = await getReadingList();
   const groups = list.duraks
-    .map((d) => ({ durak: d, books: list.books.filter((b) => b.module === d.name) }))
-    .filter((g) => watchItems(g.books).length > 0);
+    .map((d) => {
+      const books = list.books.filter((b) => b.module === d.name);
+      return { durak: d, books, items: watchItems(books) };
+    })
+    .filter((g) => g.items.length > 0);
+  const count = groups.reduce((a, g) => a + g.items.length, 0);
 
   return (
     <>
       <div className="zone zone-top band">
         <Masthead
           title="İzleme Listesi"
-          lede="Okuma listesine paralel videolar."
+          lede={count > 0 ? `Okuma listesine paralel ${count} video.` : 'Okuma listesine paralel videolar.'}
           links={<Link href="/kitap-tahlilleri">Okuma listesi <Chevron /></Link>}
         />
+        {groups.length > 1 && (
+          <nav className="directory watch-dir" aria-label="Duraklar">
+            <ol className="dir-list">
+              {groups.map((g) => (
+                <li key={g.durak.name}>
+                  <a href={`#d${g.durak.index}`} className="dir-item">
+                    <span className="dir-num">{g.durak.index}</span>
+                    <span className="dir-name">{g.durak.name}</span>
+                    <span className="dir-count">{totalLabel(g.items.map((i) => i.video.dur))}</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
       </div>
       {groups.length === 0 ? (
         <div className="zone"><p className="quiet">Henüz video yok.</p></div>
@@ -39,7 +59,7 @@ export default async function IzlemeListesiPage() {
             <ShelfHead
               id={`d${g.durak.index}`}
               main={`${g.durak.name}.`}
-              sub={`${g.durak.index}. durak · ${watchItems(g.books).length} video`}
+              sub={`${g.durak.index}. durak · ${watchSummary(g.books)}`}
               cta={{ href: durakHref(g.durak.name), label: 'Durağa git' }}
             />
             <div className="watch">

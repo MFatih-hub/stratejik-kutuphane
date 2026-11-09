@@ -28,13 +28,15 @@ async function fetchAll(supabase: SupabaseClient, table: string, select = '*', o
 const slugPart = (s: string) => (s || '').replace(/[^a-z0-9-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 70);
 
 export async function buildBackupZip(supabase: SupabaseClient): Promise<{ zip: Uint8Array; summary: string }> {
-  const [posts, notes, readingDays, readingLog, subscribers, sessions] = await Promise.all([
+  const [posts, notes, readingDays, readingLog, subscribers, sessions, settings] = await Promise.all([
     fetchAll(supabase, 'posts'),
     fetchAll(supabase, 'notes'),
     fetchAll(supabase, 'reading_days', '*', 'day'),
     fetchAll(supabase, 'reading_log'),
     fetchAll(supabase, 'subscribers', 'email, confirmed_at, unsubscribed_at, created_at'),
     fetchAll(supabase, 'reading_sessions'),
+    // haftalık hedef, izlenen videolar gibi küçük ayarlar
+    fetchAll(supabase, 'settings', '*', 'key'),
   ]);
 
   const files: Record<string, Uint8Array> = {};
@@ -67,6 +69,7 @@ export async function buildBackupZip(supabase: SupabaseClient): Promise<{ zip: U
   files['veri/reading_days.json'] = strToU8(JSON.stringify(readingDays));
   if (readingLog.length) files['veri/reading_log.json'] = strToU8(JSON.stringify(readingLog));
   if (sessions.length) files['veri/reading_sessions.json'] = strToU8(JSON.stringify(sessions));
+  if (settings.length) files['veri/settings.json'] = strToU8(JSON.stringify(settings, null, 1));
   if (subscribers.length) files['veri/subscribers.json'] = strToU8(JSON.stringify(subscribers, null, 1));
 
   const summary = `${written} yazı/tahlil, ${notes.length} fiş, ${posts.length} kayıt (okuma listesi dahil), ${readingDays.length} okuma günü`;

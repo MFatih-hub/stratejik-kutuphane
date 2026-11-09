@@ -245,6 +245,9 @@ img { max-width: 100%; height: auto; }
 }
 
 /* ---------- Üst şerit (Apple global nav) ---------- */
+/* Sayfa içi bağlantılar yapışkan şeridin altında kalmasın */
+:where([id]) { scroll-margin-top: 64px; }
+
 .nav {
   position: sticky;
   top: 0;
@@ -568,7 +571,41 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
 
 /* ---------- İzleme listesi ---------- */
 .watch { margin-top: 24px; }
-.watch-play { margin-top: 16px; }
+/* İzleme listesi başındaki durak dizini (sayfa içi bağlantılar) */
+.zone-top > .watch-dir { margin: -16px 0 0; padding-bottom: 64px; }
+.watch-play { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-top: 16px; }
+.watch-count { font-size: 14px; letter-spacing: -0.016em; color: var(--text-2); }
+.watch-row { padding-right: 12px; }
+.watch-row:hover { background: var(--fill); }
+.watch-link { color: var(--text); padding: 2px 0; }
+.watch-link:hover { text-decoration: none; }
+.watch-link:hover .row-title { color: var(--link); }
+/* İzledim tiki: 44 px dokunma alanı, 22 px halka */
+.watch-tick {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.watch-tick:disabled, .watch-tick.is-wait { cursor: default; opacity: 0.35; }
+.watch-tick-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--text-3);
+  border-radius: 50%;
+  color: var(--on-accent);
+}
+.watch-tick.is-on .watch-tick-ring { border-color: var(--accent); background: var(--accent); }
 
 /* ---------- Duraklar dizini ---------- */
 .directory { margin-top: 32px; }
@@ -1050,6 +1087,7 @@ body:has(.admin-shell) .foot-index { display: none; }
   .zone { padding: 48px 0; }
   .zone-top { padding: 0; }
   .zone-top > .feature { margin-bottom: 48px; }
+  .zone-top > .watch-dir { margin-top: 0; padding-bottom: 40px; }
   .feature {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;

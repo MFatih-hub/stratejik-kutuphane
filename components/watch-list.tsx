@@ -1,10 +1,18 @@
-// İzleme listesi satırları: okuma sırasıyla videolar ve "Sırayla izle" bağlantısı.
-import { LANG_LABEL, durLabel, playlistHref, videoHref, videosFor } from '@/lib/watch';
+// İzleme listesi satırları: okuma sırasıyla videolar, yöneticiye "izledim" tiki
+// ve "Sırayla izle" bağlantısı.
+import { LANG_LABEL, durLabel, totalLabel, videoHref, videosFor } from '@/lib/watch';
+import { WatchPlay, WatchTickSlot } from './watch-bits';
 
 type BookLike = { id: number; title: string; order: number | null };
 
 export function watchItems(books: BookLike[]) {
   return books.flatMap((b) => videosFor(b.order).map((v) => ({ book: b, video: v })));
+}
+
+/** "16 video · 9 sa 12 dk" */
+export function watchSummary(books: BookLike[]) {
+  const items = watchItems(books);
+  return `${items.length} video · ${totalLabel(items.map((i) => i.video.dur))}`;
 }
 
 export default function WatchList({ books }: { books: BookLike[] }) {
@@ -14,17 +22,18 @@ export default function WatchList({ books }: { books: BookLike[] }) {
     <>
       <div className="group">
         {items.map(({ book, video }) => (
-          <a key={`${book.id}-${video.id}`} href={videoHref(video.id)} className="row row-num-start" target="_blank" rel="noopener noreferrer">
+          <div key={`${book.id}-${video.id}`} className="row row-num-start watch-row">
             <span className="row-num">{book.order}</span>
-            <span className="row-main">
+            <a className="row-main watch-link" href={videoHref(video.id)} target="_blank" rel="noopener noreferrer">
               <span className="row-title">{video.title}</span>
               <span className="row-sub">{book.title} · {video.channel} · {durLabel(video.dur)} · {LANG_LABEL[video.lang] || video.lang}</span>
-            </span>
-          </a>
+            </a>
+            <WatchTickSlot id={video.id} />
+          </div>
         ))}
       </div>
       <p className="watch-play">
-        <a className="btn btn-primary" href={playlistHref(items.map((i) => i.video.id))} target="_blank" rel="noopener noreferrer">YouTube'da sırayla izle</a>
+        <WatchPlay ids={items.map((i) => i.video.id)} />
       </p>
     </>
   );
