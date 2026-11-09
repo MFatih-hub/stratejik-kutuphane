@@ -967,3 +967,19 @@ body.print-page { background: var(--bg-secondary); }
   .admin-shell .ld-row { flex-wrap: wrap; }
   .admin-shell .ld-meta { flex-basis: 100%; text-align: left; padding-left: 26px; }
 }
+
+/* ---------- Dem: okuma oturumu ve haftalık süre ---------- */
+.admin-shell .session { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: var(--fill); }
+.admin-shell .session-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); flex: none; }
+.admin-shell .session-time { font-family: var(--font-display); font-size: 24px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-right: auto; }
+.admin-shell .session-form { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; width: 100%; }
+.admin-shell .session-form label,
+.admin-shell .goal-form label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.admin-shell .session-form .input { width: 72px; padding: 6px 10px; font-size: 15px; }
+.admin-shell .goal-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.admin-shell .goal-form .input { width: 64px; padding: 6px 10px; font-size: 15px; }
+.admin-shell .goal-bar { height: 4px; margin: 6px 0 10px; border-radius: 2px; background: var(--fill-2); overflow: hidden; }
+.admin-shell .goal-bar span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.admin-shell .link-btn { padding: 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--link); cursor: pointer; }
+.admin-shell .link-btn:hover { text-decoration: underline; }
+

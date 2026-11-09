@@ -10,6 +10,14 @@ export const metadata: Metadata = { title: 'Dem', robots: { index: false, follow
 
 const BOOK_FIELDS = 'id, slug, title, book_author, reading_order, reading_module, current_page, started_at, reading_status';
 
+/** Haftanın başı (pazartesi), YYYY-AA-GG. */
+function weekStartDay(today: string): string {
+  const [y, m, d] = today.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString().slice(0, 10);
+}
+
 /** Gün string'inden (YYYY-AA-GG) kararlı bir sayı — "Bugün hatırla" her gün başka bir fiş seçsin. */
 function dayHash(day: string): number {
   let h = 0;
@@ -27,6 +35,9 @@ export default async function BugunPage() {
   const d30 = new Date(now - 30 * 86400_000).toISOString();
   const d120 = istanbulDay(new Date(now - 119 * 86400_000));
   const week = new Date(now - 7 * 86400_000).toISOString();
+  const weekStart = weekStartDay(today);
+  const d28 = istanbulDay(new Date(now - 27 * 86400_000));
+  const d90 = new Date(now - 90 * 86400_000).toISOString();
 
   // Okunmakta olanlar; şema henüz güncellenmemişse (migration v5) hata döner
   const currentRes = await supabase.from('posts').select(BOOK_FIELDS)
@@ -44,7 +55,7 @@ export default async function BugunPage() {
   }
 
   const ids = current.map((c: any) => c.id);
-  const [notesRes, waitingRes, daysRes, total, finishedAll, finished30, todayNotes, oldCount] = await Promise.all([
+  const [notesRes, waitingRes, daysRes, total, finishedAll, finished30, todayNotes, oldCount, sessionsRes, goalRes, finished90] = await Promise.all([
     ids.length
       ? supabase.from('notes').select('*').in('post_id', ids).order('created_at', { ascending: false }).limit(200)
       : Promise.resolve({ data: [] as any[] }),
@@ -59,7 +70,21 @@ export default async function BugunPage() {
     supabase.from('posts').select('id', { count: 'exact', head: true }).eq('post_type', 'kitap_tahlili').in('reading_status', ['okundu', 'yazildi']).gte('finished_at', d30),
     supabase.from('notes').select('id', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00+03:00`),
     supabase.from('notes').select('id', { count: 'exact', head: true }).lt('created_at', week),
+    // Okuma süreleri (migration v7); tablo yoksa hata döner, ekran süresiz çalışır
+    supabase.from('reading_sessions').select('day, minutes').gte('day', weekStart < d28 ? weekStart : d28).limit(5000),
+    supabase.from('settings').select('value').eq('key', 'haftalik_hedef_dk').maybeSingle(),
+    supabase.from('posts').select('id', { count: 'exact', head: true }).eq('post_type', 'kitap_tahlili').in('reading_status', ['okundu', 'yazildi']).gte('finished_at', d90),
   ]);
+
+  const sessionRows: { day: string; minutes: number }[] = sessionsRes.error ? [] : (sessionsRes.data as any[]) || [];
+  const sum = (rows: { minutes: number }[]) => rows.reduce((a, r) => a + (r.minutes || 0), 0);
+  const time = {
+    ready: !sessionsRes.error,
+    week: sum(sessionRows.filter((r) => r.day >= weekStart)),
+    today: sum(sessionRows.filter((r) => r.day === today)),
+    avg4: Math.round(sum(sessionRows.filter((r) => r.day >= d28)) / 4),
+    goal: typeof (goalRes.data as any)?.value === 'number' ? ((goalRes.data as any).value as number) : null,
+  };
 
   // Bugün hatırla: bir haftadan eski fişlerden biri, her gün başka
   let recall: any = null;
@@ -72,13 +97,19 @@ export default async function BugunPage() {
     recall = (data || [])[0] || null;
   }
 
-  // Okunması biten ama henüz değerlendirmesi yazılmamış duraklar
+  // Okunması biten ama henüz değerlendirmesi yazılmamış duraklar; şu anki durakta kalan eser sayısı
   let durakPrompts: string[] = [];
+  let durakLeft: { name: string; left: number } | null = null;
   try {
     const [journey, sums] = await Promise.all([
       fetchJourney(supabase),
       supabase.from('posts').select('durak_summary').not('durak_summary', 'is', null),
     ]);
+    const here = (current[0] || suggestion)?.reading_module || null;
+    if (here) {
+      const left = journey.items.filter((i) => i.module === here && !i.done).length;
+      durakLeft = { name: here, left };
+    }
     if (!sums.error) {
       const have = new Set((sums.data || []).map((r: any) => r.durak_summary));
       durakPrompts = journey.modules
@@ -106,6 +137,9 @@ export default async function BugunPage() {
         todayNotes: todayNotes.count || 0,
       }}
       recall={recall}
+      time={time}
+      pace={{ finished90: finished90.count || 0 }}
+      durakLeft={durakLeft}
     />
   );
 }

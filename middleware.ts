@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { isAdminEmail } from './lib/admin-identity';
 
 // Yalnızca yönetim adreslerinde çalışır. Herkese açık sayfalar statiktir ve
 // buraya hiç uğramaz. Oturum çerezi olmayan istekler (botlar dahil) Supabase'e
-// gitmeden, burada geri çevrilir; sayfaların kendi oturum denetimi de ayrıca durur.
+// gitmeden, burada geri çevrilir. Oturumu olan istekte de hesabın sitenin
+// yöneticisine ait olduğu doğrulanır; başka bir hesapla giriş yapılmışsa
+// yönetim sayfaları ve API açılmaz (veritabanı kuralları da ayrıca korur).
 const AUTH_COOKIE = /^sb-.+-auth-token(?:\.\d+)?$/;
 
 export async function middleware(request: NextRequest) {
@@ -33,7 +36,13 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !(await isAdminEmail(user.email))) {
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL('/giris', request.url));
+  }
   return response;
 }
 

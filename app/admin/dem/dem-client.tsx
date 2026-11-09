@@ -16,7 +16,40 @@ type Note = { id: number; post_id: number | null; kind: string; body: string; pa
 type QueuedNote = { post_id: number; kind: string; body: string; page: string | null; ts: number };
 
 const QUEUE_KEY = 'zh-note-queue';
-const MILESTONES = [1, 10, 50, 100, 250, 500, 1000, 2000, 3650];
+const SESSION_KEY = 'zh-oturum';
+type Session = { postId: number; startedAt: number };
+type TimeStats = { ready: boolean; week: number; today: number; avg4: number; goal: number | null };
+
+/** 95 → "1 sa 35 dk", 40 → "40 dk", 120 → "2 sa" */
+function fmtMin(m: number): string {
+  const h = Math.floor(m / 60);
+  const r = Math.round(m % 60);
+  if (h === 0) return `${r} dk`;
+  return r ? `${h} sa ${r} dk` : `${h} sa`;
+}
+
+/** Geçen süre: 754 sn → "12:34", 3754 sn → "1:02:34" */
+function fmtClock(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+function readSession(): Session | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    return v && typeof v.postId === 'number' && typeof v.startedAt === 'number' ? v : null;
+  } catch { return null; }
+}
+function writeSession(v: Session | null) {
+  try {
+    if (v) localStorage.setItem(SESSION_KEY, JSON.stringify(v));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch { /* özel pencere */ }
+}
 const KIND_LABEL: Record<string, string> = { not: 'Not', alinti: 'Alıntı', soru: 'Soru' };
 
 function readQueue(): QueuedNote[] {
@@ -46,8 +79,12 @@ export default function DemClient(props: {
   schemaReady: boolean; today: string; current: Book[]; suggestion: Book | null; notes: Note[]; waiting: any[];
   days: string[]; stats: { total: number; finished: number; finished30: number; todayNotes: number }; recall: Note | null;
   durakPrompts?: string[];
+  time?: TimeStats;
+  pace?: { finished90: number };
+  durakLeft?: { name: string; left: number } | null;
 }) {
   const { schemaReady, today, current, suggestion, waiting, days, stats, recall } = props;
+  const time: TimeStats = props.time || { ready: false, week: 0, today: 0, avg4: 0, goal: null };
   const durakPrompts = props.durakPrompts || [];
   const supabase = createClient();
   const router = useRouter();
@@ -57,6 +94,22 @@ export default function DemClient(props: {
   const [toast, setToast] = useState('');
   const [readToday, setReadToday] = useState(days.includes(today));
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [weekMin, setWeekMin] = useState(time.week);
+  const [todayMin, setTodayMin] = useState(time.today);
+  const [goal, setGoal] = useState<number | null>(time.goal);
+  const [goalEdit, setGoalEdit] = useState(false);
+  const [goalText, setGoalText] = useState(time.goal ? String(Math.round((time.goal / 60) * 10) / 10) : '5');
+
+  // Açık kalan oturum (sayfa kapansa da sürer)
+  useEffect(() => { setSession(readSession()); }, []);
+  useEffect(() => {
+    if (!session) return;
+    setNowMs(Date.now());
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [session]);
 
   function say(msg: string) {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -89,6 +142,50 @@ export default function DemClient(props: {
     window.addEventListener('online', flushQueue);
     return () => window.removeEventListener('online', flushQueue);
   }, [flushQueue]);
+
+  function startSession(book: Book) {
+    const v = { postId: book.id, startedAt: Date.now() };
+    writeSession(v);
+    setSession(v);
+  }
+
+  function cancelSession() {
+    writeSession(null);
+    setSession(null);
+  }
+
+  /** Oturumu kaydeder: süre + kaldığın sayfa. Başarılıysa true. */
+  async function saveSession(book: Book, minutes: number, page: string): Promise<boolean> {
+    if (!session) return false;
+    const m = Math.min(720, Math.max(1, Math.round(minutes)));
+    const row = {
+      post_id: book.id,
+      day: istanbulDay(new Date(session.startedAt)),
+      started_at: new Date(session.startedAt).toISOString(),
+      ended_at: new Date().toISOString(),
+      minutes: m,
+      page: page.trim() || null,
+    };
+    const { error } = await supabase.from('reading_sessions').insert(row);
+    if (error) { say('Hata: ' + error.message); return false; }
+    await savePage(book, page.trim());
+    if (!readToday) { await markReadingDay(supabase); setReadToday(true); }
+    setWeekMin((w) => w + m);
+    if (row.day === today) setTodayMin((t) => t + m);
+    cancelSession();
+    say(`${fmtMin(m)} kaydedildi`);
+    return true;
+  }
+
+  async function saveGoal() {
+    const hours = parseFloat(goalText.replace(',', '.'));
+    if (!Number.isFinite(hours) || hours <= 0 || hours > 100) { say('Saat olarak yaz (ör. 5)'); return; }
+    const minutes = Math.round(hours * 60);
+    const { error } = await supabase.from('settings').upsert({ key: 'haftalik_hedef_dk', value: minutes, updated_at: new Date().toISOString() });
+    if (error) { say('Hata: ' + error.message); return; }
+    setGoal(minutes);
+    setGoalEdit(false);
+  }
 
   async function setStatus(book: Book, status: 'okunuyor' | 'okundu' | null) {
     setBusy(true);
@@ -158,10 +255,11 @@ export default function DemClient(props: {
     await setStatus({ id: row.id, started_at: row.started_at } as Book, 'okunuyor');
   }
 
-  // Tempo
-  const pace = stats.finished30 / 30; // eser / gün
+  // Tempo: son 90 günde biten eserlere göre (eser / gün)
+  const pace = (props.pace?.finished90 ?? stats.finished30 * 3) / 90;
+  const durakLeft = props.durakLeft || null;
   const remaining = Math.max(0, stats.total - stats.finished);
-  const nextMilestone = MILESTONES.find((m) => m > stats.finished && m <= Math.max(stats.total, 1));
+  const listYear = pace > 0 ? new Date(Date.now() + (remaining / pace) * 86400_000).getFullYear() : null;
   const eta = (count: number) => {
     if (pace <= 0) return null;
     const d = new Date(Date.now() + (count / pace) * 86400_000);
@@ -208,6 +306,11 @@ export default function DemClient(props: {
           Okuma durumu ve fişler için veritabanının güncellenmesi gerekiyor: Supabase'de <code>SUPABASE-MIGRATION-v5.sql</code> dosyasını bir kez çalıştır.
         </div>
       )}
+      {schemaReady && !time.ready && (
+        <div className="today-banner">
+          Okuma süresi ve güvenlik kuralları için Supabase'de <code>SUPABASE-MIGRATION-v7.sql</code> dosyasını bir kez çalıştır.
+        </div>
+      )}
       {queued > 0 && <div className="today-banner">{queued} fiş çevrimdışı bekliyor; bağlantı gelince kendiliğinden gönderilecek.</div>}
 
       <div className="today-grid">
@@ -225,6 +328,13 @@ export default function DemClient(props: {
               onPage={savePage}
               onFinish={() => setStatus(book, 'okundu')}
               onBack={() => setStatus(book, null)}
+              timing={time.ready ? {
+                running: session?.postId === book.id ? Math.max(0, Math.floor((nowMs - session.startedAt) / 1000)) : null,
+                otherRunning: !!session && session.postId !== book.id,
+                onStart: () => startSession(book),
+                onCancel: cancelSession,
+                onSave: (minutes: number, page: string) => saveSession(book, minutes, page),
+              } : null}
             />
           ))}
 
@@ -264,10 +374,47 @@ export default function DemClient(props: {
             </div>
           )}
 
+          {time.ready && (
+            <div className="today-card">
+              <p className="today-kicker">Bu hafta</p>
+              <p className="tempo-big">
+                {fmtMin(weekMin)}
+                {goal ? <span> / {fmtMin(goal)}</span> : null}
+              </p>
+              {goal ? (
+                <div className="goal-bar" aria-hidden="true">
+                  <span style={{ width: `${Math.min(100, Math.round((weekMin / goal) * 100))}%` }} />
+                </div>
+              ) : null}
+              <p className="tempo-line">
+                Bugün {fmtMin(todayMin)}
+                {time.avg4 > 0 && <> · 4 haftalık ortalama {fmtMin(time.avg4)}</>}
+              </p>
+              {goalEdit ? (
+                <form className="goal-form" onSubmit={(e) => { e.preventDefault(); saveGoal(); }}>
+                  <label>
+                    Haftalık hedef
+                    <input className="input" value={goalText} onChange={(e) => setGoalText(e.target.value)} inputMode="decimal" aria-label="Haftalık hedef (saat)" />
+                    saat
+                  </label>
+                  <button className="btn btn-sm btn-primary" type="submit">Kaydet</button>
+                </form>
+              ) : (
+                <button type="button" className="link-btn" onClick={() => setGoalEdit(true)}>{goal ? 'Hedefi değiştir' : 'Haftalık hedef koy'}</button>
+              )}
+            </div>
+          )}
+
           <div className="today-card">
             <p className="today-kicker">Tempo</p>
             <p className="tempo-big">{stats.finished}<span> / {stats.total}</span></p>
             <p className="tempo-line">Son 30 günde {stats.finished30} eser</p>
+            {pace > 0 && (
+              <p className="tempo-line">
+                Bu hızla{durakLeft && durakLeft.left > 0 && <> {durakLeft.name} ~{eta(durakLeft.left)}</>}
+                {listYear && <>{durakLeft && durakLeft.left > 0 ? ' · ' : ' '}tüm liste ~{listYear}</>}
+              </p>
+            )}
 
             <div className="days" aria-label="Son 120 günde okuduğun günler">
               <span className="days-line" />
@@ -299,11 +446,20 @@ export default function DemClient(props: {
   );
 }
 
-function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPage, onFinish, onBack }: {
+type Timing = {
+  running: number | null; // geçen saniye; oturum yoksa null
+  otherRunning: boolean;
+  onStart: () => void;
+  onCancel: () => void;
+  onSave: (minutes: number, page: string) => Promise<boolean>;
+};
+
+function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPage, onFinish, onBack, timing }: {
   book: Book; today: string; notes: Note[]; busy: boolean;
   onAdd: (postId: number, kind: string, body: string, page: string) => Promise<boolean>;
   onDelete: (id: number) => void; onUpdate: (id: number, body: string) => Promise<boolean>;
   onPage: (book: Book, page: string) => void; onFinish: () => void; onBack: () => void;
+  timing: Timing | null;
 }) {
   const [kind, setKind] = useState('not');
   const [body, setBody] = useState('');
@@ -311,6 +467,28 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  // Oturum bitirilirken: süre (dk) ve kaldığın sayfa
+  const [stopping, setStopping] = useState(false);
+  const [stopMin, setStopMin] = useState('');
+  const [stopPage, setStopPage] = useState('');
+  const [savingSession, setSavingSession] = useState(false);
+
+  function stop() {
+    if (!timing || timing.running == null) return;
+    setStopMin(String(Math.max(1, Math.round(timing.running / 60))));
+    setStopPage(page);
+    setStopping(true);
+  }
+
+  async function saveStop() {
+    if (!timing) return;
+    const m = parseInt(stopMin, 10);
+    if (!Number.isFinite(m) || m < 1) { timing.onCancel(); setStopping(false); return; }
+    setSavingSession(true);
+    const ok = await timing.onSave(m, stopPage);
+    setSavingSession(false);
+    if (ok) { setPage(stopPage); setStopping(false); }
+  }
 
   async function submit() {
     if (!body.trim()) return;
@@ -341,6 +519,28 @@ function CurrentBook({ book, today, notes, busy, onAdd, onDelete, onUpdate, onPa
           />
         </label>
       </div>
+
+      {timing && (
+        <div className="session">
+          {timing.running == null ? (
+            <button className="btn btn-primary" disabled={timing.otherRunning} onClick={timing.onStart}>Okumaya başla</button>
+          ) : stopping ? (
+            <form className="session-form" onSubmit={(e) => { e.preventDefault(); saveStop(); }}>
+              <label>Süre <input className="input" value={stopMin} onChange={(e) => setStopMin(e.target.value.replace(/\D+/g, ''))} inputMode="numeric" aria-label="Süre (dakika)" /> dk</label>
+              <label>Sayfa <input className="input" value={stopPage} onChange={(e) => setStopPage(e.target.value)} aria-label="Kaldığın sayfa" /></label>
+              <button className="btn btn-sm btn-primary" type="submit" disabled={savingSession}>{savingSession ? 'Kaydediliyor' : 'Kaydet'}</button>
+              <button className="btn btn-sm btn-quiet" type="button" onClick={() => setStopping(false)}>Devam et</button>
+              <button className="btn btn-sm btn-quiet" type="button" onClick={() => { timing.onCancel(); setStopping(false); }}>Sil</button>
+            </form>
+          ) : (
+            <>
+              <span className="session-dot" aria-hidden="true" />
+              <span className="session-time" aria-live="off">{fmtClock(timing.running)}</span>
+              <button className="btn btn-sm btn-primary" onClick={stop}>Durdur</button>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="note-form">
         <div className="kind-switch" role="radiogroup" aria-label="Fiş türü">
