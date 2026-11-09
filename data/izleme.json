@@ -1,0 +1,37 @@
+{
+  "_aciklama": "Okuma listesine paralel izleme listesi. Anahtar: okuma listesindeki sıra no. Her video: YouTube kimliği, başlık, kanal, süre, dil (tr/en).",
+  "1": [
+    { "id": "BjPb878mH1M", "title": "Sokrates: Bilmediğini Bilen Adam", "channel": "Flu · Ömer Aygün", "dur": "39:28", "lang": "tr" },
+    { "id": "oFglU_ED4h0", "title": "Socratic Citizenship: Plato's Apology", "channel": "YaleCourses", "dur": "45:35", "lang": "en" }
+  ],
+  "3": [
+    { "id": "PsRexM78_Vk", "title": "Socratic Citizenship: Plato's Crito", "channel": "YaleCourses", "dur": "47:16", "lang": "en" }
+  ],
+  "4": [
+    { "id": "xRzY-QwP_Ak", "title": "Cengiz Çevik ile Stoacılık, Epiktetos ve Enkheiridion", "channel": "Tarih Obası", "dur": "36:52", "lang": "tr" },
+    { "id": "aolFKSgYbKQ", "title": "Epictetus, the Enchiridion", "channel": "Gregory B. Sadler", "dur": "56:45", "lang": "en" }
+  ],
+  "5": [
+    { "id": "fJ7kLxnRzBw", "title": "Bertrand Russell's Philosophy", "channel": "Attic Philosophy", "dur": "17:35", "lang": "en" }
+  ],
+  "6": [
+    { "id": "mYZKmyU4Mww", "title": "The Absurd by Thomas Nagel — Discussion", "channel": "Revolution and Ideology", "dur": "33:04", "lang": "en" },
+    { "id": "ly4ArH9xy8w", "title": "Why Death is Evil: Thomas Nagel On Death", "channel": "PhilosophyToons", "dur": "11:25", "lang": "en" }
+  ],
+  "7": [
+    { "id": "i25vWaPwCoY", "title": "Yaz Sersemliğimize Seneca Tokadı: Yaşamın Kısalığı", "channel": "Pelin Dilara Çolak", "dur": "26:07", "lang": "tr" },
+    { "id": "ZUXfuswyJYk", "title": "Seneca, On the Shortness of Life: Three Times", "channel": "Gregory B. Sadler", "dur": "15:40", "lang": "en" }
+  ],
+  "8": [
+    { "id": "k_SAocFtlio", "title": "Introduction to Ancient Scepticism: Pyrrhonism", "channel": "Then & Now", "dur": "13:27", "lang": "en" },
+    { "id": "jaFcOp_bPME", "title": "Pyrrhonic Skepticism", "channel": "Adam Rosenfeld", "dur": "1:15:33", "lang": "en" }
+  ],
+  "9": [
+    { "id": "hljCfaQHKik", "title": "Bir Tartışmada Rakibinizi Nasıl Perişan Edersiniz? | Schopenhauer", "channel": "Sercan Baylan", "dur": "19:37", "lang": "tr" },
+    { "id": "AAD_9oEs6-A", "title": "Schopenhauer | The Art of Being Right", "channel": "essentialsalts", "dur": "29:44", "lang": "en" }
+  ],
+  "10": [
+    { "id": "0nyGUMcN3DQ", "title": "Francis Bacon — Novum Organum: İdoller, Gerçek Tümevarım", "channel": "PARANTEZ TV", "dur": "24:01", "lang": "tr" },
+    { "id": "vlZWY_lPvvw", "title": "Francis Bacon, Novum Organum: The Idols of the Tribe", "channel": "Gregory B. Sadler", "dur": "17:46", "lang": "en" }
+  ]
+}

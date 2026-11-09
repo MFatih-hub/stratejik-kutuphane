@@ -5,7 +5,8 @@ import { durakHref, findDurak, getDurakSummaries, getReadingList } from '@/lib/p
 import BookRow from '@/components/book-row';
 import { SeqNav } from '@/components/article';
 import { AdminLink } from '@/components/admin-bits';
-import { Masthead } from '@/components/cards';
+import { Masthead, ShelfHead } from '@/components/cards';
+import WatchList, { watchItems } from '@/components/watch-list';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -70,6 +71,15 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
             </p>
           )}
         </section>
+
+        {watchItems(books).length > 0 && (
+          <section className="section" aria-labelledby="izle">
+            <ShelfHead id="izle" main="İzle." sub="Bu durağa eşlik eden videolar." />
+            <div className="watch">
+              <WatchList books={books} />
+            </div>
+          </section>
+        )}
 
         <SeqNav
           label="Duraklar arasında gezin"

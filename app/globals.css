@@ -566,6 +566,10 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
 .card-grid > li { display: flex; }
 .card-grid .card { width: 100%; min-height: 280px; }
 
+/* ---------- İzleme listesi ---------- */
+.watch { margin-top: 24px; }
+.watch-play { margin-top: 16px; }
+
 /* ---------- Duraklar dizini ---------- */
 .directory { margin-top: 32px; }
 .dir-list { columns: 3 240px; column-gap: 40px; margin: 0; padding: 0; list-style: none; }

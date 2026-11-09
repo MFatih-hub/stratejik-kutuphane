@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, changeFrequency: 'weekly', priority: 1 },
     { url: `${SITE_URL}/yazilar`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/kitap-tahlilleri`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/izleme-listesi`, changeFrequency: 'weekly', priority: 0.6 },
     ...posts.map((p) => ({ url: `${SITE_URL}/yazi/${p.slug}`, lastModified: date(p.updated_at || p.published_at), changeFrequency: 'monthly' as const, priority: 0.8 })),
     // Yalnızca tahlili yazılmış eserler; diğerleri boş sayfa sayılmasın
     ...list.written.map((b) => ({ url: `${SITE_URL}/kitap-tahlilleri/${b.slug}`, lastModified: date(b.updatedAt), changeFrequency: 'monthly' as const, priority: 0.7 })),

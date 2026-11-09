@@ -118,6 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="nav-brand">Zihin Haritası</Link>
             {hasPosts && <Link href="/yazilar" className="nav-link">Yazılar</Link>}
             <Link href="/kitap-tahlilleri" className="nav-link">Kitap Tahlilleri</Link>
+            <Link href="/izleme-listesi" className="nav-link">İzleme Listesi</Link>
             <NavAdminLinks />
             <SiteSearch />
             <ThemeToggle />
@@ -138,6 +139,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     {hasPosts && <li><Link href="/yazilar">Yazılar</Link></li>}
                     <li><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link></li>
                     <li><Link href="/kitap-tahlilleri#duraklar">Okuma listesi</Link></li>
+                    <li><Link href="/izleme-listesi">İzleme listesi</Link></li>
                   </ul>
                 </div>
                 {topics.length > 0 && (
