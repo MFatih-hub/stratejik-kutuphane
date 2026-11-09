@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { bookHref, durakHref, getReadingList } from '@/lib/public-data';
 import BookRow from '@/components/book-row';
-import { CardGrid, Masthead, ShelfTitle, durakTone } from '@/components/cards';
+import { CardGrid, Masthead, ShelfHead, durakTone } from '@/components/cards';
 import { Chevron } from '@/components/icons';
 import { OG_IMAGE, SITE_URL } from '@/lib/site';
 
@@ -40,19 +40,21 @@ export default async function KitapTahlilleriPage() {
 
   return (
     <>
-      <Masthead
-        title="Kitap Tahlilleri"
-        lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi.` : null}
-        links={
-          current && currentHref ? (
-            <Link href={currentHref}>{reading ? 'Şu an' : 'Sıradaki'}: {current.title} <Chevron /></Link>
-          ) : null
-        }
-      />
+      <div className="zone zone-top band">
+        <Masthead
+          title="Kitap Tahlilleri"
+          lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi.` : null}
+          links={
+            current && currentHref ? (
+              <Link href={currentHref}>{reading ? 'Şu an' : 'Sıradaki'}: {current.title} <Chevron /></Link>
+            ) : null
+          }
+        />
+      </div>
 
       {list.written.length > 0 && (
-        <section className="shelf" aria-labelledby="tahliller">
-          <ShelfTitle id="tahliller" main="Tahliller." sub="Okuduğum eserler üzerine." />
+        <section className="zone shelf" aria-labelledby="tahliller">
+          <ShelfHead id="tahliller" main="Tahliller." sub="Okuduğum eserler üzerine." />
           <CardGrid
             items={list.written.map((b) => ({
               key: b.id,
@@ -68,8 +70,8 @@ export default async function KitapTahlilleriPage() {
       )}
 
       {list.duraks.length > 0 && (
-        <section className="shelf" aria-labelledby="duraklar">
-          <ShelfTitle
+        <section className={list.written.length > 0 ? 'zone band shelf' : 'zone shelf'} aria-labelledby="duraklar">
+          <ShelfHead
             id="duraklar"
             main="Duraklar."
             sub={`${nf.format(list.duraks.length)} durak, ${nf.format(list.done)} eser okundu.`}
@@ -91,7 +93,7 @@ export default async function KitapTahlilleriPage() {
       )}
 
       {list.total > 0 && list.duraks.length === 0 && (
-        <section className="shelf">
+        <section className="zone shelf">
           <div className="group">
             {list.books.map((b) => <BookRow key={b.id} book={b} />)}
           </div>

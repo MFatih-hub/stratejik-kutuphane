@@ -4,10 +4,12 @@ import { Chevron } from '@/components/icons';
 
 export default function NotFound() {
   return (
-    <Masthead
-      small
-      title="Sayfa bulunamadı"
-      links={<Link href="/">Ana sayfa <Chevron /></Link>}
-    />
+    <div className="zone zone-top band">
+      <Masthead
+        small
+        title="Sayfa bulunamadı"
+        links={<Link href="/">Ana sayfa <Chevron /></Link>}
+      />
+    </div>
   );
 }

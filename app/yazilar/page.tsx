@@ -30,30 +30,34 @@ export default async function YazilarPage() {
 
   return (
     <>
-      <Masthead
-        title="Yazılar"
-        lede={posts.length > 0 ? 'Denemeler ve incelemeler.' : null}
-        links={
-          used.length > 1
-            ? used.map((c) => <Link key={c.slug} href={`/kategori/${c.path}`}>{c.name} <Chevron /></Link>)
-            : null
-        }
-      />
-      {posts.length === 0 ? (
-        <p className="quiet">Henüz yazı yok.</p>
-      ) : (
-        <CardGrid
-          items={posts.map((p) => ({
-            key: p.id,
-            href: `/yazi/${p.slug}`,
-            eyebrow: getCategoryName(p.category),
-            title: p.title,
-            desc: p.subtitle || p.excerpt,
-            date: p.published_at,
-            tone: categoryTone(p.category),
-          }))}
+      <div className="zone zone-top band">
+        <Masthead
+          title="Yazılar"
+          lede={posts.length > 0 ? 'Denemeler ve incelemeler.' : null}
+          links={
+            used.length > 1
+              ? used.map((c) => <Link key={c.slug} href={`/kategori/${c.path}`}>{c.name} <Chevron /></Link>)
+              : null
+          }
         />
-      )}
+      </div>
+      <div className="zone">
+        {posts.length === 0 ? (
+          <p className="quiet">Henüz yazı yok.</p>
+        ) : (
+          <CardGrid
+            items={posts.map((p) => ({
+              key: p.id,
+              href: `/yazi/${p.slug}`,
+              eyebrow: getCategoryName(p.category),
+              title: p.title,
+              desc: p.subtitle || p.excerpt,
+              date: p.published_at,
+              tone: categoryTone(p.category),
+            }))}
+          />
+        )}
+      </div>
     </>
   );
 }

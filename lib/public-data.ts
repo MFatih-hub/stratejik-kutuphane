@@ -6,8 +6,9 @@
 // eder (derlemede ise dağıtım durur, canlıdaki sürüm yerinde kalır).
 import { cache } from 'react';
 import { publicClient } from './supabase-public';
-import { getCategoryName } from './helpers';
+import { getCategoryName, stripHtml } from './helpers';
 import { extractWikiLinks, resolveWikiTarget, type LinkTarget } from './reading';
+import { FOOTNOTE_RE } from './render-post';
 
 export type PostSummary = {
   id: number;
@@ -290,3 +291,54 @@ export async function getSearchIndex() {
     })),
   ];
 }
+
+// ---------- Ana sayfanın öne çıkan yazısı ----------
+
+export type Feature = {
+  kind: 'yazi' | 'tahlil';
+  href: string;
+  title: string;
+  sub: string | null;
+  date: string | null;
+  excerpt: string | null;
+  isNew: boolean;
+};
+
+/** HTML'nin ilk paragraflarından düz bir giriş metni (dipnot ve [[bağlantı]] işaretleri olmadan). */
+function leadText(html?: string | null, max = 320): string | null {
+  if (!html) return null;
+  html = html.replace(FOOTNOTE_RE, '');
+  const clean = (s: string) =>
+    stripHtml(
+      s
+        .replace(/<sup[\s\S]*?<\/sup>/gi, '')
+        .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, (_m, label: string) => (/^#?\s*\d+$/.test(label.trim()) ? '' : label)),
+    );
+  const paras = Array.from(html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)).map((m) => clean(m[1])).filter(Boolean);
+  const text = (paras.length ? paras.slice(0, 3).join(' ') : clean(html)).trim();
+  if (!text) return null;
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return cut.slice(0, Math.max(cut.lastIndexOf(' '), 200)).replace(/[\s,;:.\-–—(]+$/, '') + '…';
+}
+
+/** En son yayımlanan yazı ya da tahlil; giriş metniyle birlikte. */
+export const getFeature = cache(async (): Promise<Feature | null> => {
+  const [posts, list] = await Promise.all([listYazilar(), getReadingList()]);
+  const y = posts[0] || null;
+  const t = list.written[0] || null;
+  if (!y && !t) return null;
+  const useYazi = !!y && (!t || String(y.published_at || '') >= String(t.writtenAt || ''));
+  const post = useYazi ? await getPublished('yazi', y!.slug) : await getPublished('kitap_tahlili', t!.slug);
+  const date = useYazi ? y!.published_at : t!.writtenAt;
+  return {
+    kind: useYazi ? 'yazi' : 'tahlil',
+    href: useYazi ? `/yazi/${y!.slug}` : bookHref(t!.slug),
+    title: useYazi ? y!.title : t!.title,
+    sub: useYazi ? y!.subtitle || null : t!.author,
+    date,
+    excerpt: leadText(post?.content) || post?.excerpt || null,
+    isNew: !!date && Date.now() - new Date(date).getTime() < 30 * 864e5,
+  };
+});
+

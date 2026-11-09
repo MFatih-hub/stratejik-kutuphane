@@ -29,8 +29,10 @@ export default async function DiziPage({ params }: { params: { ad: string } }) {
 
   return (
     <>
-      <Masthead small eyebrow="Yazı dizisi" title={name} lede={`${items.length} bölüm`} />
-      <section className="section section-tight">
+      <div className="zone zone-top band">
+        <Masthead small eyebrow="Yazı dizisi" title={name} lede={`${items.length} bölüm`} />
+      </div>
+      <section className="zone">
         <div className="group">
           {items.map((p, i) => (
             <Link key={p.id} href={getPostUrl(p)} className="row row-num-start">

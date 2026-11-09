@@ -35,44 +35,48 @@ export default async function DurakPage({ params }: { params: { ad: string } }) 
 
   return (
     <>
-      <Masthead
-        small
-        eyebrow={<><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link> · {durak.index}. durak</>}
-        title={name}
-        lede={`${durak.total} eser · ${durak.done} okundu`}
-      />
+      <div className="zone zone-top band">
+        <Masthead
+          small
+          eyebrow={<><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link> · {durak.index}. durak</>}
+          title={name}
+          lede={`${durak.total} eser · ${durak.done} okundu`}
+        />
+      </div>
 
-      {summaries.length > 0 && (
-        <section className="section section-tight" aria-label="Durak değerlendirmesi">
-          <div className="group">
-            {summaries.map((s) => (
-              <Link key={s.id} href={`/yazi/${s.slug}`} className="row">
-                <span className="row-main">
-                  <span className="row-title">{s.title}</span>
-                  <span className="row-sub">Durak değerlendirmesi</span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="section section-tight" aria-label="Eserler">
-        <div className="group">
-          {books.map((b) => <BookRow key={b.id} book={b} />)}
-        </div>
-        {summaries.length === 0 && (
-          <p className="admin-only">
-            <AdminLink href={`/admin/yazi/yeni?durak=${encodeURIComponent(name)}`}>Değerlendirme yaz</AdminLink>
-          </p>
+      <div className="zone">
+        {summaries.length > 0 && (
+          <section className="section section-tight" aria-label="Durak değerlendirmesi">
+            <div className="group">
+              {summaries.map((s) => (
+                <Link key={s.id} href={`/yazi/${s.slug}`} className="row">
+                  <span className="row-main">
+                    <span className="row-title">{s.title}</span>
+                    <span className="row-sub">Durak değerlendirmesi</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
-      </section>
 
-      <SeqNav
-        label="Duraklar arasında gezin"
-        prev={prev && { href: durakHref(prev.name), title: prev.name, note: `${prev.done}/${prev.total}` }}
-        next={next && { href: durakHref(next.name), title: next.name, note: `${next.done}/${next.total}` }}
-      />
+        <section className="section section-tight" aria-label="Eserler">
+          <div className="group">
+            {books.map((b) => <BookRow key={b.id} book={b} />)}
+          </div>
+          {summaries.length === 0 && (
+            <p className="admin-only">
+              <AdminLink href={`/admin/yazi/yeni?durak=${encodeURIComponent(name)}`}>Değerlendirme yaz</AdminLink>
+            </p>
+          )}
+        </section>
+
+        <SeqNav
+          label="Duraklar arasında gezin"
+          prev={prev && { href: durakHref(prev.name), title: prev.name, note: `${prev.done}/${prev.total}` }}
+          next={next && { href: durakHref(next.name), title: next.name, note: `${next.done}/${next.total}` }}
+        />
+      </div>
     </>
   );
 }

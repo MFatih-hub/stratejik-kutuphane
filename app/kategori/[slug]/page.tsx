@@ -36,21 +36,25 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   return (
     <>
-      <Masthead small eyebrow={<Link href="/yazilar">Yazılar</Link>} title={category.name} />
-      {posts.length === 0 ? (
-        <p className="quiet">Bu başlıkta henüz yazı yok.</p>
-      ) : (
-        <CardGrid
-          items={posts.map((p) => ({
-            key: p.id,
-            href: `/yazi/${p.slug}`,
-            title: p.title,
-            desc: p.subtitle || p.excerpt,
-            date: p.published_at,
-            tone: categoryTone(category.slug),
-          }))}
-        />
-      )}
+      <div className="zone zone-top band">
+        <Masthead small eyebrow={<Link href="/yazilar">Yazılar</Link>} title={category.name} />
+      </div>
+      <div className="zone">
+        {posts.length === 0 ? (
+          <p className="quiet">Bu başlıkta henüz yazı yok.</p>
+        ) : (
+          <CardGrid
+            items={posts.map((p) => ({
+              key: p.id,
+              href: `/yazi/${p.slug}`,
+              title: p.title,
+              desc: p.subtitle || p.excerpt,
+              date: p.published_at,
+              tone: categoryTone(category.slug),
+            }))}
+          />
+        )}
+      </div>
     </>
   );
 }

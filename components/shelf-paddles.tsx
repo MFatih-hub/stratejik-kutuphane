@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Chevron } from './icons';
 
 /**
- * Rafın sağ üstündeki iki yuvarlak ok (Apple Store'daki gibi). Yalnızca
- * kartlar ekrana sığmadığında görünür; dokunmatik ekranda gizlidir.
+ * Rafın altındaki iki yuvarlak ok (Apple'daki gibi). Yalnızca kartlar ekrana
+ * sığmadığında görünür; telefonda gizlidir (parmakla kaydırılır).
  */
 export default function ShelfPaddles({ target }: { target: string }) {
   const [state, setState] = useState<{ prev: boolean; next: boolean } | null>(null);

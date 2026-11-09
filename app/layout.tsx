@@ -6,6 +6,8 @@ import SiteSearch from '@/components/site-search';
 import { NavAdminLinks } from '@/components/admin-bits';
 import { THEME_SCRIPT } from '@/lib/theme';
 import { listYazilar } from '@/lib/public-data';
+import { CATEGORIES } from '@/lib/helpers';
+import { newsletterEnabled } from '@/lib/server-env';
 import { AUTHOR_NAME, OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/site';
 // Yazı tipi: Apple cihazlarda sistemin SF Pro'su, diğerlerinde siteyle birlikte barındırılan Inter
 import '@fontsource-variable/inter/opsz.css';
@@ -92,7 +94,9 @@ const jsonLd = [
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // "Yazılar" bağlantısı yalnızca yayında yazı varsa görünür (veri, sayfalarla birlikte önbellekten gelir)
-  const hasPosts = await listYazilar().then((p) => p.length > 0, () => false);
+  const posts = await listYazilar().catch(() => []);
+  const hasPosts = posts.length > 0;
+  const topics = CATEGORIES.filter((c) => posts.some((p) => p.category === c.slug));
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
@@ -124,9 +128,37 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <footer className="foot">
           <div className="foot-inner">
+            {/* Apple'ın sayfa sonu dizini gibi: sitenin bütün bölümleri tek bakışta */}
+            <nav className="foot-index" aria-label="Site dizini">
+              <p className="foot-index-title">Zihin Haritası</p>
+              <div className="foot-groups">
+                <div className="foot-group">
+                  <p className="foot-group-title">Keşfedin</p>
+                  <ul className="foot-list foot-list-big">
+                    {hasPosts && <li><Link href="/yazilar">Yazılar</Link></li>}
+                    <li><Link href="/kitap-tahlilleri">Kitap Tahlilleri</Link></li>
+                    <li><Link href="/kitap-tahlilleri#duraklar">Okuma listesi</Link></li>
+                  </ul>
+                </div>
+                {topics.length > 0 && (
+                  <div className="foot-group">
+                    <p className="foot-group-title">Konular</p>
+                    <ul className="foot-list">
+                      {topics.map((c) => <li key={c.slug}><Link href={`/kategori/${c.path}`}>{c.name}</Link></li>)}
+                    </ul>
+                  </div>
+                )}
+                <div className="foot-group">
+                  <p className="foot-group-title">Takip edin</p>
+                  <ul className="foot-list">
+                    <li><Link href="/feed.xml">RSS</Link></li>
+                    {newsletterEnabled() && <li><Link href="/abone">E-posta aboneliği</Link></li>}
+                  </ul>
+                </div>
+              </div>
+            </nav>
             <div className="foot-row">
-              <span>© {new Date().getFullYear()} {AUTHOR_NAME}</span>
-              <Link href="/feed.xml">RSS</Link>
+              <span>Telif Hakkı © {new Date().getFullYear()} {AUTHOR_NAME}</span>
             </div>
           </div>
         </footer>
