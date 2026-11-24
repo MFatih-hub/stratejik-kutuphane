@@ -1,9 +1,8 @@
 // lib/weekly.ts — Pazar özeti: haftanın okuma süresi, bitenler, fişler, çekirdek
-// yol ilerlemesi, gelecek haftanın önerisi ve eski bir fiş. SADECE sunucuda.
+// okumaların ilerlemesi, gelecek haftanın önerisi ve eski bir fiş. SADECE sunucuda.
 // Hem /admin/hafta sayfası hem de pazar akşamı giden e-posta bunu kullanır.
 import { istanbulDay } from './reading';
 import { fetchJourney } from './reading-journey';
-import { isCore } from './core';
 import { SITE_URL } from './site';
 
 export type Weekly = {
@@ -16,7 +15,6 @@ export type Weekly = {
   byBook: { title: string; minutes: number }[];
   finished: { title: string; order: number | null }[];
   notes: { total: number; alinti: number; not: number; soru: number };
-  watched: number;
   current: { title: string; order: number | null; page: string | null }[];
   core: { total: number; done: number; next: { title: string; order: number; author: string | null }[] };
   recall: { body: string; kind: string; book: string | null } | null;
@@ -46,13 +44,12 @@ export async function buildWeekly(supabase: any, now = new Date()): Promise<Week
   const startTs = `${start}T00:00:00+03:00`;
   const month = new Date(now.getTime() - 30 * 864e5).toISOString();
 
-  const [sessions, days, finished, notes, goal, watched, current, oldCount] = await Promise.all([
+  const [sessions, days, finished, notes, goal, current, oldCount] = await Promise.all([
     supabase.from('reading_sessions').select('day, minutes, post_id, posts(title)').gte('day', prevStart).limit(5000),
     supabase.from('reading_days').select('day').gte('day', start),
     supabase.from('posts').select('title, reading_order').eq('post_type', 'kitap_tahlili').gte('finished_at', startTs).order('finished_at'),
     supabase.from('notes').select('kind').gte('created_at', startTs).limit(5000),
     supabase.from('settings').select('value').eq('key', 'haftalik_hedef_dk').maybeSingle(),
-    supabase.from('settings').select('value').eq('key', 'izlenenler').maybeSingle(),
     supabase.from('posts').select('title, reading_order, current_page').eq('post_type', 'kitap_tahlili').eq('reading_status', 'okunuyor').order('reading_order').limit(5),
     supabase.from('notes').select('id', { count: 'exact', head: true }).lt('created_at', month),
   ]);
@@ -66,12 +63,11 @@ export async function buildWeekly(supabase: any, now = new Date()): Promise<Week
   }
   const dayset = new Set<string>([...(days.data || []).map((d: any) => d.day), ...thisWeek.map((r) => r.day)]);
   const nRows: any[] = notes.data || [];
-  const w = watched.data?.value && typeof watched.data.value === 'object' ? (watched.data.value as Record<string, string>) : {};
 
   let core: Weekly['core'] = { total: 0, done: 0, next: [] };
   try {
     const j = await fetchJourney(supabase);
-    const items = j.items.filter((i) => isCore(i.order)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const items = j.items.filter((i) => i.core).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     core = {
       total: items.length,
       done: items.filter((i) => i.done).length,
@@ -103,7 +99,6 @@ export async function buildWeekly(supabase: any, now = new Date()): Promise<Week
       not: nRows.filter((n) => n.kind === 'not').length,
       soru: nRows.filter((n) => n.kind === 'soru').length,
     },
-    watched: Object.values(w).filter((iso) => typeof iso === 'string' && iso >= startTs.slice(0, 10)).length,
     current: (current.data || []).map((p: any) => ({ title: p.title, order: p.reading_order, page: p.current_page })),
     core,
     recall,
@@ -142,10 +137,9 @@ export function weeklyEmail(w: Weekly) {
   if (w.finished.length) { parts.push(h('Biten')); parts.push(li(w.finished.map((b) => `${b.order != null ? `#${b.order} ` : ''}${esc(b.title)}`))); }
   const extra: string[] = [];
   if (w.notes.total) extra.push(`${w.notes.total} fiş (${w.notes.alinti} alıntı, ${w.notes.not} not, ${w.notes.soru} soru)`);
-  if (w.watched) extra.push(`${w.watched} video izlendi`);
   if (extra.length) parts.push(p(extra.join(' · ')));
   if (w.core.total) {
-    parts.push(h('Çekirdek yol'));
+    parts.push(h('Çekirdek okumalar (★)'));
     parts.push(p(`${w.core.done} / ${w.core.total} eser.`));
   }
   const next = w.current.length
@@ -168,7 +162,7 @@ ${parts.join('\n')}
     `Bu hafta: ${fmtMin(w.minutes)} · ${w.readingDays} gün. ${verdict(w)}`,
     ...w.byBook.map((b) => `- ${b.title}: ${fmtMin(b.minutes)}`),
     w.finished.length ? `Biten: ${w.finished.map((b) => b.title).join(', ')}` : '',
-    w.core.total ? `Çekirdek yol: ${w.core.done}/${w.core.total}` : '',
+    w.core.total ? `Çekirdek okumalar: ${w.core.done}/${w.core.total}` : '',
     `${SITE_URL}/admin/dem`,
   ].filter(Boolean).join('\n');
   return { subject: `Bu hafta ${fmtMin(w.minutes)} okudun — Zihin Haritası`, html, text };

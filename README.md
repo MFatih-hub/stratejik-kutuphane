@@ -72,7 +72,7 @@ Görüntülenme sayacı artık güvenli şekilde çalışıyor: eski sürümde s
 
 ## 🔍 Arama
 
-Üst şeritteki büyüteç (ya da Ctrl/⌘+K): yazılar ve okuma listesindeki bütün eserler içinde arar. Arama dizini statik bir dosyadır (`/ara.json`, saatte bir yenilenir) ve arama tamamen tarayıcıda yapılır; sunucuya ya da veritabanına istek gitmez. Türkçe karakterler (İ/I, ı/i, şapkalı harfler) doğru eşleşir.
+Üst şeritteki büyüteç (ya da Ctrl/⌘+K): yazılar ve okuma planındaki bütün eserler içinde arar. Arama dizini statik bir dosyadır (`/ara.json`, saatte bir yenilenir) ve arama tamamen tarayıcıda yapılır; sunucuya ya da veritabanına istek gitmez. Türkçe karakterler (İ/I, ı/i, şapkalı harfler) doğru eşleşir.
 
 ## 📖 Günlük Kullanım: Dem, Fişler, Harita
 
@@ -98,6 +98,7 @@ Site artık okuma sürecini de taşır (önce `SUPABASE-MIGRATION-v5.sql` çalı
 - **Sürüm geçmişi:** veritabanı yazının eski hâllerini kendiliğinden saklar (en fazla 10 dakikada bir; bir bölüm silindiğinde hemen; yazı başına son 200). Editör → *Sürüm geçmişi* → önizle → *Bu sürüme dön*.
 - **Dipnot:** metinde `((dipnot metni))` (editörde x¹ düğmesi) → numaralı dipnot. **Kaynakça:** editörde her satıra bir kaynak.
 - **Yazı dizileri:** editörde *Dizi* + *sıra* → yazının altında dizideki yeri ve önceki/sonraki bölüm, `/dizi/[ad]` sayfası.
+- **Okuma planı:** ev kütüphanesinin planı (Kasım 2026): 21 bölüm, 108 durak, 1.015 eser. Bölümler ve her bölümün durakları `data/okuma-plani.json`'da; eserin sırası `reading_order`, durağı `reading_module`, yayınevi `source_name`, çekirdek (★) işareti `tags` içinde `cekirdek`. Bölüm duraktan çıkar; planda olmayan bir durak "Diğer" bölümüne düşer. Düzenleyicinin kitap panelinde Sıra, Durak, Yayınevi ve ★ alanları var. İlk kurulum `/admin/plan-kur` ile yapılır (önce tam yedek; eski listedeki tahlil, fiş ve okuma kayıtları plandaki karşılığına taşınır; tekrar çalıştırmak güvenli).
 - **Duraklar:** `/durak/[ad]` — duraktaki eserler, önceki/sonraki durak. Bir yazıyı *Durak değerlendirmesi* olarak işaretlersen o durağın sayfasında görünür; bir durağın bütün eserleri bitince Dem değerlendirmeyi yazmayı önerir.
 - **Okuma özeti:** `/admin/ozet` — yıl takvimi, ay ay okuma günü ve sayfa, bitirilen kitaplar, yazılan tahliller, fişler, en uzun seri. Sayfa sayısı, Dem ekranında "kaldığın yer" ilerledikçe kendiliğinden kaydedilir.
 - **E-posta aboneliği:** onaylı abonelik (çift onay), her e-postada tek tıkla ayrılma. Editörde yayındaki yazı için *Önce bana deneme* ve *Gönder*. `/admin/aboneler`: liste, CSV.
@@ -157,18 +158,18 @@ Site üç ayrı, birbirine karışmayan bölümde yayın yapar. Hepsi aynı `pos
 
 `/admin`'deki **"İçerik Türü"** seçiciyle (yeni yazı / düzenleme ekranında) bir kaydın türünü belirlersin.
 
-### Kitap Tahlilleri toplu ekleme (okuma listesi → site)
+### Kitap Tahlilleri toplu ekleme (okuma planı → site)
 
-**`/admin/kitap-tahlilleri/toplu-ekle`** (admin panelde "📚 Tahlil: Toplu Ekle"): okuma listesini tek seferde siteye aktarır. Önce `SUPABASE-MIGRATION-v4.sql` çalıştırılmış olmalı.
+**`/admin/kitap-tahlilleri/toplu-ekle`** (admin panelde "📚 Tahlil: Toplu Ekle"): okuma planını tek seferde siteye aktarır. Önce `SUPABASE-MIGRATION-v4.sql` çalıştırılmış olmalı.
 
 1. Excel'de **Sıra · Yazar · Metin** sütunlarını seç (başlık satırıyla ya da onsuz), kopyala, kutuya yapıştır. İsteğe bağlı sütunlar: **Kategori** ve **Durak** (modül, ör. "Mantık"). Başlık satırı varsa sütun sırası önemli değil (Sıra/No, Yazar/Author, Metin/Başlık/Eser/Kitap, Kategori/Alan tanınır). Etiketli bloklar da çalışır (`Sıra:`, `Yazar:`, `Metin:`, `Kategori:`; bloklar boş satırla ayrılır).
 2. Önizlemede "Kontrol edilecekler" sekmesi eksik yazar/başlık, tekrarlanan sıra numarası ve sitede zaten olan eserleri gösterir. Sitede zaten olan eserler (aynı sıra + başlık) otomatik olarak işaretsiz gelir — aynı listeyi ikinci kez yapıştırmak kopya oluşturmaz.
 3. Sitede aynı sıra numarasıyla zaten olan eserler varsayılan olarak **güncellenir** (başlık, yazar, durak; tahlil notu, kategori ve yayın durumu değişmez) — böylece listeyi düzeltilmiş hâliyle ya da durak sütunu eklenmiş hâliyle tekrar yapıştırmak kopya oluşturmaz. Kutunun işareti kaldırılırsa sitede olanlar atlanır.
 4. "Ekle" yenileri 100'erli partilerle yazar. Her eser `post_type = 'kitap_tahlili'`, boş `content` ile oluşur; adresi `/kitap-tahlilleri/<sıra>-<başlık>` olur.
 
-Sonra `/admin?tur=kitap_tahlili` sekmesinde (okuma sırasına göre dizili) bir esere "Not yaz" deyip tahlil notunu editörde yazarsın. Editörün sağ panelinde **Yazar** ve **Okuma listesindeki sıra** alanları da düzenlenebilir.
+Sonra `/admin?tur=kitap_tahlili` sekmesinde (okuma sırasına göre dizili) bir esere "Not yaz" deyip tahlil notunu editörde yazarsın. Editörün sağ panelinde **Yazar** ve **Okuma planındaki sıra** alanları da düzenlenebilir.
 
-**Okuma yolculuğu:** `/kitap-tahlilleri` sayfasının başında her eser bir kare olarak görünür (tahlili yazılan dolu, sıradaki eser yanıp sönen çerçeveli). "Şu an buradayım" = tahlili yazılmamış en küçük sıra numaralı eser; "En son tamamlanan" = en son güncellenen tahlil. Eserlere Durak verilmişse kareler duraklara ayrılır (16'dan fazla durak varsa kompakt görünüm: sadece içinde bulunulan durağın kareleri, altında tüm yolculuğu gösteren durak şeridi ve açılır durak listesi) ve her durağın ilerleme çubuğu görünür (durak adına tıklayınca liste o durağa süzülür, `?modul=`). Tahlil sayfasında okuma listesindeki önceki/sonraki eser bağlantıları vardır. Ana sayfada son tahliller ve bu yolculuğun özeti gösterilir.
+**Okuma yolculuğu:** `/kitap-tahlilleri` sayfasının başında her eser bir kare olarak görünür (tahlili yazılan dolu, sıradaki eser yanıp sönen çerçeveli). "Şu an buradayım" = tahlili yazılmamış en küçük sıra numaralı eser; "En son tamamlanan" = en son güncellenen tahlil. Eserlere Durak verilmişse kareler duraklara ayrılır (16'dan fazla durak varsa kompakt görünüm: sadece içinde bulunulan durağın kareleri, altında tüm yolculuğu gösteren durak şeridi ve açılır durak listesi) ve her durağın ilerleme çubuğu görünür (durak adına tıklayınca liste o durağa süzülür, `?modul=`). Tahlil sayfasında okuma planındaki önceki/sonraki eser bağlantıları vardır. Ana sayfada son tahliller ve bu yolculuğun özeti gösterilir.
 
 `/kitap-tahlilleri` sayfası eserleri okuma sırasına göre, 100'erli sayfalar halinde listeler; "Tüm liste / Tahlili yazılanlar / Sırada bekleyenler" filtresi, alan filtresi, eser/yazar araması ve ilerleme çubuğu vardır. Tahlili yazılmış eserler bağlantılıdır; notu henüz yazılmamış eserlerin sayfası "tahlil henüz yazılmadı" der, arama motorlarına kapalıdır (noindex) ve sitemap'e ve site aramasına girmez.
 
@@ -191,7 +192,7 @@ app/
   page.tsx                          # Ana sayfa: yazılar + son tahliller
   yazi/[slug]/page.tsx              # Yazı
   kategori/[slug]/page.tsx          # Kategori
-  kitap-tahlilleri/page.tsx         # Okuma listesi: tahliller, şu an, duraklar
+  kitap-tahlilleri/page.tsx         # Okuma planı: tahliller, şu an, duraklar
   kitap-tahlilleri/[slug]/page.tsx  # Tahlil (ya da listedeki eserin sade sayfası)
   durak/[ad]/page.tsx               # Durak: eserler, "Okudum" (yönetici)
   dizi/[ad]/page.tsx                # Yazı dizisi

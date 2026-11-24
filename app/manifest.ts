@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Zihin Haritası',
     short_name: 'Zihin',
-    description: 'Okuma listesi, fişler ve kitap tahlilleri',
+    description: 'Okuma planı, fişler ve kitap tahlilleri',
     start_url: '/admin/dem',
     scope: '/',
     display: 'standalone',

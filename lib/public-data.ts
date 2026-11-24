@@ -9,6 +9,7 @@ import { publicClient } from './supabase-public';
 import { getCategoryName, stripHtml } from './helpers';
 import { extractWikiLinks, resolveWikiTarget, type LinkTarget } from './reading';
 import { FOOTNOTE_RE } from './render-post';
+import { BOLUMLER, bolumOf, isCoreTags, type PlanBolum } from './plan';
 
 export type PostSummary = {
   id: number;
@@ -28,6 +29,10 @@ export type Book = {
   author: string | null;
   order: number | null;
   module: string | null;
+  /** Yayınevi */
+  publisher: string | null;
+  /** Çekirdek okuma (★) */
+  core: boolean;
   status: string | null;
   /** Tahlili yazıldı */
   written: boolean;
@@ -41,15 +46,23 @@ export type Book = {
 export type Durak = {
   name: string;
   index: number;
+  /** Durağın bölümü (planda yoksa null) */
+  bolum: PlanBolum | null;
+  core: number;
   total: number;
   done: number;
   firstOrder: number | null;
   lastOrder: number | null;
 };
 
+export type Bolum = PlanBolum & { duraks: Durak[]; total: number; done: number; core: number };
+
 export type ReadingList = {
   books: Book[];
   duraks: Durak[];
+  /** Duraklar bölüm bölüm; planda olmayan duraklar sondaki "Diğer" bölümünde */
+  bolumler: Bolum[];
+  core: number;
   total: number;
   done: number;
   /** Tahlili yazılanlar, en yeni önce */
@@ -105,13 +118,13 @@ export const getPublished = cache(async (type: 'yazi' | 'kitap_tahlili', slug: s
   return (data || [])[0] || null;
 });
 
-const BOOK_FIELDS = 'id, slug, title, book_author, reading_order, reading_module, reading_status, updated_at';
+const BOOK_FIELDS = 'id, slug, title, book_author, source_name, tags, reading_order, reading_module, reading_status, updated_at';
 
-/** Okuma listesi: bütün eserler, duraklar, ilerleme. */
+/** Okuma planı: bütün eserler, duraklar, ilerleme. */
 export const getReadingList = cache(async (): Promise<ReadingList> => {
   const db = publicClient();
   const [rows, writtenRows] = await Promise.all([
-    paged<any>('okuma listesi', (a, b) =>
+    paged<any>('okuma planı', (a, b) =>
       db.from('posts').select(BOOK_FIELDS)
         .eq('is_published', true).eq('post_type', 'kitap_tahlili')
         .order('reading_order', { ascending: true, nullsFirst: false })
@@ -143,6 +156,8 @@ export const getReadingList = cache(async (): Promise<ReadingList> => {
       author: r.book_author ?? null,
       order: r.reading_order ?? null,
       module: r.reading_module ? String(r.reading_module).trim() || null : null,
+      publisher: r.source_name ? String(r.source_name).trim() || null : null,
+      core: isCoreTags(r.tags),
       status,
       written,
       done: written || status === 'okundu' || status === 'yazildi',
@@ -156,10 +171,11 @@ export const getReadingList = cache(async (): Promise<ReadingList> => {
     if (!b.module) continue;
     let d = byName.get(b.module);
     if (!d) {
-      d = { name: b.module, index: byName.size + 1, total: 0, done: 0, firstOrder: b.order, lastOrder: b.order };
+      d = { name: b.module, index: byName.size + 1, bolum: bolumOf(b.module), core: 0, total: 0, done: 0, firstOrder: b.order, lastOrder: b.order };
       byName.set(b.module, d);
     }
     d.total++;
+    if (b.core) d.core++;
     if (b.done) d.done++;
     if (b.order != null) {
       if (d.firstOrder == null || b.order < d.firstOrder) d.firstOrder = b.order;
@@ -172,9 +188,20 @@ export const getReadingList = cache(async (): Promise<ReadingList> => {
   const written = books.filter((b) => b.written)
     .sort((a, b) => String(b.writtenAt || '').localeCompare(String(a.writtenAt || '')));
 
+  const duraks = Array.from(byName.values());
+  const bolumler: Bolum[] = BOLUMLER.map((p) => ({ ...p, duraks: [] as Durak[], total: 0, done: 0, core: 0 }));
+  const diger: Bolum = { no: bolumler.length + 1, roman: '', ad: 'Diğer', duraklar: [], duraks: [], total: 0, done: 0, core: 0 };
+  for (const d of duraks) {
+    const b = (d.bolum && bolumler[d.bolum.no - 1]) || diger;
+    b.duraks.push(d);
+    b.total += d.total; b.done += d.done; b.core += d.core;
+  }
+
   return {
     books,
-    duraks: Array.from(byName.values()),
+    duraks,
+    bolumler: [...bolumler, diger].filter((b) => b.duraks.length > 0),
+    core: books.filter((b) => b.core).length,
     total: books.length,
     done: books.filter((b) => b.done).length,
     written,
@@ -279,14 +306,14 @@ export const getDurakSummaries = cache(async (name: string): Promise<PostSummary
   return (data || []) as PostSummary[];
 });
 
-/** Site araması için hafif dizin: yazılar ve okuma listesindeki bütün eserler. */
+/** Site araması için hafif dizin: yazılar ve okuma planındaki bütün eserler. */
 export async function getSearchIndex() {
   const [posts, list] = await Promise.all([listYazilar(), getReadingList()]);
   return [
     ...posts.map((p) => ({ t: p.title, s: getCategoryName(p.category), u: `/yazi/${p.slug}` })),
     ...list.books.map((b) => ({
       t: b.title,
-      s: [b.author, b.order != null ? `#${b.order}` : null, b.written ? 'Tahlil' : null].filter(Boolean).join(' · '),
+      s: [b.author, b.order != null ? `#${b.order}` : null, b.module, b.written ? 'Tahlil' : null].filter(Boolean).join(' · '),
       u: bookHref(b.slug),
     })),
   ];

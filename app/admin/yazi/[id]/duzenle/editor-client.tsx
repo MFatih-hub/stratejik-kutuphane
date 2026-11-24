@@ -14,6 +14,10 @@ import NotesPanel from './notes-panel';
 import RevisionsPanel from './revisions-panel';
 import NewsletterPanel from './newsletter-panel';
 
+// Çekirdek (★) eserler tags içinde bu etiketi taşır (bkz. lib/plan.ts CORE_TAG)
+const CORE_TAG = 'cekirdek';
+const tagList = (v: string) => v.split(',').map((t) => t.trim()).filter(Boolean);
+
 const RichTextEditor = dynamic(() => import('@/components/rich-text-editor'), {
   ssr: false,
   loading: () => <div className="rte-wrap rte-loading">Editör yükleniyor…</div>,
@@ -231,7 +235,8 @@ export default function EditorClient({
       reading_minutes: minutes,
       is_published: shouldPublish,
       post_type: s.postType,
-      source_name: isBulletinType ? (s.sourceName.trim() || null) : null,
+      // Kitapta source_name yayınevidir
+      source_name: isBulletinType || s.postType === 'kitap_tahlili' ? (s.sourceName.trim() || null) : null,
       source_url: isBulletinType ? (s.sourceUrl.trim() || null) : null,
       source_summary: isBulletinType ? (s.sourceSummary.trim() || null) : null,
     };
@@ -477,7 +482,7 @@ export default function EditorClient({
                 onChange={(e) => { setBookAuthor(e.target.value); markDirty(); }}
                 placeholder="Örn. Platon"
               />
-              <label className="form-label" style={{ marginTop: 10 }}>Okuma listesindeki sıra</label>
+              <label className="form-label" style={{ marginTop: 10 }}>Okuma planındaki sıra</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -486,15 +491,37 @@ export default function EditorClient({
                 onChange={(e) => { setReadingOrder(e.target.value); markDirty(); }}
                 placeholder="Örn. 12"
               />
-              <p className="form-hint">Kitap Tahlilleri sayfası bu sıraya göre listelenir.</p>
-              <label className="form-label" style={{ marginTop: 10 }}>Durak / modül (opsiyonel)</label>
+              <p className="form-hint">Okuma planı ve raf bu sıraya göre dizilir.</p>
+              <label className="form-label" style={{ marginTop: 10 }}>Yayınevi</label>
               <input
                 type="text"
                 className="input"
+                value={sourceName}
+                onChange={(e) => { setSourceName(e.target.value); markDirty(); }}
+                placeholder="Örn. Doğubatı"
+              />
+              <label className="form-label" style={{ marginTop: 10 }}>Durak</label>
+              <input
+                type="text"
+                className="input"
+                list="zh-book-modules"
                 value={readingModule}
                 onChange={(e) => { setReadingModule(e.target.value); markDirty(); }}
-                placeholder="Örn. Mantık"
+                placeholder="Örn. Platon"
               />
+              <datalist id="zh-book-modules">{modules.map((m) => <option key={m} value={m} />)}</datalist>
+              <label className="check-row" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={tagList(tags).includes(CORE_TAG)}
+                  onChange={(e) => {
+                    const rest = tagList(tags).filter((t) => t !== CORE_TAG);
+                    setTags((e.target.checked ? [...rest, CORE_TAG] : rest).join(', '));
+                    markDirty();
+                  }}
+                />
+                <span>★ Çekirdek okuma</span>
+              </label>
             </div>
           )}
 
@@ -563,16 +590,18 @@ export default function EditorClient({
             <p className="form-hint">{typeInfo.basePath}/{slug || 'ornek-slug'}</p>
           </div>
 
-          <div className="sidebar-section">
-            <label className="form-label">Etiketler (virgülle)</label>
-            <input
-              type="text"
-              className="input"
-              value={tags}
-              onChange={(e) => { setTags(e.target.value); markDirty(); }}
-              placeholder="ai, türkiye, deneme"
-            />
-          </div>
+          {!isBook && (
+            <div className="sidebar-section">
+              <label className="form-label">Etiketler (virgülle)</label>
+              <input
+                type="text"
+                className="input"
+                value={tags}
+                onChange={(e) => { setTags(e.target.value); markDirty(); }}
+                placeholder="ai, türkiye, deneme"
+              />
+            </div>
+          )}
 
           <div className="sidebar-section">
             <label className="form-label">Özet</label>

@@ -24,6 +24,9 @@ const nextConfig = {
       { source: '/kavram', destination: '/', permanent: false },
       { source: '/kavram/:path*', destination: '/', permanent: false },
       { source: '/admin/bugun', destination: '/admin/dem', permanent: true },
+      // Eski okuma listesine bağlı sayfalar (Kasım 2026'da yeni okuma planıyla kaldırıldı)
+      { source: '/izleme-listesi', destination: '/kitap-tahlilleri', permanent: false },
+      { source: '/admin/liste-duzenle', destination: '/admin', permanent: false },
       // Yazdırma sayfası yönetim paneline taşındı
       { source: '/yazdir/:id', destination: '/admin/yazdir/:id', permanent: true },
     ];

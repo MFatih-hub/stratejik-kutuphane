@@ -4,7 +4,7 @@ import { getReadingList, wikiResolver } from '@/lib/public-data';
 // Eski [[...]] bağlantılarının adresi: /eser?ad=Etika → ilgili eserin sayfası.
 // Sayfalardaki bağlantılar artık doğrudan esere gider; bu adres yalnızca dışa
 // aktarılmış belgelerdeki ve e-postalardaki eski bağlantılar için duruyor.
-// Okuma listesi önbellekten gelir; yönlendirme CDN'de bir gün saklanır.
+// Okuma planı önbellekten gelir; yönlendirme CDN'de bir gün saklanır.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const ad = (url.searchParams.get('ad') || '').trim().slice(0, 160);

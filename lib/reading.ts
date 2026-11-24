@@ -31,7 +31,7 @@ export async function markReadingDay(supabase: any) {
 
 // ============== [[BAĞLANTILAR]] ==============
 // Notlarda ve tahlillerde [[...]] ile başka bir esere bağlantı verilir:
-//   [[#123]]            → okuma listesindeki 123. eser
+//   [[#123]]            → okuma planındaki 123. eser
 //   [[Etika]]           → başlığı "Etika" olan (ya da öyle başlayan) eser
 //   [[Spinoza, Etika]]  → yazarı Spinoza'yı, başlığı Etika'yı içeren eser
 

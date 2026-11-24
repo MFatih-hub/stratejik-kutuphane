@@ -13,7 +13,7 @@ export const dynamic = 'force-static';
 export const revalidate = 86400;
 
 
-// Tahlili yazılanlar derlemede üretilir; okuma listesindeki diğer eserlerin
+// Tahlili yazılanlar derlemede üretilir; okuma planındaki diğer eserlerin
 // sade sayfası ilk ziyarette üretilip önbelleğe alınır.
 export async function generateStaticParams() {
   const list = await getReadingList();
@@ -53,7 +53,7 @@ export default async function TahlilPage({ params }: { params: { slug: string } 
   const next = i >= 0 && i < list.books.length - 1 ? list.books[i + 1] : null;
   const seq = (
     <SeqNav
-      label="Okuma listesinde gezin"
+      label="Okuma planında gezin"
       prev={prev && { href: bookHref(prev.slug), title: prev.title, note: prev.order != null ? `#${prev.order}` : null }}
       next={next && { href: bookHref(next.slug), title: next.title, note: next.order != null ? `#${next.order}` : null }}
     />
@@ -69,12 +69,14 @@ export default async function TahlilPage({ params }: { params: { slug: string } 
       <article className="article">
         <header className="article-head">
           <p className="eyebrow">
-            <Link href="/kitap-tahlilleri">Okuma listesi</Link>
+            <Link href="/kitap-tahlilleri#duraklar">Okuma planı</Link>
             {post.reading_order != null && <> · #{post.reading_order}</>}
             {durak && <> · {durak}</>}
           </p>
           <h1 className="article-title">{post.title}</h1>
-          {post.book_author && <p className="article-byline">{post.book_author}</p>}
+          {(post.book_author || post.source_name) && (
+            <p className="article-byline">{[post.book_author, post.source_name].filter(Boolean).join(' · ')}</p>
+          )}
           {book && (
             <div className="article-state">
               <BookState id={book.id} status={book.status} done={book.done} labeled />
@@ -138,7 +140,7 @@ export default async function TahlilPage({ params }: { params: { slug: string } 
         )}
         {(durak || post.reading_order != null) && (
           <p className="article-place">
-            Okuma listesinde{post.reading_order != null && <> #{post.reading_order}</>}{durak && <> · {durak}</>}
+            Okuma planında{post.reading_order != null && <> #{post.reading_order}</>}{durak && <> · {durak}</>}{post.source_name && <> · {post.source_name}</>}
           </p>
         )}
         {seq}

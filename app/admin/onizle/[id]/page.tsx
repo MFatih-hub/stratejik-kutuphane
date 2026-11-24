@@ -36,7 +36,7 @@ export default async function OnizlePage({ params }: { params: { id: string } })
       {isBook && !hasRealContent(post.content) ? (
         <article className="article">
           <header className="article-head">
-            <p className="eyebrow">Okuma listesi{post.reading_order != null && <> · #{post.reading_order}</>}</p>
+            <p className="eyebrow">Okuma planı{post.reading_order != null && <> · #{post.reading_order}</>}</p>
             <h1 className="article-title">{post.title}</h1>
             {post.book_author && <p className="article-byline">{post.book_author}</p>}
           </header>

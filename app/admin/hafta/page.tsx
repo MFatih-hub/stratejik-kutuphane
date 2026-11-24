@@ -40,7 +40,7 @@ export default async function HaftaPage() {
             </>
           )}
           <p className="tempo-line" style={{ marginTop: 12 }}>
-            {w.notes.total} fiş ({w.notes.alinti} alıntı, {w.notes.not} not, {w.notes.soru} soru) · {w.watched} video izlendi
+            {w.notes.total} fiş ({w.notes.alinti} alıntı, {w.notes.not} not, {w.notes.soru} soru)
           </p>
         </section>
 
@@ -53,7 +53,7 @@ export default async function HaftaPage() {
               ))}
             </ul>
           ) : <p className="tempo-line">—</p>}
-          {w.core.total > 0 && <p className="tempo-line" style={{ marginTop: 12 }}>Çekirdek yol: {w.core.done} / {w.core.total}</p>}
+          {w.core.total > 0 && <p className="tempo-line" style={{ marginTop: 12 }}>★ Çekirdek: {w.core.done} / {w.core.total}</p>}
         </section>
 
         {w.recall && (

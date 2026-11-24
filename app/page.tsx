@@ -61,7 +61,7 @@ export default async function HomePage() {
             id="tahliller"
             main="Kitap Tahlilleri."
             sub="Okuduğum eserler üzerine."
-            cta={{ href: '/kitap-tahlilleri', label: 'Okuma listesi' }}
+            cta={{ href: '/kitap-tahlilleri', label: 'Okuma planı' }}
             items={list.written.slice(0, 12).map((b) => ({
               key: b.id,
               href: bookHref(b.slug),
@@ -73,7 +73,7 @@ export default async function HomePage() {
             }))}
             after={
               <Link href="/kitap-tahlilleri" className="card">
-                <span className="card-eyebrow">Okuma listesi</span>
+                <span className="card-eyebrow">Okuma planı</span>
                 <span className="card-title">
                   {current ? `${reading ? 'Şu an' : 'Sıradaki'}: ${current.title}` : `${new Intl.NumberFormat('tr-TR').format(list.total)} eser`}
                 </span>

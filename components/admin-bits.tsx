@@ -27,7 +27,7 @@ export function EditLink({ id }: { id: number }) {
   return <Link href={`/admin/yazi/${id}/duzenle`} className="btn btn-sm">Düzenle</Link>;
 }
 
-/** Okuma listesindeki bir eserin durumu: ziyaretçiye işaret, yöneticiye "Okudum" düğmesi. */
+/** Okuma planındaki bir eserin durumu: ziyaretçiye işaret, yöneticiye "Okudum" düğmesi. */
 export function BookState({ id, status, done, labeled = false }: { id: number; status: string | null; done: boolean; labeled?: boolean }) {
   const admin = useIsAdmin();
   if (admin) return <ReadToggle id={id} status={status} />;

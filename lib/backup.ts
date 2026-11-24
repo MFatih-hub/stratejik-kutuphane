@@ -72,7 +72,7 @@ export async function buildBackupZip(supabase: SupabaseClient): Promise<{ zip: U
   if (settings.length) files['veri/settings.json'] = strToU8(JSON.stringify(settings, null, 1));
   if (subscribers.length) files['veri/subscribers.json'] = strToU8(JSON.stringify(subscribers, null, 1));
 
-  const summary = `${written} yazı/tahlil, ${notes.length} fiş, ${posts.length} kayıt (okuma listesi dahil), ${readingDays.length} okuma günü`;
+  const summary = `${written} yazı/tahlil, ${notes.length} fiş, ${posts.length} kayıt (okuma planı dahil), ${readingDays.length} okuma günü`;
   files['BENIOKU.txt'] = strToU8(
     [
       'Zihin Haritası — tam yedek',

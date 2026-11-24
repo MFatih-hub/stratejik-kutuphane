@@ -7,7 +7,7 @@ import RefreshButton from './refresh-button';
 
 export const revalidate = 0;
 
-// İçerik yönetimi: kitap tahlilleri (okuma listesi) ve yazılar.
+// İçerik yönetimi: kitap tahlilleri (okuma planı) ve yazılar.
 // Eskiden bütün kayıtlar tek seferde çekiliyordu; 3.650+ eserle yavaşlamasın
 // diye artık sayfa sayfa (50'şer), filtre ve aramayla çalışır.
 const PAGE = 50;
@@ -51,13 +51,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
   const cur: Params = { tur, durum, q, sayfa: String(page) };
 
   const count = (fn: (x: any) => any) => fn(supabase.from('posts').select('id', { count: 'exact', head: true }));
-  const [kitapAll, yaziAll, okunuyor, okundu, yazildi] = await Promise.all([
+  const [kitapAll, yaziAll, okunuyor, okundu, yazildi, planRows] = await Promise.all([
     count((x) => x.eq('post_type', 'kitap_tahlili')),
     count((x) => x.neq('post_type', 'kitap_tahlili')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okunuyor')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'okundu')),
     count((x) => x.eq('post_type', 'kitap_tahlili').eq('reading_status', 'yazildi')),
+    // Yeni okuma planı kurulduysa ★ eserler vardır
+    count((x) => x.eq('post_type', 'kitap_tahlili').contains('tags', ['cekirdek'])),
   ]);
+  const planReady = !planRows.error && (planRows.count || 0) > 0;
   const statusReady = !okunuyor.error;
 
   // "Yazılar": kitap tahlili olmayan her kayıt (kaldırılmış eski türler de burada görünür)
@@ -87,7 +90,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
       <div className="admin-header">
         <div>
           <h1 className="admin-title">İçerik</h1>
-          <p className="admin-sub">Okuma listesi, tahliller ve yazılar</p>
+          <p className="admin-sub">Okuma planı, tahliller ve yazılar</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link href="/admin/dem" className="btn btn-primary">Dem</Link>
@@ -98,15 +101,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Params
           <Link href="/admin/analiz" className="btn btn-sm">Analiz</Link>
           <Link href="/admin/ozet" className="btn btn-sm">Okuma özeti</Link>
           <Link href="/admin/aboneler" className="btn btn-sm">Aboneler</Link>
-          <Link href="/admin/liste-duzenle" className="btn btn-sm">Listeyi düzenle</Link>
           <a href="/api/admin/yedek" className="btn btn-sm" title="Bütün yazılar, notlar ve veriler tek bir ZIP dosyasında">Tam yedek indir</a>
           <RefreshButton />
           <Link href="/admin/cikis" className="btn btn-sm">Çıkış</Link>
         </div>
       </div>
 
+      {!planReady && (
+        <div className="today-banner">
+          Yeni okuma planı (1.015 eser, 108 durak) hazır; eski liste hâlâ sitede.{' '}
+          <Link href="/admin/plan-kur">Okuma planını kur</Link>
+        </div>
+      )}
+
       <div className="admin-stats">
-        <div className="stat-card"><span className="stat-label">Okuma listesi</span><span className="stat-value">{kitapAll.count || 0}</span></div>
+        <div className="stat-card"><span className="stat-label">Okuma planı</span><span className="stat-value">{kitapAll.count || 0}</span></div>
         <div className="stat-card"><span className="stat-label">Okunuyor</span><span className="stat-value">{statusReady ? okunuyor.count || 0 : '—'}</span></div>
         <div className="stat-card"><span className="stat-label">Tahlil bekliyor</span><span className="stat-value">{statusReady ? okundu.count || 0 : '—'}</span></div>
         <div className="stat-card"><span className="stat-label">Tahlili yazıldı</span><span className="stat-value">{statusReady ? yazildi.count || 0 : '—'}</span></div>

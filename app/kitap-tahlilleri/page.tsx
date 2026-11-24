@@ -5,7 +5,6 @@ import BookRow from '@/components/book-row';
 import { CardGrid, Masthead, ShelfHead, durakTone } from '@/components/cards';
 import { Chevron } from '@/components/icons';
 import { OG_IMAGE, SITE_URL } from '@/lib/site';
-import { CORE_TOTAL } from '@/lib/core';
 
 export const dynamic = 'force-static';
 // Yönetim panelinde kayıt olunca anında yenilenir; ayrıca günde bir kendiliğinden.
@@ -14,13 +13,13 @@ export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: 'Kitap Tahlilleri',
-  description: 'Muhammet Fatih Işık\'ın okuma listesi ve okuduğu eserler üzerine tahlilleri.',
+  description: 'Muhammet Fatih Işık\'ın kendi kütüphanesinden kurduğu okuma planı ve okuduğu eserler üzerine tahlilleri.',
   alternates: { canonical: `${SITE_URL}/kitap-tahlilleri` },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/kitap-tahlilleri`,
     title: 'Kitap Tahlilleri — Zihin Haritası',
-    description: 'Okuma listesi ve okunan eserler üzerine tahliller.',
+    description: 'Okuma planı ve okunan eserler üzerine tahliller.',
     siteName: 'Zihin Haritası',
     locale: 'tr_TR',
     images: [OG_IMAGE],
@@ -44,7 +43,7 @@ export default async function KitapTahlilleriPage() {
       <div className="zone zone-top band">
         <Masthead
           title="Kitap Tahlilleri"
-          lede={list.total > 0 ? `${nf.format(list.total)} eserlik bir okuma listesi; ★ ${nf.format(CORE_TOTAL)} eserlik çekirdek yol.` : null}
+          lede={list.total > 0 ? `${nf.format(list.total)} eserlik okuma planı: ${nf.format(list.bolumler.length)} bölüm, ${nf.format(list.duraks.length)} durak.` : null}
           links={
             current && currentHref ? (
               <Link href={currentHref}>{reading ? 'Şu an' : 'Sıradaki'}: {current.title} <Chevron /></Link>
@@ -74,21 +73,30 @@ export default async function KitapTahlilleriPage() {
         <section className={list.written.length > 0 ? 'zone band shelf' : 'zone shelf'} aria-labelledby="duraklar">
           <ShelfHead
             id="duraklar"
-            main="Duraklar."
-            sub={`${nf.format(list.duraks.length)} durak, ${nf.format(list.done)} eser okundu.`}
+            main="Okuma planı."
+            sub={`${nf.format(list.done)} eser okundu · ★\u00a0${nf.format(list.core)} çekirdek.`}
           />
-          <div className="directory">
-            <ol className="dir-list">
-              {list.duraks.map((d) => (
-                <li key={d.name}>
-                  <Link href={durakHref(d.name)} className={d.done > 0 ? 'dir-item is-started' : 'dir-item'}>
-                    <span className="dir-num">{d.index}</span>
-                    <span className="dir-name">{d.name}</span>
-                    <span className="dir-count">{`${d.done}/${d.total}`}</span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
+          <div className="plan">
+            {list.bolumler.map((b) => (
+              <section key={b.ad} className="plan-part" aria-labelledby={`bolum-${b.no}`}>
+                <h3 className="plan-part-head" id={`bolum-${b.no}`}>
+                  {b.roman && <span className="plan-part-num">{b.roman}</span>}
+                  <span className="plan-part-name">{b.ad}</span>
+                  <span className="plan-part-count">{`${b.done}/${b.total}`}</span>
+                </h3>
+                <ol className="dir-list">
+                  {b.duraks.map((d) => (
+                    <li key={d.name}>
+                      <Link href={durakHref(d.name)} className={d.done > 0 ? 'dir-item is-started' : 'dir-item'}>
+                        <span className="dir-num">{d.index}</span>
+                        <span className="dir-name">{d.name}</span>
+                        <span className="dir-count">{`${d.done}/${d.total}`}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))}
           </div>
         </section>
       )}

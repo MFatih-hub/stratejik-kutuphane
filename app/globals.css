@@ -569,68 +569,6 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
 .card-grid > li { display: flex; }
 .card-grid .card { width: 100%; min-height: 280px; }
 
-/* ---------- İzleme listesi ---------- */
-.watch { margin-top: 24px; }
-/* İzleme listesi başındaki durak dizini (sayfa içi bağlantılar) */
-.zone-top > .watch-dir { margin: -16px 0 0; padding-bottom: 64px; }
-.watch-play { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-top: 16px; }
-.watch-count { font-size: 14px; letter-spacing: -0.016em; color: var(--text-2); }
-/* Her eser bir başlık; videoları altında, başlık hizasında */
-.watch-book { position: relative; }
-.watch-book + .watch-book::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 24px;
-  right: 0;
-  border-top: 1px solid var(--sep);
-}
-.watch-book-head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin: 0;
-  padding: 16px 24px 0;
-  font-size: 13px;
-  line-height: 1.38463;
-  font-weight: 600;
-  letter-spacing: -0.008em;
-  color: var(--text-2);
-}
-.watch-book-head .row-num { font-weight: 400; color: var(--text-2); }
-.watch-book-title { min-width: 0; }
-.watch-row { padding-right: 12px; }
-.watch-row:hover { background: var(--fill); }
-.watch-link { color: var(--text); padding: 2px 0; }
-.watch-link:hover { text-decoration: none; }
-.watch-link:hover .row-title { color: var(--link); }
-/* İzledim tiki: 44 px dokunma alanı, 22 px halka */
-.watch-tick {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin: -8px 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-.watch-tick:disabled, .watch-tick.is-wait { cursor: default; opacity: 0.35; }
-.watch-tick-ring {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 1.5px solid var(--text-3);
-  border-radius: 50%;
-  color: var(--on-accent);
-}
-.watch-tick.is-on .watch-tick-ring { border-color: var(--accent); background: var(--accent); }
-
 /* ---------- Duraklar dizini ---------- */
 .directory { margin-top: 32px; }
 .dir-list { columns: 3 240px; column-gap: 40px; margin: 0; padding: 0; list-style: none; }
@@ -662,6 +600,39 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
   color: var(--text-3);
 }
 .dir-item.is-started .dir-count { color: var(--brand); }
+/* Bölümler: her bölüm bir başlık, altında durakları */
+.plan { margin-top: 32px; }
+.plan-part + .plan-part { margin-top: 44px; }
+.plan-part-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--sep);
+  font-size: 21px;
+  line-height: 1.19048;
+  font-weight: 600;
+  letter-spacing: 0.011em;
+  color: var(--text);
+}
+.plan-part-num {
+  flex: 0 0 auto;
+  min-width: 34px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--brand);
+}
+.plan-part-name { flex: 1 1 auto; min-width: 0; }
+.plan-part-count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
 
 /* ---------- Listeler (eserler, dizi, değinenler) ---------- */
 .group { background: var(--surface); border-radius: 18px; overflow: hidden; }
@@ -1112,7 +1083,6 @@ body:has(.admin-shell) .foot-index { display: none; }
   .zone { padding: 48px 0; }
   .zone-top { padding: 0; }
   .zone-top > .feature { margin-bottom: 48px; }
-  .zone-top > .watch-dir { margin-top: 0; padding-bottom: 40px; }
   .feature {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
@@ -1157,8 +1127,8 @@ body:has(.admin-shell) .foot-index { display: none; }
   .row + .row::before { left: 16px; }
   .row-num { flex-basis: 28px; }
   .row-num-start + .row-num-start::before { left: 54px; }
-  .watch-book + .watch-book::before { left: 16px; }
-  .watch-book-head { gap: 10px; padding: 14px 16px 0; }
+  .plan-part-head { font-size: 19px; }
+  .plan-part + .plan-part { margin-top: 36px; }
   .article { padding: 44px 0 64px; }
   .article-title { font-size: 28px; line-height: 1.14286; letter-spacing: 0.007em; }
   .article-sub { font-size: 17px; line-height: 1.47059; letter-spacing: -0.022em; }

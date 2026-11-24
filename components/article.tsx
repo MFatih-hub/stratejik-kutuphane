@@ -52,7 +52,7 @@ export default function Article({
   );
 }
 
-/** Önceki / sonraki bağlantıları (dizide, okuma listesinde, duraklar arasında). */
+/** Önceki / sonraki bağlantıları (dizide, okuma planında, duraklar arasında). */
 export function SeqNav({ label, prev, next }: {
   label: string;
   prev?: { href: string; title: string; note?: string | null } | null;

@@ -130,7 +130,7 @@ export function notesToMarkdown(book: any, notes: NoteRow[]): string {
   const parts = [
     `# ${book.title} — Okuma notları`,
     '',
-    [book.book_author, book.reading_order != null ? `Okuma listesinde #${book.reading_order}` : null].filter(Boolean).join(' · '),
+    [book.book_author, book.reading_order != null ? `Okuma planında #${book.reading_order}` : null].filter(Boolean).join(' · '),
     '',
     ...bookHeaderLines(book).map((l) => `- ${l}`),
     `- ${notes.length} fiş`,

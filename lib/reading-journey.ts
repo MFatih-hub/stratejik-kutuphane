@@ -1,12 +1,13 @@
 // lib/reading-journey.ts — Kitap Tahlilleri "okuma yolculuğu" verisi.
 //
-// Okuma listesindeki tüm eserleri (yayındaki kitap_tahlili kayıtları) sıra
+// Okuma planındaki tüm eserleri (yayındaki kitap_tahlili kayıtları) sıra
 // numarasıyla çeker, hangilerinin tahlili yazıldığını işaretler ve özet
 // çıkarır: toplam/yazılan, sıradaki eser ("şu an buradayım"), son yazılan
 // tahliller ve modül (durak) bazında ilerleme.
 //
 // Migration v4 çalıştırılmamışsa (reading_order / book_author / reading_module
 // yoksa) sessizce daha az alanla çalışır.
+import { isCoreTags } from './plan';
 
 
 export type JourneyItem = {
@@ -21,6 +22,8 @@ export type JourneyItem = {
   done: boolean;
   updatedAt: string | null;
   status: string | null;
+  /** Çekirdek okuma (★) */
+  core: boolean;
 };
 
 export type JourneyModule = {
@@ -59,6 +62,7 @@ async function fetchPaged(build: (from: number, to: number) => any): Promise<{ r
 }
 
 const FIELD_SETS = [
+  'id, slug, title, updated_at, book_author, tags, reading_order, reading_module, reading_status',
   'id, slug, title, updated_at, book_author, reading_order, reading_module, reading_status',
   'id, slug, title, updated_at, book_author, reading_order, reading_module',
   'id, slug, title, updated_at, book_author, reading_order',
@@ -96,6 +100,7 @@ export async function fetchJourney(supabase: any): Promise<Journey> {
     updatedAt: r.updated_at ?? null,
     status: r.reading_status ?? null,
     done: isDone(writtenIds.has(r.id), r.reading_status ?? null),
+    core: isCoreTags(r.tags),
   }));
 
   const written = items.filter((i) => i.written).length;

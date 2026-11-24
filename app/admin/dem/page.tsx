@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase-server';
 import { istanbulDay } from '@/lib/reading';
 import DemClient from './dem-client';
 import { fetchJourney } from '@/lib/reading-journey';
-import { videosFor } from '@/lib/watch';
-import { isCore } from '@/lib/core';
 
 export const revalidate = 0;
 export const metadata: Metadata = { title: 'Dem', robots: { index: false, follow: false } };
@@ -108,15 +106,15 @@ export default async function BugunPage() {
       fetchJourney(supabase),
       supabase.from('posts').select('durak_summary').not('durak_summary', 'is', null),
     ]);
-    // Çekirdek yol: ★ eserlerden okunanlar ve sıradaki üçü
-    const coreItems = journey.items.filter((i) => isCore(i.order)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    // Çekirdek okumalar: ★ eserlerden okunanlar ve sıradaki üçü
+    const coreItems = journey.items.filter((i) => i.core).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const coreNext = coreItems.filter((i) => !i.done && i.status !== 'okunuyor');
     core = {
       total: coreItems.length,
       done: coreItems.filter((i) => i.done).length,
       next: coreNext.slice(0, 3).map((i) => ({ id: i.id, order: i.order as number, title: i.title, author: i.author })),
     };
-    // Okunan eser yoksa "Sıradaki" önerisi çekirdek yoldan gelir
+    // Okunan eser yoksa "Sıradaki" önerisi çekirdek okumalardan gelir
     if (suggestion && coreNext[0] && coreNext[0].id !== suggestion.id) {
       const { data } = await supabase.from('posts').select(BOOK_FIELDS).eq('id', coreNext[0].id).maybeSingle();
       if (data) suggestion = data;
@@ -157,7 +155,6 @@ export default async function BugunPage() {
       pace={{ finished90: finished90.count || 0 }}
       durakLeft={durakLeft}
       core={core}
-      videos={Object.fromEntries(current.map((c: any) => [c.id, videosFor(c.reading_order)]))}
     />
   );
 }

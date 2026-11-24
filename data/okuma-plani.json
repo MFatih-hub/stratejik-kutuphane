@@ -1,0 +1,217 @@
+{
+ "bolumler": [
+  {
+   "ad": "Başlangıç: Felsefe, Okuma ve Mantık",
+   "duraklar": [
+    "Felsefeye Giriş: Sokrates'in Yolu",
+    "Okuma, Öğrenme ve Zihin Disiplini",
+    "Mantık ve Münazara: Aristoteles'ten Gelenbevî'ye",
+    "Modern Mantık ve Matematiğin Temelleri"
+   ]
+  },
+  {
+   "ad": "Büyük Resim: İnsan ve Medeniyet",
+   "duraklar": [
+    "İnsanlığın Büyük Hikâyesi",
+    "Medeniyetlerin Yükselişi ve Çöküşü"
+   ]
+  },
+  {
+   "ad": "İlk Medeniyetler: Antik Yakındoğu",
+   "duraklar": [
+    "Mezopotamya ve Mısır"
+   ]
+  },
+  {
+   "ad": "Antik Yunan",
+   "duraklar": [
+    "Destan ve Tragedya",
+    "Sokrates Öncesi Filozoflar",
+    "Platon",
+    "Aristoteles",
+    "Yunan Tarihi, Hitabet ve Gündelik Hayat",
+    "Stoa ve Helenistik Bilgelik",
+    "Orta ve Yeni Platonculuk"
+   ]
+  },
+  {
+   "ad": "Roma",
+   "duraklar": [
+    "Roma Tarihi ve Tarihçileri",
+    "Roma'da Doğa, Dil ve Gündelik Hayat"
+   ]
+  },
+  {
+   "ad": "Kutsal Metinler, Dinler ve Doğu Bilgeliği",
+   "duraklar": [
+    "Kutsal Metinler ve Apokrif Gelenek",
+    "Din, Mit ve Büyü",
+    "Hint ve Çin Bilgeliği",
+    "Erken Hristiyanlık ve Bizans"
+   ]
+  },
+  {
+   "ad": "İslami İlimler",
+   "duraklar": [
+    "Kur'an, Tefsir ve Hadis",
+    "Siyer ve Peygamberler"
+   ]
+  },
+  {
+   "ad": "İslam Düşüncesi ve Bilimi",
+   "duraklar": [
+    "Fârâbî ve İbn Sînâ",
+    "Gazzâlî",
+    "Endülüs ve İşrâk: İbn Bâcce, İbn Tufeyl, Sühreverdî",
+    "Tasavvuf: Mevlânâ, İbn Arabî ve İbn Atâullah",
+    "Anadolu'nun Sûfî Şiiri: Yunus Emre'den Niyâzî-i Mısrî'ye",
+    "Siyasetnâmeler ve İbn Haldûn",
+    "Siyasetnâme Geleneği Üzerine",
+    "İslam'da Bilim: Matematik ve Tıp"
+   ]
+  },
+  {
+   "ad": "Osmanlı",
+   "duraklar": [
+    "Türkiye Tarihinin Çerçevesi",
+    "Osmanlı Vakanüvisleri",
+    "Ahmed Cevdet Paşa I: Hayatı ve Dünyası",
+    "Ahmed Cevdet Paşa II: Tarih, Hukuk ve Dil",
+    "Osmanlı Devleti, Ekonomisi ve Bürokrasisi",
+    "Osmanlı'da İlim, Medrese ve Modernleşme",
+    "Osmanlı Türkçesi"
+   ]
+  },
+  {
+   "ad": "Orta Çağ ve Rönesans Avrupası",
+   "duraklar": [
+    "Orta Çağ Avrupası",
+    "Haçlılar, Moğollar ve İpek Yolu",
+    "Reform, Rönesans ve Keşifler"
+   ]
+  },
+  {
+   "ad": "Modern Felsefe",
+   "duraklar": [
+    "Erken Modern Felsefe: Bacon, Descartes, Pascal, Spinoza",
+    "Leibniz",
+    "Aydınlanma ve Kant",
+    "Schopenhauer",
+    "19. Yüzyıl: Hegel, Kierkegaard, Mill, Nietzsche",
+    "Fenomenoloji ve Heidegger",
+    "Wittgenstein ve Analitik Felsefe",
+    "Gelenekselcilik: Guénon ve Modern Dünyanın Eleştirisi",
+    "Çağdaş Düşünce ve Kültür Eleştirisi"
+   ]
+  },
+  {
+   "ad": "Bilim: Evren, Hayat ve Zihin",
+   "duraklar": [
+    "Bilimsel Devrim: Kopernik'ten Newton'a",
+    "Bilim Felsefesi, Bilim ve Din",
+    "Matematik ve Kaos",
+    "Einstein ve Görelilik",
+    "Kuantum Dünyası",
+    "Evrenin Kökeni ve Zaman",
+    "Kozmos: Sagan'ın Evreni",
+    "Darwin ve Doğa Tarihi",
+    "Genetik, Tıp ve Salgınlar",
+    "İnsan Doğası",
+    "Beyin, Bellek ve Bilinç",
+    "Psikoloji ve Psikanaliz",
+    "Dikkat ve DEHB"
+   ]
+  },
+  {
+   "ad": "Teknoloji, Ekoloji ve Gelecek",
+   "duraklar": [
+    "Mühendislik, Sistemler ve Enerji",
+    "Bilgi Çağı, Yapay Zekâ ve Gelecek",
+    "Ekoloji ve Çöküş"
+   ]
+  },
+  {
+   "ad": "Siyaset ve Toplum",
+   "duraklar": [
+    "Siyaset Felsefesine Giriş ve Modern Klasikler",
+    "Marx ve Marksizm",
+    "Yirminci Yüzyıl Siyaset Kuramı",
+    "Medya, Propaganda ve İktidar",
+    "Sosyolojinin Kurucuları ve Modernleşme"
+   ]
+  },
+  {
+   "ad": "Modern Dünya Tarihi",
+   "duraklar": [
+    "Devrimler Çağı (1750–1900)",
+    "Müzik: Mozart ve Beethoven",
+    "Yirminci Yüzyıl: Savaşlar ve Totaliterlik"
+   ]
+  },
+  {
+   "ad": "Türkiye",
+   "duraklar": [
+    "Son Osmanlı'dan Cumhuriyet'e",
+    "Cumhuriyet Türkiyesi ve Siyaset",
+    "Cemil Meriç",
+    "Türk Düşüncesi: Medeniyet, Kimlik ve Diriliş"
+   ]
+  },
+  {
+   "ad": "Çağdaş İslam Dünyası",
+   "duraklar": [
+    "İslam, Batı ve Modern Dünya",
+    "Aliya İzetbegoviç",
+    "Malcolm X ve Siyah Amerika",
+    "İbrahim Kalın",
+    "Din Felsefesi: Tanrı, Peygamberlik ve Kötülük"
+   ]
+  },
+  {
+   "ad": "Uluslararası İlişkiler, Strateji ve İstihbarat",
+   "duraklar": [
+    "Strateji ve Savaş",
+    "Uluslararası İlişkiler Kuramı ve Diplomasi",
+    "Jeopolitik ve Büyük Güçler",
+    "İstihbarat"
+   ]
+  },
+  {
+   "ad": "İktisat ve Finans",
+   "duraklar": [
+    "İktisadın Klasikleri ve İktisat Tarihi",
+    "Eşitsizlik, Kriz ve Para Politikası",
+    "Değer Yatırımı",
+    "Borsa ve Teknik Analiz"
+   ]
+  },
+  {
+   "ad": "Edebiyat (paralel okuma rafı)",
+   "duraklar": [
+    "Türk Edebiyatı: Divan'dan Cumhuriyet'e",
+    "Tanpınar ve İhsan Oktay Anar",
+    "Çağdaş Türk ve Türk Dünyası Edebiyatı",
+    "Doğu Edebiyatı",
+    "Tiyatro",
+    "Rus Edebiyatı",
+    "Fransız Edebiyatı",
+    "Kafka ve Alman Dili Edebiyatı",
+    "Stefan Zweig",
+    "İngiliz Edebiyatı",
+    "Amerikan Edebiyatı",
+    "Akdeniz ve Balkan Edebiyatı",
+    "Umberto Eco",
+    "Latin Amerika ve Borges",
+    "Bilimkurgu ve Distopya",
+    "Polisiye, Gerilim ve Tekinsiz",
+    "Penguin Modern (50 kitaplık dizi)"
+   ]
+  },
+  {
+   "ad": "Raf Dışı: Başvuru, Dergi ve Katalog",
+   "duraklar": [
+    "Başvuru, Dergiler ve Müzayede Katalogları"
+   ]
+  }
+ ]
+}
