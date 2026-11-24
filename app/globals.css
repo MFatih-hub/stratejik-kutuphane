@@ -193,7 +193,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.47059;
   letter-spacing: -0.022em;
   font-synthesis: none;
@@ -311,7 +311,7 @@ img { max-width: 100%; height: auto; }
 .masthead-main { min-width: 0; }
 .masthead-title {
   font-family: var(--font-display);
-  font-size: 64px;
+  font-size: 42px;
   line-height: 1.0625;
   font-weight: 600;
   letter-spacing: -0.009em;
@@ -320,7 +320,7 @@ img { max-width: 100%; height: auto; }
 .masthead-side { flex: 0 1 320px; text-align: right; }
 .masthead-lede {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 19px;
   line-height: 1.14286;
   font-weight: 600;
   letter-spacing: 0.007em;
@@ -341,8 +341,8 @@ img { max-width: 100%; height: auto; }
 .masthead-links .chev { width: 6px; height: 10px; color: inherit; }
 /* Durak, kategori, dizi gibi alt sayfalar */
 .masthead-sm { padding: 56px 0 48px; align-items: flex-end; }
-.masthead-sm .masthead-title { font-size: 48px; line-height: 1.08349; letter-spacing: -0.003em; }
-.masthead-sm .masthead-lede { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+.masthead-sm .masthead-title { font-size: 32px; line-height: 1.08349; letter-spacing: -0.003em; }
+.masthead-sm .masthead-lede { font-size: 17px; line-height: 1.19048; letter-spacing: 0.011em; }
 .eyebrow {
   margin-bottom: 12px;
   font-size: 12px;
@@ -375,7 +375,7 @@ img { max-width: 100%; height: auto; }
 }
 .feature-title {
   font-family: var(--font-display);
-  font-size: 48px;
+  font-size: 30px;
   line-height: 1.08349;
   font-weight: 600;
   letter-spacing: -0.003em;
@@ -385,19 +385,19 @@ img { max-width: 100%; height: auto; }
 .feature-sub {
   margin-top: 8px;
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 19px;
   line-height: 1.14286;
   letter-spacing: 0.007em;
   color: var(--text);
 }
 .feature-ctas { display: flex; align-items: center; gap: 24px; padding-top: 6px; }
-.feature-link { display: inline-flex; align-items: center; gap: 4px; font-size: 17px; letter-spacing: -0.022em; white-space: nowrap; }
+.feature-link { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; letter-spacing: -0.022em; white-space: nowrap; }
 .feature-link .chev { width: 7px; height: 12px; color: inherit; }
 .feature-excerpt {
   grid-column: 1 / -1;
   max-width: 860px;
   margin-top: 16px;
-  font-size: 21px;
+  font-size: 16px;
   line-height: 1.42857;
   letter-spacing: 0.011em;
   color: var(--text-2);
@@ -421,7 +421,7 @@ img { max-width: 100%; height: auto; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.47059;
   letter-spacing: -0.022em;
   white-space: nowrap;
@@ -429,7 +429,7 @@ img { max-width: 100%; height: auto; }
 .shelf-cta .chev { width: 7px; height: 12px; color: inherit; }
 .shelf-title {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 21px;
   line-height: 1.14286;
   font-weight: 600;
   letter-spacing: 0.007em;
@@ -515,7 +515,7 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
   overflow: hidden;
   margin-top: 10px;
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 19px;
   line-height: 1.14286;
   font-weight: 600;
   letter-spacing: 0.007em;
@@ -528,7 +528,7 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-top: 10px;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.23536;
   letter-spacing: -0.022em;
 }
@@ -610,7 +610,7 @@ a.card:hover { text-decoration: none; box-shadow: var(--shadow-hover); }
   margin: 0 0 10px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--sep);
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1.19048;
   font-weight: 600;
   letter-spacing: 0.011em;
@@ -702,7 +702,7 @@ a.row::after {
 .section-title {
   margin-bottom: 16px;
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1.16667;
   font-weight: 600;
   letter-spacing: 0.009em;
@@ -715,21 +715,21 @@ a.row::after {
 .article-head { margin-bottom: 40px; }
 .article-title {
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 32px;
   line-height: 1.1;
   font-weight: 600;
   letter-spacing: 0;
 }
 .article-sub {
   margin-top: 14px;
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.42106;
   letter-spacing: 0.012em;
   color: var(--text-2);
 }
 .article-byline {
   margin-top: 10px;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.47059;
   color: var(--text-2);
 }
@@ -746,7 +746,7 @@ a.row::after {
 .prose,
 .post-content {
   font-family: var(--font-read);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.6;
   letter-spacing: -0.016em;
   color: var(--text);
@@ -764,8 +764,8 @@ a.row::after {
   color: var(--text);
   scroll-margin-top: 64px;
 }
-.prose h1, .prose h2, .post-content h1, .post-content h2 { margin: 1.9em 0 0.6em; font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
-.prose h3, .post-content h3 { margin: 1.7em 0 0.5em; font-size: 19px; line-height: 1.21053; letter-spacing: 0.012em; }
+.prose h1, .prose h2, .post-content h1, .post-content h2 { margin: 1.9em 0 0.6em; font-size: 20px; line-height: 1.16667; letter-spacing: 0.009em; }
+.prose h3, .post-content h3 { margin: 1.7em 0 0.5em; font-size: 17px; line-height: 1.21053; letter-spacing: 0.012em; }
 .prose a, .post-content a { color: var(--link); }
 .prose strong, .post-content strong { font-weight: 600; }
 .prose blockquote, .post-content blockquote {
@@ -875,7 +875,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
 .btn-primary, .btn-primary:hover { background: var(--accent); color: var(--on-accent); }
 .btn-primary:hover { background: var(--accent-hover); }
 .btn-sm { min-height: 30px; padding: 5px 12px; font-size: 14px; }
-.btn-lg { min-height: 44px; padding: 10px 22px; font-size: 17px; letter-spacing: -0.022em; }
+.btn-lg { min-height: 38px; padding: 8px 20px; font-size: 15px; letter-spacing: -0.022em; }
 .btn-danger { color: var(--danger); }
 .btn-quiet { background: transparent; color: var(--text-2); }
 
@@ -886,7 +886,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
   border-radius: 12px;
   background: var(--surface);
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.3;
 }
 .textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
@@ -957,7 +957,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
   background: transparent;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1.16667;
   font-weight: 600;
   letter-spacing: 0.009em;
@@ -984,7 +984,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
 /* ---------- Giriş ---------- */
 .login-page { display: flex; justify-content: center; padding: 96px 0; }
 .login-card { width: 100%; max-width: 380px; }
-.login-title { font-family: var(--font-display); font-size: 32px; line-height: 1.125; font-weight: 600; color: var(--brand); }
+.login-title { font-family: var(--font-display); font-size: 26px; line-height: 1.125; font-weight: 600; color: var(--brand); }
 .login-sub { margin: 6px 0 28px; color: var(--text-2); }
 
 /* ---------- Alt bilgi: Apple'ın sayfa sonu dizini ---------- */
@@ -1000,7 +1000,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
 .foot-index { padding: 72px 0 56px; }
 .foot-index-title {
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 28px;
   line-height: 1.1;
   font-weight: 600;
   letter-spacing: 0;
@@ -1027,7 +1027,7 @@ sup.fn-ref a { padding: 0 1px 0 0.5px; font-weight: 600; text-decoration: none; 
 .foot-list-big li + li { margin-top: 8px; }
 .foot-list-big a {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 18px;
   line-height: 1.16667;
   letter-spacing: 0.009em;
 }
@@ -1065,18 +1065,18 @@ body:has(.admin-shell) .foot-index { display: none; }
   .zone-top { padding: 0; }
   .zone-top > .feature { margin-bottom: 64px; }
   .feature { padding: 44px 44px 48px; }
-  .feature-title { font-size: 40px; line-height: 1.1; letter-spacing: 0; }
-  .feature-sub { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
-  .feature-excerpt { font-size: 19px; line-height: 1.42106; letter-spacing: 0.012em; }
+  .feature-title { font-size: 27px; line-height: 1.1; letter-spacing: 0; }
+  .feature-sub { font-size: 18px; line-height: 1.16667; letter-spacing: 0.009em; }
+  .feature-excerpt { font-size: 16px; line-height: 1.42106; letter-spacing: 0.012em; }
   .foot-group:first-child { flex-basis: 50%; }
   .foot-group { flex-basis: 50%; }
-  .masthead-title { font-size: 56px; line-height: 1.07143; letter-spacing: -0.005em; }
-  .masthead-sm .masthead-title { font-size: 40px; line-height: 1.1; letter-spacing: 0; }
-  .masthead-lede { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
-  .shelf-title { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
+  .masthead-title { font-size: 38px; line-height: 1.07143; letter-spacing: -0.005em; }
+  .masthead-sm .masthead-title { font-size: 30px; line-height: 1.1; letter-spacing: 0; }
+  .masthead-lede { font-size: 18px; line-height: 1.16667; letter-spacing: 0.009em; }
+  .shelf-title { font-size: 20px; line-height: 1.16667; letter-spacing: 0.009em; }
   .card { width: 320px; min-height: 280px; padding: 26px 26px 24px; }
-  .card-title { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
-  .article-title { font-size: 32px; line-height: 1.125; letter-spacing: 0.004em; }
+  .card-title { font-size: 18px; line-height: 1.16667; letter-spacing: 0.009em; }
+  .article-title { font-size: 30px; line-height: 1.125; letter-spacing: 0.004em; }
 }
 @media (max-width: 734px) {
   :root { --gutter: 20px; }
@@ -1091,34 +1091,34 @@ body:has(.admin-shell) .foot-index { display: none; }
     border-radius: 24px;
     text-align: center;
   }
-  .feature-title { font-size: 32px; line-height: 1.125; letter-spacing: 0.004em; }
-  .feature-sub { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .feature-title { font-size: 24px; line-height: 1.125; letter-spacing: 0.004em; }
+  .feature-sub { font-size: 17px; line-height: 1.19048; letter-spacing: 0.011em; }
   .feature-ctas { flex-wrap: wrap; justify-content: center; gap: 12px 20px; padding-top: 0; }
-  .feature-excerpt { margin-top: 4px; font-size: 17px; line-height: 1.47059; letter-spacing: -0.022em; -webkit-line-clamp: 5; text-align: left; }
+  .feature-excerpt { margin-top: 4px; font-size: 15px; line-height: 1.47059; letter-spacing: -0.022em; -webkit-line-clamp: 5; text-align: left; }
   .shelf-head { flex-direction: column; align-items: flex-start; }
   .shelf-cta { font-size: 14px; line-height: 1.42859; letter-spacing: -0.016em; }
   .shelf-cta .chev { width: 6px; height: 10px; }
   .card-button { right: 16px; bottom: 14px; width: 32px; height: 32px; }
   .foot-index { padding: 48px 0 40px; }
-  .foot-index-title { font-size: 28px; line-height: 1.14286; letter-spacing: 0.007em; }
+  .foot-index-title { font-size: 24px; line-height: 1.14286; letter-spacing: 0.007em; }
   .foot-groups { margin-top: 28px; }
   .foot-group, .foot-group:first-child { flex-basis: 100%; padding-right: 0; }
-  .foot-list-big a { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .foot-list-big a { font-size: 17px; line-height: 1.19048; letter-spacing: 0.011em; }
   .nav-inner { height: 48px; gap: 0; }
   .nav-brand, .nav-link, .nav-icon { height: 48px; }
   .nav-link { padding: 0 6px; }
   .nav-icon { width: 32px; }
   .masthead { flex-direction: column; align-items: flex-start; gap: 16px; padding: 44px 0 36px; }
-  .masthead-title { font-size: 40px; line-height: 1.1; letter-spacing: 0; }
-  .masthead-sm .masthead-title { font-size: 32px; line-height: 1.125; letter-spacing: 0.004em; }
+  .masthead-title { font-size: 32px; line-height: 1.1; letter-spacing: 0; }
+  .masthead-sm .masthead-title { font-size: 26px; line-height: 1.125; letter-spacing: 0.004em; }
   .masthead-side { flex: none; text-align: left; }
-  .masthead-lede, .masthead-sm .masthead-lede { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .masthead-lede, .masthead-sm .masthead-lede { font-size: 17px; line-height: 1.19048; letter-spacing: 0.011em; }
   .masthead-links { align-items: flex-start; }
-  .shelf-title { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .shelf-title { font-size: 19px; line-height: 1.19048; letter-spacing: 0.011em; }
   .paddles { display: none; }
   .scroller-track { gap: 14px; padding: 24px var(--edge) 4px; }
   .card { width: 280px; min-height: 260px; padding: 24px 24px 22px; border-radius: 24px; }
-  .card-title { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .card-title { font-size: 17px; line-height: 1.19048; letter-spacing: 0.011em; }
   .card-desc { font-size: 15px; line-height: 1.33337; letter-spacing: -0.016em; }
   .card-grid { gap: 14px; padding: 20px 0 32px; }
   .card-grid .card { min-height: 220px; }
@@ -1127,18 +1127,18 @@ body:has(.admin-shell) .foot-index { display: none; }
   .row + .row::before { left: 16px; }
   .row-num { flex-basis: 28px; }
   .row-num-start + .row-num-start::before { left: 54px; }
-  .plan-part-head { font-size: 19px; }
+  .plan-part-head { font-size: 17px; }
   .plan-part + .plan-part { margin-top: 36px; }
   .article { padding: 44px 0 64px; }
-  .article-title { font-size: 28px; line-height: 1.14286; letter-spacing: 0.007em; }
-  .article-sub { font-size: 17px; line-height: 1.47059; letter-spacing: -0.022em; }
+  .article-title { font-size: 26px; line-height: 1.14286; letter-spacing: 0.007em; }
+  .article-sub { font-size: 16px; line-height: 1.47059; letter-spacing: -0.022em; }
   .article-head { margin-bottom: 32px; }
-  .prose h1, .prose h2, .post-content h1, .post-content h2 { font-size: 21px; line-height: 1.19048; letter-spacing: 0.011em; }
-  .prose h3, .post-content h3 { font-size: 17px; letter-spacing: -0.022em; }
+  .prose h1, .prose h2, .post-content h1, .post-content h2 { font-size: 19px; line-height: 1.19048; letter-spacing: 0.011em; }
+  .prose h3, .post-content h3 { font-size: 16px; letter-spacing: -0.022em; }
   .seq { grid-template-columns: 1fr; gap: 12px; }
   .seq-next { align-items: flex-start; text-align: left; }
   .search-sheet { padding-top: 20px; }
-  .search-input { font-size: 21px; }
+  .search-input { font-size: 18px; }
   .subscribe { padding: 22px 20px; }
 }
 @media (max-width: 560px) {
